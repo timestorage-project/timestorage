@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "timestorage_backend": {
+      "main": "src/timestorage_backend/main.mo",
+      "type": "motoko"
+    },
+    "timestorage_frontend": {
+      "dependencies": [
+        "timestorage_backend"
+      ],
+      "source": [
+        "src/timestorage_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "timestorage_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}

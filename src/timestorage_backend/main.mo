@@ -102,9 +102,4 @@ actor TimestorageBackend {
         imageCounter += 1;
         return "img-" # Nat.toText(imageCounter);
     };
-
-    // Funzione di debug: ottenere tutti i dati
-    public query func debugGetAllData() : async [(Text, Text)] {
-        return Iter.toArray(uuidToStructure.entries());
-    };
 }

@@ -1,37 +1,29 @@
+import Result "mo:base/Result";
+
 module Types {
-  public type UUID = Text;
+    public type UUID = Text;
 
-  public type CoreData = {
-    key: Text;
-    value: Text;
-  };
+    public type CoreData = {
+      key: Text;
+      value: Text;
+    };
 
-  public type MintRequest = {
-    uuids: [Text];
-    structures: Text; // JSON serialized structure
-  };
+    public type MintRequest = {
+      uuids: [Text];
+      structures: Text;
+    };
 
-  public type ImageMetadata = {
-    fileName: Text;
-    fileType: Text;
-    uploadTimestamp: Int;
-  };
+    public type ImageMetadata = {
+      fileName: Text;
+      fileType: Text;
+      uploadTimestamp: Int;
+    };
 
-  public type ImageUploadRequest = {
-    uuid: Text;
-    imageData: Blob;
-    metadata: ImageMetadata;
-  };
-
-  public type UUIDStructure = {
-    uuid: UUID;
-    structure: Text;
-  };
-
-  public type AuthorizationRole = {
-    admin: Bool;
-    editor: Bool;
-    reader: Bool;
-  };
-}
+    public type ImageUploadRequest = {
+      uuid: Text;
+      imageData: Blob;
+      metadata: ImageMetadata;
+    };
+    public type Result<T, E> = Result.Result<T, E>;
+};
 

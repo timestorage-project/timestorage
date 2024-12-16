@@ -1,58 +1,85 @@
+import Storage "./storage";
+import Types "./types";
+import Auth "./auth";
 import Principal "mo:base/Principal";
-import { mint, uploadUUIDImage, getUuidIndex, getUuidStructure, getUuidContainer, getCoreByKey, getDataByKey, getAllDataByKeys, assignRole, getRole } from "./logic";
-import { MintRequest, ImageUploadRequest, UUIDStructure, UUIDContainer } from "./types";
+import Nat "mo:base/Nat";
+import Iter "mo:base/Iter";
+import Debug "mo:base/Debug";
 
-actor timestorage_backend {
-  // Initialization hook - could be used to assign an initial admin
-  public func init() {
-    let caller = Principal.fromActorId();
-    // Assign the caller as admin initially
-    logic.assignRole(caller, {admin = true; editor = true; reader = true});
-  }
+actor TimestorageBackend {
+  // STABLE DATA: array di coppie per persistenza
+  stable var uuidToStructureStable : [(Text, Text)] = [];
+  stable var uuidToImagesStable : [(Text, Storage.ImageRecord)] = [];
+  stable var adminsStable : [Principal] = [];
+  stable var imageCounter : Nat = 0;
 
-  // Query methods (read-only)
-  public query func getUuidIndex() : async [Text] {
-    return logic.getUuidIndex();
-  }
+  // MAPPE DINAMICHE
+  var uuidToStructure = Storage.newUUIDStructure();
+  var uuidToImages = Storage.newImageMap();
 
-  public query func getUuidStructure() : async [UUIDStructure] {
-    // Convert from [(Text, Text)] to [UUIDStructure]
-    let entries = logic.getUuidStructure();
-    entries.map(func (e) { { uuid = e.0; structure = e.1 } })
-  }
+  // Inizializza l'admin principale solo se la lista è vuota
+  if (adminsStable.size() == 0) {
+    let caller = Principal.fromActor(TimestorageBackend);
+    adminsStable := [caller];
+  };
 
-  public query func getUuidContainer() : async [UUIDContainer] {
-    let entries = logic.getUuidContainer();
-    entries.map(func (e) { { uuid = e.0; data = { key = e.0; value = e.1 } } })
-  }
+  // Caricamento all'avvio
+  system func postupgrade() {
+    for ((k, v) in uuidToStructureStable.vals()) { uuidToStructure.put(k, v); };
+    for ((k, v) in uuidToImagesStable.vals()) { uuidToImages.put(k, v); };
+  };
 
-  public query func getCoreByKey(key: Text) : async ?{key: Text; value: Text} {
-    logic.getCoreByKey(key)
-  }
+  // Salvataggio prima dell'aggiornamento
+  system func preupgrade() {
+    uuidToStructureStable := Iter.toArray(uuidToStructure.entries());
+    uuidToImagesStable := Iter.toArray(uuidToImages.entries());
+  };
 
-  public query func getDataByKey(key: Text) : async ?Text {
-    logic.getDataByKey(key)
-  }
+  // Aggiungere un nuovo admin
+  public func addAdmin(newAdmin: Principal, caller: Principal) : async Text {
+    adminsStable := Auth.addAdmin(newAdmin, caller, adminsStable);
+    return "New admin added successfully.";
+  };
 
-  public query func getAllDataByKeys(keys: [Text]) : async [(Text, ?Text)] {
-    logic.getAllDataByKeys(keys)
-  }
+  // Verifica se l'utente corrente è admin
+  public shared query func isAdmin(caller: Principal) : async Bool {
+    return Auth.isAdmin(caller, adminsStable);
+  };
 
-  // Update methods (require authorization)
-  public func mint(req: MintRequest) : async Text {
-    logic.mint(req)
-  }
+  // Inserire un UUID con struttura (solo admin)
+  public func insertUUIDStructure(uuid : Text, structure : Text, caller: Principal) : async Text {
+    Auth.requireAdmin(caller, adminsStable);
+    uuidToStructure.put(uuid, structure);
+    return "UUID inserted successfully.";
+  };
 
-  public func uploadUUIDImage(req: ImageUploadRequest) : async Text {
-    logic.uploadUUIDImage(req)
-  }
+  // Ottenere tutti gli UUID (solo admin)
+  public shared query func getAllUUIDs(caller: Principal) : async [Text] {
+    Auth.requireAdmin(caller, adminsStable);
+    return Iter.toArray(uuidToStructure.keys());
+  };
 
-  public func assignRole(p: Principal, role: {admin: Bool; editor: Bool; reader: Bool}) : async Text {
-    logic.assignRole(p, role)
-  }
+  // Caricare un'immagine (solo admin)
+  public func uploadImage(uuid: Text, imgData: Blob, metadata: Types.ImageMetadata, caller: Principal) : async Text {
+    Auth.requireAdmin(caller, adminsStable);
 
-  public query func getRole(p: Principal) : async ?{admin: Bool; editor: Bool; reader: Bool} {
-    logic.getRole(p)
-  }
+    if (uuidToStructure.get(uuid) == null) {
+      Debug.trap("Error: UUID does not exist.");
+    };
 
+    let imageId = generateUniqueImageId();
+    uuidToImages.put(imageId, { imageData = imgData; metadata = metadata });
+    return "Image uploaded successfully with ID: " # imageId;
+  };
+
+  // Generare un ID immagine unico
+  func generateUniqueImageId() : Text {
+    imageCounter += 1;
+    return "img-" # Nat.toText(imageCounter);
+  };
+
+  // Funzione di debug: ottenere tutti i dati
+  public query func debugGetAllData() : async [(Text, Text)] {
+    return Iter.toArray(uuidToStructure.entries());
+  };
 }

@@ -28,14 +28,10 @@ module Types {
     structure: Text;
   };
 
-  public type UUIDContainer = {
-    uuid: UUID;
-    data: CoreData;
-  };
-
   public type AuthorizationRole = {
     admin: Bool;
     editor: Bool;
     reader: Bool;
   };
 }
+

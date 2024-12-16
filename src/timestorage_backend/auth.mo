@@ -1,33 +1,35 @@
 import Principal "mo:base/Principal";
-import Error "mo:base/Error";
-import Types "./types";
+import Debug "mo:base/Debug";
+import Array "mo:base/Array";
 
 module {
-  type AuthorizationRole = Types.AuthorizationRole;
-
-  let requireEditorOrAbove = func(getRoleFunc : Principal -> ?AuthorizationRole) {
-    let caller = Principal.fromActor();
-    let role = getRoleFunc(caller);
-    switch (role) {
-      case (null) { Error.reject("Unauthorized: No role assigned") };
-      case (?r) {
-        if (not (r.admin or r.editor)) {
-          Error.reject("Unauthorized: Insufficient permissions")
-        }
-      }
-    }
+  // Verifica se un Principal è un admin
+  public func isAdmin(caller: Principal, admins: [Principal]) : Bool {
+    for (admin in admins.vals()) {
+      if (admin == caller) {
+        return true;
+      };
+    };
+    return false;
   };
 
-  let requireAdmin = func(getRoleFunc : Principal -> ?AuthorizationRole) {
-    let caller = Principal.fromActor();
-    let role = getRoleFunc(caller);
-    switch (role) {
-      case (null) { Error.reject("Unauthorized: No role assigned") };
-      case (?r) {
-        if (not r.admin) {
-          Error.reject("Unauthorized: Admin role required")
-        }
-      }
-    }
+  // Aggiunge un nuovo admin, garantendo unicità
+  public func addAdmin(newAdmin: Principal, caller: Principal, admins: [Principal]) : [Principal] {
+    if (not isAdmin(caller, admins)) {
+      Debug.trap("Unauthorized: Only admins can add new admins.");
+    };
+    if (isAdmin(newAdmin, admins)) {
+      Debug.trap("Admin already exists.");
+    };
+    return Array.append<Principal>(admins, [newAdmin]);
+  };
+
+  // Richiede che il chiamante sia un admin
+  public func requireAdmin(caller: Principal, admins: [Principal]) {
+    if (not isAdmin(caller, admins)) {
+      Debug.trap("Unauthorized: Admin role required.");
+    };
   };
 }
+
+

@@ -1,85 +1,32 @@
-import Trie "mo:base/TrieMap";
+import TrieMap "mo:base/TrieMap";
+import Text "mo:base/Text";
 import Types "./types";
 import Principal "mo:base/Principal";
-import Nat "mo:base/Nat";
 
-module {
-  type UUID = Types.UUID;
-  type CoreData = Types.CoreData;
-  type ImageMetadata = Types.ImageMetadata;
-  type AuthorizationRole = Types.AuthorizationRole;
-
-  type ImageRecord = {
+module Storage {
+  public type UUID = Types.UUID;
+  public type ImageRecord = {
     imageData : Blob;
-    metadata : ImageMetadata;
+    metadata : Types.ImageMetadata;
   };
 
-  // STABLE VARIABLES
-  stable var uuidToStructure : Trie.Map<Text, Text> = Trie.empty();
-  stable var uuidToCoreData : Trie.Map<Text, Text> = Trie.empty();
-  stable var uuidToImages : Trie.Map<Text, ImageRecord> = Trie.empty();
-  stable var principalRoles : Trie.Map<Principal, AuthorizationRole> = Trie.empty();
-  stable var imageCounter : Nat = 0n;
-
-  func getAllUUIDs() : [Text] {
-    Trie.keys(uuidToStructure)
+  // Funzione per creare una nuova mappa di UUID -> Struttura
+  public func newUUIDStructure() : TrieMap.TrieMap<Text, Text> {
+    TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
   };
 
-  func getAllUUIDStructures() : [(Text, Text)] {
-    Trie.entries(uuidToStructure)
+  // Funzione per creare una nuova mappa di immagini
+  public func newImageMap() : TrieMap.TrieMap<Text, ImageRecord> {
+    TrieMap.TrieMap<Text, ImageRecord>(Text.equal, Text.hash);
   };
 
-  func getAllUUIDContainers() : [(Text, Text)] {
-    Trie.entries(uuidToCoreData)
+  // Funzione per creare una nuova mappa dei ruoli principali
+  public func newPrincipalRoles() : TrieMap.TrieMap<Principal, Types.AuthorizationRole> {
+    TrieMap.TrieMap<Principal, Types.AuthorizationRole>(Principal.equal, Principal.hash);
   };
 
-  func getCoreData(key : Text) : ?CoreData {
-    switch (Trie.get(uuidToCoreData, key)) {
-      case (null) { null };
-      case (?v) { ?{ key = key; value = v } };
-    }
-  };
-
-  func getDataValue(key : Text) : ?Text {
-    Trie.get(uuidToCoreData, key)
-  };
-
-  func uuidExists(uuid : Text) : Bool {
-    Trie.containsKey(uuidToStructure, uuid)
-  };
-
-  func insertUUIDStructure(uuid : Text, structure : Text) {
-    uuidToStructure := Trie.put(uuidToStructure, uuid, structure)
-  };
-
-  func insertCoreData(key : Text, value : Text) {
-    uuidToCoreData := Trie.put(uuidToCoreData, key, value)
-  };
-
-  func insertImage(imageId : Text, imgData : Blob, meta : ImageMetadata) {
-    uuidToImages := Trie.put(uuidToImages, imageId, { imageData = imgData; metadata = meta })
-  };
-
-  func linkImageToUUID(uuid : Text, imageId : Text) {
-    switch (Trie.get(uuidToStructure, uuid)) {
-      case (null) { /* do nothing, uuid not found */ };
-      case (?structure) {
-        let newStructure = structure # "\n[image_ref]:" # imageId;
-        uuidToStructure := Trie.put(uuidToStructure, uuid, newStructure);
-      };
-    }
-  };
-
-  func generateUniqueImageId() : Text {
-    imageCounter += 1n;
-    return "img-" # Nat.toText(imageCounter)
-  };
-
-  func setPrincipalRole(p : Principal, role : AuthorizationRole) {
-    principalRoles := Trie.put(principalRoles, p, role)
-  };
-
-  func getPrincipalRole(p : Principal) : ?AuthorizationRole {
-    Trie.get(principalRoles, p)
+  // Funzione per controllare se un UUID esiste nella mappa
+  public func uuidExists(map : TrieMap.TrieMap<Text, Text>, uuid : Text) : Bool {
+    return map.get(uuid) != null;
   };
 }

@@ -4,13 +4,14 @@ import Utils "./utils";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Text "mo:base/Text";
+import HashMap "mo:base/HashMap";
 
 module {
     // Funzione per il mint di nuovi UUID
     public func mint(
         req: Types.MintRequest,
         caller: Principal,
-        admins: [Principal],
+        admins: HashMap.HashMap<Principal, Bool>,
         insertUUID: (Text, Text) -> (),
         uuidExists: (Text) -> Bool
     ) : Result.Result<Text, Text> {
@@ -25,7 +26,7 @@ module {
         };
 
         for (u in req.uuids.vals()) {
-            if (u.size() < 5 or not Utils.startsWith(u, "uuid-")) {
+            if (not Utils.isValidUUID(u)) {
                 return #err("Invalid UUID format: " # u);
             };
             if (uuidExists(u)) {
@@ -44,7 +45,7 @@ module {
     public func uploadUUIDImage(
         req: Types.ImageUploadRequest,
         caller: Principal,
-        admins: [Principal],
+        admins: HashMap.HashMap<Principal, Bool>,
         uuidExists: (Text) -> Bool,
         generateImageId: () -> Text,
         linkImage: (Text, Text) -> ()
@@ -54,7 +55,7 @@ module {
             case (#ok(())) {};                 // Procede se admin
         };
 
-        if (not Utils.startsWith(req.uuid, "uuid-")) {
+        if (not Utils.isValidUUID(req.uuid)) {
             return #err("Invalid UUID format.");
         };
         if (not uuidExists(req.uuid)) {
@@ -70,4 +71,3 @@ module {
         return #ok("Image upload successful with ID: " # imageId);
     };
 }
-

@@ -8,58 +8,57 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 
 actor TimestorageBackend {
-    // STABLE DATA: array di coppie per persistenza
     stable var uuidToStructureStable : [(Text, Text)] = [];
     stable var uuidToImagesStable : [(Text, Storage.ImageRecord)] = [];
-    stable var adminsStable : [Principal] = [];
+    stable var adminsStable : [(Principal, Bool)] = [];
     stable var imageCounter : Nat = 0;
 
-    // MAPPE DINAMICHE
     var uuidToStructure = Storage.newUUIDStructure();
     var uuidToImages = Storage.newImageMap();
+    var admins = Auth.newAdminMap();
 
-    // Inizializza l'admin principale solo se la lista è vuota
+    // Inizializzazione degli admin
     if (adminsStable.size() == 0) {
-        let caller = Principal.fromActor(TimestorageBackend);
-        adminsStable := [caller];
+        let initialAdmin = Principal.fromActor(TimestorageBackend);
+        admins.put(initialAdmin, true);
+    } else {
+        for ((k, v) in adminsStable.vals()) {
+            admins.put(k, v);
+        };
     };
 
-    // Caricamento all'avvio
     system func postupgrade() {
         for ((k, v) in uuidToStructureStable.vals()) { uuidToStructure.put(k, v); };
         for ((k, v) in uuidToImagesStable.vals()) { uuidToImages.put(k, v); };
+        for ((k, v) in adminsStable.vals()) { admins.put(k, v); };
     };
 
-    // Salvataggio prima dell'aggiornamento
     system func preupgrade() {
         uuidToStructureStable := Iter.toArray(uuidToStructure.entries());
         uuidToImagesStable := Iter.toArray(uuidToImages.entries());
+        adminsStable := Iter.toArray(admins.entries());
     };
 
-    // Aggiungere un nuovo admin
-    public func addAdmin(newAdmin: Principal, caller: Principal) : async Result.Result<Text, Text> {
-        switch (Auth.addAdmin(newAdmin, caller, adminsStable)) {
-            case (#err(e)) { return #err(e); };           // Gestione errore
-            case (#ok(updatedAdmins)) {                   // Aggiorna la lista di admin
-                adminsStable := updatedAdmins;
+    public shared func addAdmin(newAdmin: Principal, caller: Principal) : async Result.Result<Text, Text> {
+        switch (Auth.addAdmin(newAdmin, caller, admins)) {
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {
                 return #ok("New admin added successfully.");
             };
         };
     };
 
-    // Verifica se l'utente corrente è admin
     public shared query func isAdmin(caller: Principal) : async Bool {
-        return Auth.isAdmin(caller, adminsStable);
+        return Auth.isAdmin(caller, admins);
     };
 
-    // Inserire un UUID con struttura (solo admin)
-    public func insertUUIDStructure(uuid : Text, structure : Text, caller: Principal) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdmin(caller, adminsStable)) {
+    public shared func insertUUIDStructure(uuid: Text, structure: Text, caller: Principal) : async Result.Result<Text, Text> {
+        switch (Auth.requireAdmin(caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
 
-        if (not Utils.startsWith(uuid, "uuid-")) {
+        if (not Utils.isValidUUID(uuid)) {
             return #err("Invalid UUID format.");
         };
 
@@ -67,9 +66,8 @@ actor TimestorageBackend {
         return #ok("UUID inserted successfully.");
     };
 
-    // Ottenere tutti gli UUID (solo admin)
     public shared query func getAllUUIDs(caller: Principal) : async Result.Result<[Text], Text> {
-        switch (Auth.requireAdmin(caller, adminsStable)) {
+        switch (Auth.requireAdmin(caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
@@ -77,9 +75,8 @@ actor TimestorageBackend {
         return #ok(Iter.toArray(uuidToStructure.keys()));
     };
 
-    // Caricare un'immagine (solo admin)
-    public func uploadImage(uuid: Text, imgData: Blob, metadata: Types.ImageMetadata, caller: Principal) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdmin(caller, adminsStable)) {
+    public shared func uploadImage(uuid: Text, imgData: Blob, metadata: Types.ImageMetadata, caller: Principal) : async Result.Result<Text, Text> {
+        switch (Auth.requireAdmin(caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
@@ -97,7 +94,6 @@ actor TimestorageBackend {
         return #ok("Image uploaded successfully with ID: " # imageId);
     };
 
-    // Generare un ID immagine unico
     func generateUniqueImageId() : Text {
         imageCounter += 1;
         return "img-" # Nat.toText(imageCounter);

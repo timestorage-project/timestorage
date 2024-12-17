@@ -1,35 +1,36 @@
 import Text "mo:base/Text";
 
 module Utils {
+    // Controlla se un UUID è valido: deve iniziare con "uuid-" ed essere lungo almeno 5 caratteri
+    public func isValidUUID(uuid: Text) : Bool {
+        let prefix = "uuid-";
+        if (Text.size(uuid) < Text.size(prefix)) {
+            return false;
+        };
 
-    // Funzione startsWith per verificare il prefisso di una stringa
-    // Utils.startsWith("uuid-", "uuid-");     // true
-    // Utils.startsWith("uuid-12345", "uuid-"); // true
-    // Utils.startsWith("abc-12345", "uuid-"); // false
-    // Utils.startsWith("", "uuid-");          // false
-    public func startsWith(s: Text, prefix: Text) : Bool {
-        let sChars = Text.toIter(s);
+        // Controlla manualmente il prefisso
+        let uuidChars = Text.toIter(uuid);
         let prefixChars = Text.toIter(prefix);
 
-        var sIter = sChars.next();
+        var uuidIter = uuidChars.next();
         var prefixIter = prefixChars.next();
 
-        while (prefixIter != null) { // Continua finché ci sono caratteri nel prefisso
-            switch (sIter) {
-                case (null) { return false; }; // La stringa principale è più corta del prefisso
+        while (prefixIter != null) {
+            switch (uuidIter) {
+                case (null) { return false; };
                 case (?char) {
                     switch (prefixIter) {
                         case (?pChar) {
                             if (char != pChar) { return false; };
                         };
-                        case (null) { return false; }; // Prefisso finisce in modo inatteso
+                        case (null) { return true; };
                     };
                 };
             };
-            sIter := sChars.next();
+            uuidIter := uuidChars.next();
             prefixIter := prefixChars.next();
         };
-        return true; // Prefisso corrisponde interamente
+
+        return true;
     };
 }
-

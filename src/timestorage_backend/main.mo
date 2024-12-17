@@ -6,6 +6,7 @@ import Principal "mo:base/Principal";
 import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Nat "mo:base/Nat";
+import Array "mo:base/Array";
 
 shared (msg) actor class TimestorageBackend() {
     stable var uuidToStructureStable : [(Text, Text)] = [];
@@ -87,7 +88,7 @@ shared (msg) actor class TimestorageBackend() {
         };
 
         let imageId = generateUniqueImageId();
-        uuidToImages.put(imageId, { imageData = imgData; metadata = metadata });
+        uuidToImages.put(imageId, { uuid = uuid; imageData = imgData; metadata = metadata });
         return #ok("Image uploaded successfully with ID: " # imageId);
     };
 
@@ -96,5 +97,35 @@ shared (msg) actor class TimestorageBackend() {
         imageCounter += 1;
         return "img-" # Nat.toText(imageCounter);
     };
-}
 
+    // Restituisce la struttura e tutti gli imageId associati ad un dato UUID (no admin required)
+    public shared query (msg) func getUUIDInfo(uuid: Text) : async Result.Result<(Text, [Text]), Text> {
+        let s = uuidToStructure.get(uuid);
+        if (s == null) {
+            return #err("Error: UUID not found.");
+        };
+
+        let structureText = switch (s) {
+            case (?val) val;
+            case null "unreachable"; // non verrà mai eseguito
+        };
+
+        var imageIds : [Text] = [];
+        for ((imgId, record) in uuidToImages.entries()) {
+            if (record.uuid == uuid) {
+                imageIds := Array.append(imageIds, [imgId]);
+            };
+        };
+
+        return #ok((structureText, imageIds));
+    };
+
+    // Restituisce l'immagine dato un imageId (no admin required)
+    public shared query (msg) func getImage(imageId: Text) : async Result.Result<Storage.ImageRecord, Text> {
+        let imageRecord = uuidToImages.get(imageId);
+        switch (imageRecord) {
+            case null { return #err("Error: Image not found."); };
+            case (?rec) { return #ok(rec); };
+        };
+    };
+}

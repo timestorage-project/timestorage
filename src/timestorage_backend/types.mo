@@ -25,5 +25,5 @@ module Types {
       metadata: ImageMetadata;
     };
     public type Result<T, E> = Result.Result<T, E>;
-};
+}
 

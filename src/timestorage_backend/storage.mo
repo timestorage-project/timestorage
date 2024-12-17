@@ -5,6 +5,7 @@ import Types "./types";
 module Storage {
     public type UUID = Types.UUID;
     public type ImageRecord = {
+        uuid : Text;
         imageData : Blob;
         metadata : Types.ImageMetadata;
     };
@@ -24,4 +25,3 @@ module Storage {
         return map.get(uuid) != null;
     };
 }
-

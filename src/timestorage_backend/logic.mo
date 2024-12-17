@@ -4,6 +4,7 @@ import Utils "./utils";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Text "mo:base/Text";
+import Iter "mo:base/Iter";
 import HashMap "mo:base/HashMap";
 
 module {
@@ -25,7 +26,7 @@ module {
             return #err("Input validation failed: UUID list and structure cannot be empty.");
         };
 
-        for (u in req.uuids.vals()) {
+        for (u in Iter.fromArray(req.uuids)) {
             if (not Utils.isValidUUID(u)) {
                 return #err("Invalid UUID format: " # u);
             };
@@ -34,7 +35,7 @@ module {
             };
         };
 
-        for (u in req.uuids.vals()) {
+        for (u in Iter.fromArray(req.uuids)) {
             insertUUID(u, req.structures);
         };
 

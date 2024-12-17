@@ -2,7 +2,10 @@
   "canisters": {
     "timestorage_backend": {
       "main": "src/timestorage_backend/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "motoko": {
+        "version": "0.8.6"
+      }
     },
     "timestorage_frontend": {
       "dependencies": [

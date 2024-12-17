@@ -3,11 +3,11 @@ import Types "./types";
 import Auth "./auth";
 import Utils "./utils";
 import Principal "mo:base/Principal";
-import Nat "mo:base/Nat";
 import Iter "mo:base/Iter";
 import Result "mo:base/Result";
+import Nat "mo:base/Nat";
 
-actor TimestorageBackend {
+shared (msg) actor class TimestorageBackend() {
     stable var uuidToStructureStable : [(Text, Text)] = [];
     stable var uuidToImagesStable : [(Text, Storage.ImageRecord)] = [];
     stable var adminsStable : [(Principal, Bool)] = [];
@@ -17,15 +17,9 @@ actor TimestorageBackend {
     var uuidToImages = Storage.newImageMap();
     var admins = Auth.newAdminMap();
 
-    // Inizializzazione degli admin
-    if (adminsStable.size() == 0) {
-        let initialAdmin = Principal.fromActor(TimestorageBackend);
-        admins.put(initialAdmin, true);
-    } else {
-        for ((k, v) in adminsStable.vals()) {
-            admins.put(k, v);
-        };
-    };
+    // Inizializza l'admin principale con il deployer dell'actor
+    let initialAdmin = msg.caller;
+    admins.put(initialAdmin, true);
 
     system func postupgrade() {
         for ((k, v) in uuidToStructureStable.vals()) { uuidToStructure.put(k, v); };
@@ -39,21 +33,22 @@ actor TimestorageBackend {
         adminsStable := Iter.toArray(admins.entries());
     };
 
-    public shared func addAdmin(newAdmin: Principal, caller: Principal) : async Result.Result<Text, Text> {
-        switch (Auth.addAdmin(newAdmin, caller, admins)) {
+    // Verifica se il chiamante è admin
+    public shared query (msg) func isAdmin() : async Bool {
+        return Auth.isAdmin(msg.caller, admins);
+    };
+
+    // Aggiunta di un nuovo admin
+    public shared (msg) func addAdmin(newAdmin: Principal) : async Result.Result<Text, Text> {
+        switch (Auth.addAdmin(newAdmin, msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
-            case (#ok(())) {
-                return #ok("New admin added successfully.");
-            };
+            case (#ok(())) { return #ok("New admin added successfully."); };
         };
     };
 
-    public shared query func isAdmin(caller: Principal) : async Bool {
-        return Auth.isAdmin(caller, admins);
-    };
-
-    public shared func insertUUIDStructure(uuid: Text, structure: Text, caller: Principal) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdmin(caller, admins)) {
+    // Inserimento di un UUID con struttura
+    public shared (msg) func insertUUIDStructure(uuid: Text, structure: Text) : async Result.Result<Text, Text> {
+        switch (Auth.requireAdmin(msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
@@ -66,8 +61,9 @@ actor TimestorageBackend {
         return #ok("UUID inserted successfully.");
     };
 
-    public shared query func getAllUUIDs(caller: Principal) : async Result.Result<[Text], Text> {
-        switch (Auth.requireAdmin(caller, admins)) {
+    // Ottenere tutti gli UUID
+    public shared query (msg) func getAllUUIDs() : async Result.Result<[Text], Text> {
+        switch (Auth.requireAdmin(msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
@@ -75,8 +71,9 @@ actor TimestorageBackend {
         return #ok(Iter.toArray(uuidToStructure.keys()));
     };
 
-    public shared func uploadImage(uuid: Text, imgData: Blob, metadata: Types.ImageMetadata, caller: Principal) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdmin(caller, admins)) {
+    // Caricare un'immagine associata a un UUID
+    public shared (msg) func uploadImage(uuid: Text, imgData: Blob, metadata: Types.ImageMetadata) : async Result.Result<Text, Text> {
+        switch (Auth.requireAdmin(msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
@@ -94,8 +91,10 @@ actor TimestorageBackend {
         return #ok("Image uploaded successfully with ID: " # imageId);
     };
 
+    // Genera un ID univoco per le immagini
     func generateUniqueImageId() : Text {
         imageCounter += 1;
         return "img-" # Nat.toText(imageCounter);
     };
 }
+

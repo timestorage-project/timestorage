@@ -8,6 +8,7 @@ module {
         HashMap.HashMap<Principal, Bool>(0, Principal.equal, Principal.hash);
     };
 
+    // Controlla se un utente è admin
     public func isAdmin(caller: Principal, admins: HashMap.HashMap<Principal, Bool>) : Bool {
         switch (admins.get(caller)) {
             case (?_) { return true; };
@@ -15,6 +16,7 @@ module {
         };
     };
 
+    // Aggiunge un nuovo admin
     public func addAdmin(
         newAdmin: Principal,
         caller: Principal,
@@ -30,6 +32,7 @@ module {
         return #ok(());
     };
 
+    // Verifica se un utente è admin, altrimenti ritorna errore
     public func requireAdmin(
         caller: Principal,
         admins: HashMap.HashMap<Principal, Bool>
@@ -40,4 +43,5 @@ module {
         return #ok(());
     };
 }
+
 

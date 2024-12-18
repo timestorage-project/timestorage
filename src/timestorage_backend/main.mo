@@ -79,7 +79,7 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // Caricare un'immagine associata a un UUID
-    public shared (msg) func uploadImage(uuid: Text, imgData: Blob, metadata: Types.ImageMetadata) : async Result.Result<Text, Text> {
+    public shared (msg) func uploadImage(uuid: Text, base64ImgData: Text, metadata: Types.ImageMetadata) : async Result.Result<Text, Text> {
         switch (Auth.requireAdmin(msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
@@ -93,10 +93,20 @@ shared (msg) actor class TimestorageBackend() {
             return #err("Invalid metadata: File name and type cannot be empty.");
         };
 
+        // Genera un imageId unico
         let imageId = generateUniqueImageId();
-        uuidToImages.put(imageId, { uuid = uuid; imageData = imgData; metadata = metadata });
+
+        // Crea il record dell'immagine
+        let imageRecord : Storage.ImageRecord = {
+            uuid = uuid;
+            imageData = base64ImgData; // Già testo base64
+            metadata = metadata
+        };
+
+        uuidToImages.put(imageId, imageRecord);
         return #ok("Image uploaded successfully with ID: " # imageId);
     };
+
 
     // Genera un ID univoco per le immagini
     func generateUniqueImageId() : Text {

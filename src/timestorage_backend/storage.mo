@@ -6,9 +6,10 @@ module Storage {
     public type UUID = Types.UUID;
     public type ImageRecord = {
         uuid : Text;
-        imageData : Blob;
+        imageData : Text;
         metadata : Types.ImageMetadata;
     };
+
 
     // Funzione per creare una nuova mappa di UUID -> Struttura
     public func newUUIDStructure() : TrieMap.TrieMap<Text, Text> {

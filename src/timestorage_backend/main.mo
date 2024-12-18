@@ -127,11 +127,27 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // Restituisce l'immagine dato un imageId (no admin required)
-    public shared query (msg) func getImage(imageId: Text) : async Result.Result<Storage.ImageRecord, Text> {
+    public shared query (msg) func getImageByUUIDAndId(uuid: Text, imageId: Text) : async Result.Result<Storage.ImageRecord, Text> {
+        if (not Utils.isValidUUID(uuid)) {
+            return #err("Invalid UUID format.");
+        };
+
+        // Controlla se l'UUID esiste
+        let s = uuidToStructure.get(uuid);
+        if (s == null) {
+            return #err("UUID not found.");
+        };
+
         let imageRecord = uuidToImages.get(imageId);
         switch (imageRecord) {
-            case null { return #err("Error: Image not found."); };
-            case (?rec) { return #ok(rec); };
+            case null { return #err("No image found for the given UUID and image ID."); };
+            case (?rec) {
+                if (rec.uuid == uuid) {
+                    return #ok(rec);
+                } else {
+                    return #err("The image does not belong to the given UUID.");
+                };
+            };
         };
-    };
+    }
 }

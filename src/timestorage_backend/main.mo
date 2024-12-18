@@ -58,9 +58,15 @@ shared (msg) actor class TimestorageBackend() {
             return #err("Invalid UUID format.");
         };
 
+        // Controllo se l'UUID esiste già
+        if (uuidToStructure.get(uuid) != null) {
+            return #err("UUID already exists.");
+        };
+
         uuidToStructure.put(uuid, structure);
         return #ok("UUID inserted successfully.");
     };
+
 
     // Ottenere tutti gli UUID
     public shared query (msg) func getAllUUIDs() : async Result.Result<[Text], Text> {

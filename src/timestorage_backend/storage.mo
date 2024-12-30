@@ -4,12 +4,7 @@ import Types "./types";
 
 module Storage {
     public type UUID = Types.UUID;
-    public type ImageRecord = {
-        uuid : Text;
-        imageData : Text;
-        metadata : Types.ImageMetadata;
-    };
-
+    public type ImageRecord = Types.ImageRecord;
 
     // Funzione per creare una nuova mappa di UUID -> Struttura
     public func newUUIDStructure() : TrieMap.TrieMap<Text, Text> {

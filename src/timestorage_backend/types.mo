@@ -25,6 +25,12 @@ module Types {
     metadata: ImageMetadata;
   };
 
+  public type ImageRecord = {
+    uuid: Text;
+    imageData: Text; // Base64
+    metadata: ImageMetadata;
+  };
+
   public type Result<T, E> = Result.Result<T, E>;
 }
 

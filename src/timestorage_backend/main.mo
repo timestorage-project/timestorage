@@ -67,7 +67,6 @@ shared (msg) actor class TimestorageBackend() {
         return #ok("UUID inserted successfully.");
     };
 
-
     // Ottenere tutti gli UUID
     public shared query (msg) func getAllUUIDs() : async Result.Result<[Text], Text> {
         switch (Auth.requireAdmin(msg.caller, admins)) {
@@ -99,14 +98,13 @@ shared (msg) actor class TimestorageBackend() {
         // Crea il record dell'immagine
         let imageRecord : Storage.ImageRecord = {
             uuid = uuid;
-            imageData = base64ImgData; // Già testo base64
-            metadata = metadata
+            imageData = base64ImgData; // Base64
+            metadata = metadata;
         };
 
         uuidToImages.put(imageId, imageRecord);
         return #ok("Image uploaded successfully with ID: " # imageId);
     };
-
 
     // Genera un ID univoco per le immagini
     func generateUniqueImageId() : Text {

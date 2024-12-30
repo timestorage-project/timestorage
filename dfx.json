@@ -16,6 +16,13 @@
       ],
       "type": "assets",
       "workspace": "timestorage_frontend"
+    },
+    "test_runner": {
+      "main": "test/test.mo",
+      "type": "motoko",
+      "dependencies": [
+        "timestorage_backend"
+      ]
     }
   },
   "defaults": {

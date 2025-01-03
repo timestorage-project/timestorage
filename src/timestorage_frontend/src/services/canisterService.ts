@@ -18,7 +18,7 @@ const initializeAgent = async () => {
   if (!timestorageActor) {
     timestorageActor = Actor.createActor<TimestorageBackend>(idlFactory, {
       agent,
-      canisterId: process.env.CANISTER_ID_TIMESTORAGE_BACKEND || 'asd'
+      canisterId: process.env.CANISTER_ID_TIMESTORAGE_BACKEND || 'bkyz2-fmaaa-aaaaa-qaaaq-cai'
     })
   }
 

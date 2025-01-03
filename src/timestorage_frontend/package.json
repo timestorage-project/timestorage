@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@caldwell619/react-hooks": "^0.0.6",
+    "@dfinity/agent": "^2.2.0",
     "@emotion/react": "11.4.1",
     "@emotion/styled": "11.3.0",
     "@mui/icons-material": "^5.0.1",
@@ -22,7 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^14.14.31",
-    "@types/react": "^17.0.0",
+    "@types/react": "^17.0.83",
     "@types/react-dom": "^17.0.0",
     "@vitejs/plugin-react": "^1.0.1",
     "eslint": "^7.32.0",
@@ -31,7 +32,7 @@
     "rc": "^1.2.8",
     "react-scripts": "^4.0.3",
     "rollup-plugin-visualizer": "^5.5.2",
-    "typescript": "^4.1.2",
+    "typescript": "^4.9.5",
     "vite": "^2.0.1",
     "vite-plugin-checker": "^0.3.4"
   },

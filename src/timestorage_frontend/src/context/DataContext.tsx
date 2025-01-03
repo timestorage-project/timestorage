@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
+import * as canisterService from '../services/canisterService'
 
 interface DataNode {
   id: string
@@ -47,58 +48,58 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
 
-const mockData: DataStructure = {
-  productInfo: {
-    id: 'product-info',
-    title: 'Product Info',
-    icon: 'info',
-    description: 'Dimensions, model number, material type, glass type, energy rating',
-    children: [
-      { icon: '📏', label: 'Dimensions', value: '120cm x 150cm' },
-      { icon: '🔢', label: 'Model Number', value: 'WX12345' },
-      { icon: '🏗️', label: 'Material Type', value: 'Aluminum' },
-      { icon: '🪟', label: 'Glass Type', value: 'Tempered' },
-      { icon: '⚡', label: 'Energy Rating', value: 'A+' },
-      { icon: '📅', label: 'Manufacturing Date', value: '2023-01-15' },
-      { icon: '🔢', label: 'Serial Number', value: 'SN123456789' },
-      { icon: '📋', label: 'Installation Status', value: 'Pending' }
-    ],
-    showImages: true
-  },
-  installationProcess: {
-    id: 'installation-process',
-    title: 'Installation Process',
-    icon: 'download',
-    description: 'Form for tracking installation process',
-    children: [
-      { icon: '📅', label: 'Scheduled Date', value: '2024-02-20' },
-      { icon: '👤', label: 'Installer', value: 'John Smith' },
-      { icon: '⏱️', label: 'Duration', value: '4 hours' },
-      { icon: '📋', label: 'Status', value: 'Scheduled' },
-      { icon: '🔧', label: 'Tools Required', value: 'Standard Kit' }
-    ]
-  },
-  maintenanceLog: {
-    id: 'maintenance-log',
-    title: 'Maintenance Log',
-    icon: 'build',
-    description: 'Log of all maintenance activities',
-    children: [
-      { icon: '🔧', label: 'Last Service', value: '2023-12-15' },
-      { icon: '📝', label: 'Service Type', value: 'Regular Maintenance' },
-      { icon: '👤', label: 'Technician', value: 'Mike Johnson' },
-      { icon: '📅', label: 'Next Service Due', value: '2024-06-15' }
-    ]
-  },
-  startInstallation: {
-    id: 'wizard',
-    title: 'Start Installation',
-    icon: 'build',
-    description: 'Begin the installation process',
-    children: [],
-    isWizard: true // Add this flag to identify the wizard
-  }
-}
+// const mockData: DataStructure = {
+//   productInfo: {
+//     id: 'product-info',
+//     title: 'Product Info',
+//     icon: 'info',
+//     description: 'Dimensions, model number, material type, glass type, energy rating',
+//     children: [
+//       { icon: '📏', label: 'Dimensions', value: '120cm x 150cm' },
+//       { icon: '🔢', label: 'Model Number', value: 'WX12345' },
+//       { icon: '🏗️', label: 'Material Type', value: 'Aluminum' },
+//       { icon: '🪟', label: 'Glass Type', value: 'Tempered' },
+//       { icon: '⚡', label: 'Energy Rating', value: 'A+' },
+//       { icon: '📅', label: 'Manufacturing Date', value: '2023-01-15' },
+//       { icon: '🔢', label: 'Serial Number', value: 'SN123456789' },
+//       { icon: '📋', label: 'Installation Status', value: 'Pending' }
+//     ],
+//     showImages: true
+//   },
+//   installationProcess: {
+//     id: 'installation-process',
+//     title: 'Installation Process',
+//     icon: 'download',
+//     description: 'Form for tracking installation process',
+//     children: [
+//       { icon: '📅', label: 'Scheduled Date', value: '2024-02-20' },
+//       { icon: '👤', label: 'Installer', value: 'John Smith' },
+//       { icon: '⏱️', label: 'Duration', value: '4 hours' },
+//       { icon: '📋', label: 'Status', value: 'Scheduled' },
+//       { icon: '🔧', label: 'Tools Required', value: 'Standard Kit' }
+//     ]
+//   },
+//   maintenanceLog: {
+//     id: 'maintenance-log',
+//     title: 'Maintenance Log',
+//     icon: 'build',
+//     description: 'Log of all maintenance activities',
+//     children: [
+//       { icon: '🔧', label: 'Last Service', value: '2023-12-15' },
+//       { icon: '📝', label: 'Service Type', value: 'Regular Maintenance' },
+//       { icon: '👤', label: 'Technician', value: 'Mike Johnson' },
+//       { icon: '📅', label: 'Next Service Due', value: '2024-06-15' }
+//     ]
+//   },
+//   startInstallation: {
+//     id: 'wizard',
+//     title: 'Start Installation',
+//     icon: 'build',
+//     description: 'Begin the installation process',
+//     children: [],
+//     isWizard: true // Add this flag to identify the wizard
+//   }
+// }
 
 const mockWizardQuestions: WizardQuestion[] = [
   {
@@ -135,11 +136,66 @@ const mockWizardQuestions: WizardQuestion[] = [
   }
 ]
 
+const mapCanisterDataToStructure = async (uuid: string): Promise<DataStructure> => {
+  try {
+    const [structure] = await canisterService.getUUIDInfo(uuid) //imageIds
+
+    // Parse the structure string (assuming it's JSON)
+    const parsedStructure = JSON.parse(structure)
+
+    // Fetch all images for this UUID
+    // const imagePromises = imageIds.map(imageId => canisterService.getImage(uuid, imageId))
+    // const images = await Promise.all(imagePromises)
+
+    return {
+      productInfo: {
+        id: 'product-info',
+        title: 'Product Info',
+        icon: 'info',
+        description: parsedStructure.productDescription || '',
+        children: [
+          { icon: '📏', label: 'Dimensions', value: parsedStructure.dimensions || '' },
+          { icon: '🔢', label: 'Model Number', value: parsedStructure.modelNumber || '' }
+          // ... map other fields from parsedStructure
+        ],
+        showImages: true
+      },
+      installationProcess: {
+        id: 'installation-process',
+        title: 'Installation Process',
+        icon: 'download',
+        description: parsedStructure.installationDescription || '',
+        children: [
+          // ... map installation process fields
+        ]
+      },
+      maintenanceLog: {
+        id: 'maintenance-log',
+        title: 'Maintenance Log',
+        icon: 'build',
+        description: parsedStructure.maintenanceDescription || '',
+        children: [
+          // ... map maintenance log fields
+        ]
+      },
+      startInstallation: {
+        id: 'wizard',
+        title: 'Start Installation',
+        icon: 'build',
+        description: 'Begin the installation process',
+        children: [],
+        isWizard: true
+      }
+    }
+  } catch (error) {
+    console.error('Error mapping canister data:', error)
+    throw error
+  }
+}
+
 async function fetchData(projectId: string): Promise<DataStructure> {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  // In a real application, you would fetch from an API here
-  return mockData
+  // Now fetch real data from the canister
+  return await mapCanisterDataToStructure(projectId)
 }
 
 interface DataProviderProps {

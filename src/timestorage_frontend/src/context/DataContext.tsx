@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import * as canisterService from '../services/canisterService'
+import { en } from '@/lang/en'
+import { it } from '@/lang/it'
 
 /**
  * DataNode represents either a "data" section or a "wizard" section,
@@ -133,10 +135,17 @@ function mapApiResponseToDataStructure(response: { data: { [key: string]: unknow
  * ---------------------------------------------------------
  * This must return the new JSON that includes { schema, data }.
  */
-async function fetchData(projectId: string): Promise<DataStructure> {
+async function fetchData(projectId: string, translations: { [key: string]: string }): Promise<DataStructure> {
   try {
     const [response] = await canisterService.getUUIDInfo(projectId)
-    return mapApiResponseToDataStructure(JSON.parse(response))
+    let copied = response
+    for (const localeKey in translations) {
+      if (translations.hasOwnProperty(localeKey)) {
+        const regex = new RegExp(localeKey, 'g')
+        copied = copied.replace(regex, translations[localeKey])
+      }
+    }
+    return mapApiResponseToDataStructure(JSON.parse(copied))
   } catch (err) {
     console.error('Error fetching data from API:', err)
     throw err
@@ -159,6 +168,9 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const location = useLocation()
   const [projectId, setProjectId] = useState<string>('uuid-dummy')
   const [dataLoaded, setDataLoaded] = useState(false)
+  const [locale, setLocale] = useState<'en' | 'it'>('en') // Default to English
+
+  const translations = locale === 'en' ? en : it
 
   useEffect(() => {
     const loadData = async () => {
@@ -178,7 +190,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
         setProjectId(newProjectId)
 
         // Fetch the data from your new endpoint
-        const result = await fetchData(newProjectId)
+        const result = await fetchData(newProjectId, translations)
         setData(result)
         setDataLoaded(true)
         setError(null)
@@ -198,7 +210,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const reloadData = async () => {
     try {
       setIsLoading(true)
-      const result = await fetchData(projectId)
+      const result = await fetchData(projectId, translations)
       setData(result)
       setError(null)
     } catch (err) {

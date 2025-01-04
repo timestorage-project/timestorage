@@ -10,7 +10,7 @@ const App: FC = () => {
     <BrowserRouter>
       <DataProvider>
         <Routes>
-          <Route path='/' element={<Navigate to='/dummy' replace />} />
+          <Route path='/' element={<Navigate to='/uuid-dummy' replace />} />
           <Route path='/:projectId' element={<Dashboard />} />
           <Route path='/:projectId/:type' element={<DetailPage />} />
           <Route path='/:projectId/wizard' element={<WizardPage />} />

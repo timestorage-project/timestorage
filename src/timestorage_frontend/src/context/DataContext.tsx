@@ -207,14 +207,14 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const location = useLocation()
-  const [projectId, setProjectId] = useState<string>('dummy')
+  const [projectId, setProjectId] = useState<string>('uuid-dummy')
   const [dataLoaded, setDataLoaded] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
       if (dataLoaded) {
         const pathParts = location.pathname.split('/')
-        const newProjectId = pathParts[1] || 'dummy'
+        const newProjectId = pathParts[1] || 'uuid-dummy'
         setProjectId(newProjectId)
         return
       }
@@ -222,7 +222,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
         setIsLoading(true)
         // Extract project ID from URL path
         const pathParts = location.pathname.split('/')
-        const newProjectId = pathParts[1] || 'dummy'
+        const newProjectId = pathParts[1] || 'uuid-dummy'
         setProjectId(newProjectId)
 
         const result = await fetchData(newProjectId)

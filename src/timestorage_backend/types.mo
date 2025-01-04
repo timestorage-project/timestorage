@@ -31,6 +31,33 @@ module Types {
     metadata: ImageMetadata;
   };
 
+  public type ParamLockStatus = {
+    locked: Bool;
+    lockedBy: ?Principal;
+  };
+
+  public type ParamUpdateRequest = {
+    uuid: Text;
+    key: Text;
+    newValue: Text;
+  };
+
+  public type ParamLockRequest = {
+    uuid: Text;
+    key: Text;
+    lock: Bool;
+  };
+
+  public type SchemaLockStatus = {
+    locked: Bool;
+    lockedBy: ?Principal;
+  };
+
+  public type SchemaLockRequest = {
+    uuid: Text;
+    lock: Bool;
+  };
+
   public type Result<T, E> = Result.Result<T, E>;
 }
 

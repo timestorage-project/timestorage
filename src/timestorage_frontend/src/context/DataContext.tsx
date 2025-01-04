@@ -2,20 +2,31 @@ import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'r
 import { useLocation } from 'react-router-dom'
 import * as canisterService from '../services/canisterService'
 
+/**
+ * DataNode represents either a "data" section or a "wizard" section,
+ * with children for data, or questions for a wizard.
+ */
 interface DataNode {
   id: string
   title: string
   icon: string
   description: string
+  /** Only used if this is a "data" section: */
   children?: {
     icon: string
     label: string
     value: string
   }[]
+  /** Used if this is a "wizard" section: */
+  questions?: WizardQuestion[]
   showImages?: boolean
   isWizard?: boolean
 }
 
+/**
+ * You mentioned your UI uses these four sections, so we'll keep them.
+ * Each key corresponds to a section in your data.
+ */
 interface DataStructure {
   productInfo: DataNode
   installationProcess: DataNode
@@ -23,20 +34,20 @@ interface DataStructure {
   startInstallation: DataNode
 }
 
-interface DataContextType {
-  data: DataStructure | null
-  isLoading: boolean
-  error: string | null
-  projectId: string
-}
-
+/** WizardQuestion is used only in wizard sections */
 export interface WizardQuestion {
   id: string
   type: 'text' | 'select' | 'multiselect' | 'photo' | 'multiphoto'
   question: string
   options?: string[]
+  // You can include refId or other fields from your schema if you need them:
+  refId?: string
 }
 
+/**
+ * Our DataContextType holds the data structure, loading/error states,
+ * plus helper methods to reload data or get wizard questions.
+ */
 interface DataContextType {
   data: DataStructure | null
   isLoading: boolean
@@ -48,156 +59,95 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
 
-// const mockData: DataStructure = {
-//   productInfo: {
-//     id: 'product-info',
-//     title: 'Product Info',
-//     icon: 'info',
-//     description: 'Dimensions, model number, material type, glass type, energy rating',
-//     children: [
-//       { icon: '📏', label: 'Dimensions', value: '120cm x 150cm' },
-//       { icon: '🔢', label: 'Model Number', value: 'WX12345' },
-//       { icon: '🏗️', label: 'Material Type', value: 'Aluminum' },
-//       { icon: '🪟', label: 'Glass Type', value: 'Tempered' },
-//       { icon: '⚡', label: 'Energy Rating', value: 'A+' },
-//       { icon: '📅', label: 'Manufacturing Date', value: '2023-01-15' },
-//       { icon: '🔢', label: 'Serial Number', value: 'SN123456789' },
-//       { icon: '📋', label: 'Installation Status', value: 'Pending' }
-//     ],
-//     showImages: true
-//   },
-//   installationProcess: {
-//     id: 'installation-process',
-//     title: 'Installation Process',
-//     icon: 'download',
-//     description: 'Form for tracking installation process',
-//     children: [
-//       { icon: '📅', label: 'Scheduled Date', value: '2024-02-20' },
-//       { icon: '👤', label: 'Installer', value: 'John Smith' },
-//       { icon: '⏱️', label: 'Duration', value: '4 hours' },
-//       { icon: '📋', label: 'Status', value: 'Scheduled' },
-//       { icon: '🔧', label: 'Tools Required', value: 'Standard Kit' }
-//     ]
-//   },
-//   maintenanceLog: {
-//     id: 'maintenance-log',
-//     title: 'Maintenance Log',
-//     icon: 'build',
-//     description: 'Log of all maintenance activities',
-//     children: [
-//       { icon: '🔧', label: 'Last Service', value: '2023-12-15' },
-//       { icon: '📝', label: 'Service Type', value: 'Regular Maintenance' },
-//       { icon: '👤', label: 'Technician', value: 'Mike Johnson' },
-//       { icon: '📅', label: 'Next Service Due', value: '2024-06-15' }
-//     ]
-//   },
-//   startInstallation: {
-//     id: 'wizard',
-//     title: 'Start Installation',
-//     icon: 'build',
-//     description: 'Begin the installation process',
-//     children: [],
-//     isWizard: true // Add this flag to identify the wizard
-//   }
-// }
+/**
+ * ---------------------------------------------------------
+ * 1) Utility to convert a "section" from the API into DataNode
+ * ---------------------------------------------------------
+ */
+function mapSectionToDataNode(section: unknown): DataNode {
+  const { id, title, icon, description, type, children = [], questions = [] } = section as never
 
-const mockWizardQuestions: WizardQuestion[] = [
-  {
-    id: 'installer_name',
-    type: 'text',
-    question: 'What is your name?'
-  },
-  {
-    id: 'window_type',
-    type: 'select',
-    question: 'What type of window are you installing?',
-    options: ['Single Hung', 'Double Hung', 'Casement', 'Sliding']
-  },
-  {
-    id: 'tools_needed',
-    type: 'multiselect',
-    question: 'Which tools will you need? (Select all that apply)',
-    options: ['Drill', 'Level', 'Tape Measure', 'Screwdriver', 'Caulk Gun']
-  },
-  {
-    id: 'installation_notes',
-    type: 'text',
-    question: 'Any additional notes about the installation?'
-  },
-  {
-    id: 'window_photo',
-    type: 'photo',
-    question: 'Please take a photo of the window installation area'
-  },
-  {
-    id: 'installation_photos',
-    type: 'multiphoto',
-    question: 'Take photos of any potential obstacles or concerns'
-  }
-]
+  // If it is a wizard, we store the questions in the same object
+  // and mark `isWizard = true`.
+  const isWizard = type === 'wizard'
 
-const mapCanisterDataToStructure = async (uuid: string): Promise<DataStructure> => {
-  try {
-    const [structure] = await canisterService.getUUIDInfo(uuid) //imageIds
-
-    // Parse the structure string (assuming it's JSON)
-    const parsedStructure = JSON.parse(structure)
-
-    // Fetch all images for this UUID
-    // const imagePromises = imageIds.map(imageId => canisterService.getImage(uuid, imageId))
-    // const images = await Promise.all(imagePromises)
-
-    return {
-      productInfo: {
-        id: 'product-info',
-        title: 'Product Info',
-        icon: 'info',
-        description: parsedStructure.productDescription || '',
-        children: [
-          { icon: '📏', label: 'Dimensions', value: parsedStructure.dimensions || '' },
-          { icon: '🔢', label: 'Model Number', value: parsedStructure.modelNumber || '' }
-          // ... map other fields from parsedStructure
-        ],
-        showImages: true
-      },
-      installationProcess: {
-        id: 'installation-process',
-        title: 'Installation Process',
-        icon: 'download',
-        description: parsedStructure.installationDescription || '',
-        children: [
-          // ... map installation process fields
-        ]
-      },
-      maintenanceLog: {
-        id: 'maintenance-log',
-        title: 'Maintenance Log',
-        icon: 'build',
-        description: parsedStructure.maintenanceDescription || '',
-        children: [
-          // ... map maintenance log fields
-        ]
-      },
-      startInstallation: {
-        id: 'wizard',
-        title: 'Start Installation',
-        icon: 'build',
-        description: 'Begin the installation process',
-        children: [],
-        isWizard: true
-      }
-    }
-  } catch (error) {
-    console.error('Error mapping canister data:', error)
-    throw error
+  // For a data section, we store `children`.
+  // For a wizard section, we store `questions`.
+  // We can unify them in one interface for convenience:
+  return {
+    id,
+    title,
+    icon,
+    description,
+    children: isWizard
+      ? []
+      : children.map((child: { icon: string; value: string; label: string }) => ({
+          icon: child.icon,
+          label: child.label,
+          value: child.value
+        })),
+    questions: isWizard
+      ? questions.map((q: { id: string; type: string; question: string; options: string[]; refId: string }) => ({
+          id: q.id,
+          type: q.type as never,
+          question: q.question,
+          options: q.options || [],
+          refId: q.refId
+        }))
+      : [],
+    isWizard
   }
 }
 
+/**
+ * ---------------------------------------------------------
+ * 2) Convert the combined API response into DataStructure
+ * ---------------------------------------------------------
+ * The API response is assumed to be an object like:
+ * {
+ *   schema: { ... },
+ *   data: {
+ *     productInfo: { id, title, type, icon, children: [...], etc },
+ *     installationProcess: { ... },
+ *     maintenanceLog: { ... },
+ *     startInstallation: { ... }
+ *   }
+ * }
+ */
+function mapApiResponseToDataStructure(response: { data: { [key: string]: unknown } }): DataStructure {
+  const { data } = response
+
+  console.log('aaa', response)
+
+  return {
+    productInfo: mapSectionToDataNode(data.productInfo),
+    installationProcess: mapSectionToDataNode(data.installationProcess),
+    maintenanceLog: mapSectionToDataNode(data.maintenanceLog),
+    startInstallation: mapSectionToDataNode(data.startInstallation)
+  }
+}
+
+/**
+ * ---------------------------------------------------------
+ * 3) Fetch function that calls your canister or backend
+ * ---------------------------------------------------------
+ * This must return the new JSON that includes { schema, data }.
+ */
 async function fetchData(projectId: string): Promise<DataStructure> {
-  // Now fetch real data from the canister
-  return await mapCanisterDataToStructure(projectId)
+  try {
+    const [response] = await canisterService.getUUIDInfo(projectId)
+    return mapApiResponseToDataStructure(JSON.parse(response))
+  } catch (err) {
+    console.error('Error fetching data from API:', err)
+    throw err
+  }
 }
 
+/**
+ * ---------------------------------------------------------
+ * 4) DataProvider & useData Hook
+ * ---------------------------------------------------------
+ */
 interface DataProviderProps {
   children: ReactNode
 }
@@ -212,12 +162,14 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const loadData = async () => {
+      // If we already loaded data once, just update the projectId from the path:
       if (dataLoaded) {
         const pathParts = location.pathname.split('/')
         const newProjectId = pathParts[1] || 'uuid-dummy'
         setProjectId(newProjectId)
         return
       }
+
       try {
         setIsLoading(true)
         // Extract project ID from URL path
@@ -225,10 +177,11 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
         const newProjectId = pathParts[1] || 'uuid-dummy'
         setProjectId(newProjectId)
 
+        // Fetch the data from your new endpoint
         const result = await fetchData(newProjectId)
         setData(result)
-        setError(null)
         setDataLoaded(true)
+        setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -239,6 +192,9 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     loadData()
   }, [location.pathname, dataLoaded])
 
+  /**
+   * Allows us to refetch data on demand (e.g., after a form submission).
+   */
   const reloadData = async () => {
     try {
       setIsLoading(true)
@@ -252,14 +208,31 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     }
   }
 
+  /**
+   * Dynamically returns wizard questions from the "startInstallation" node
+   * (or any node that might be a wizard, if you prefer to generalize).
+   */
   const getWizardQuestions = async (): Promise<WizardQuestion[]> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return mockWizardQuestions
+    // In a real scenario, you might do more logic here,
+    // or even store them in the context after fetchData.
+    if (!data) return []
+    // For this example, we'll assume "startInstallation" is the wizard section.
+    const wizardNode = data.startInstallation
+    if (!wizardNode?.isWizard || !wizardNode?.questions) return []
+    return wizardNode.questions
   }
 
   return (
-    <DataContext.Provider value={{ data, isLoading, error, projectId, getWizardQuestions, reloadData }}>
+    <DataContext.Provider
+      value={{
+        data,
+        isLoading,
+        error,
+        projectId,
+        getWizardQuestions,
+        reloadData
+      }}
+    >
       {children}
     </DataContext.Provider>
   )

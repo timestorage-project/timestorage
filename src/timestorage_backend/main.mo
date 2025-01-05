@@ -227,57 +227,114 @@ shared (msg) actor class TimestorageBackend() {
   // Funzione per bloccare/sbloccare un parametro
   public shared (msg) func lockParam(req: Types.ParamLockRequest) : async Result.Result<Text, Text> {
     switch (Auth.requireAdmin(msg.caller, admins)) {
-      case (#err(e)) { return #err(e); };
-      case (#ok(())) {};
+        case (#err(e)) { return #err(e); };
+        case (#ok(())) {};
+    };
+
+    // Verifica se l'UUID esiste
+    if (uuidToStructure.get(req.uuid) == null) {
+        return #err("UUID not found.");
+    };
+
+    // Controlla se lo schema è già bloccato
+    let schemaLockStatus = schemaLocks.get(req.uuid);
+    switch (schemaLockStatus) {
+        case (?status) {
+        if (status.locked) {
+            return #err("Schema is already locked. Cannot lock individual parameters.");
+        };
+        };
+        case null {};
     };
 
     let lockKey = req.uuid # "-" # req.key;
-    let lockStatus = paramLocks.get(lockKey);
+    let paramLockStatus = paramLocks.get(lockKey);
 
-    switch (lockStatus) {
-      case (?status) {
-        if (status.locked and status.lockedBy != ?msg.caller) {
-          return #err("Parameter is locked by another admin and cannot be modified.");
+    switch (paramLockStatus) {
+        case (?status) {
+        if (status.locked) {
+            // Se il parametro è già bloccato
+            if (req.lock) {
+            return #err("Parameter is already locked.");
+            } else {
+            // Se stai cercando di sbloccarlo, verifica che sia bloccato dallo stesso admin
+            if (status.lockedBy != ?msg.caller) {
+                return #err("Parameter is locked by another admin and cannot be modified.");
+            };
+            };
+        } else {
+            // Se il parametro non è bloccato
+            if (not req.lock) {
+            return #ok("Parameter is already unlocked.");
+            };
         };
-      };
-      case null {};
+        };
+        case null {
+        // Se il parametro non è mai stato bloccato
+        if (not req.lock) {
+            return #ok("Parameter is already unlocked.");
+        };
+        };
     };
 
     let newStatus : Types.ParamLockStatus = {
-      locked = req.lock;
-      lockedBy = if (req.lock) ?msg.caller else null;
+        locked = req.lock;
+        lockedBy = if (req.lock) ?msg.caller else null;
     };
 
     paramLocks.put(lockKey, newStatus);
     return #ok(if (req.lock) "Parameter locked successfully." else "Parameter unlocked successfully.");
-  };
+    };
 
   // Funzione per bloccare/sbloccare l'intero schema
   public shared (msg) func lockSchema(req: Types.SchemaLockRequest) : async Result.Result<Text, Text> {
     switch (Auth.requireAdmin(msg.caller, admins)) {
-      case (#err(e)) { return #err(e); };
-      case (#ok(())) {};
+        case (#err(e)) { return #err(e); };
+        case (#ok(())) {};
+    };
+
+    // Verifica se l'UUID esiste
+    if (uuidToStructure.get(req.uuid) == null) {
+        return #err("UUID not found.");
     };
 
     let schemaLockStatus = schemaLocks.get(req.uuid);
 
     switch (schemaLockStatus) {
-      case (?status) {
-        if (status.locked and status.lockedBy != ?msg.caller) {
-          return #err("Schema is locked by another admin and cannot be modified.");
+        case (?status) {
+        if (status.locked) {
+            // Se lo schema è già bloccato
+            if (req.lock) {
+            return #err("Schema is already locked.");
+            } else {
+            // Se stai cercando di sbloccarlo, verifica che sia bloccato dallo stesso admin
+            if (status.lockedBy != ?msg.caller) {
+                return #err("Schema is locked by another admin and cannot be modified.");
+            };
+            };
+        } else {
+            // Se lo schema non è bloccato
+            if (not req.lock) {
+            return #ok("Schema is already unlocked.");
+            };
         };
-      };
-      case null {};
+        };
+        case null {
+        // Se lo schema non è mai stato bloccato
+        if (not req.lock) {
+            return #ok("Schema is already unlocked.");
+        };
+        };
     };
 
     let newStatus : Types.SchemaLockStatus = {
-      locked = req.lock;
-      lockedBy = if (req.lock) ?msg.caller else null;
+        locked = req.lock;
+        lockedBy = if (req.lock) ?msg.caller else null;
     };
 
     schemaLocks.put(req.uuid, newStatus);
     return #ok(if (req.lock) "Schema locked successfully." else "Schema unlocked successfully.");
-  };
+    };
 
   // Funzione per verificare se l'intero schema è bloccato
   public shared query (msg) func isSchemaLocked(uuid: Text) : async Result.Result<Bool, Text> {

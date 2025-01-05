@@ -17,8 +17,8 @@ module {
         uuidExists: (Text) -> Bool
     ) : Result.Result<Text, Text> {
         switch (Auth.requireAdmin(caller, admins)) {
-            case (#err(e)) { return #err(e); }; // Non admin
-            case (#ok(())) {};                 // Procede se admin
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
         };
 
         // Validazione input
@@ -52,8 +52,8 @@ module {
         linkImage: (Text, Text) -> ()
     ) : Result.Result<Text, Text> {
         switch (Auth.requireAdmin(caller, admins)) {
-            case (#err(e)) { return #err(e); }; // Non admin
-            case (#ok(())) {};                 // Procede se admin
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
         };
 
         if (not Utils.isValidUUID(req.uuid)) {
@@ -71,4 +71,4 @@ module {
 
         return #ok("Image upload successful with ID: " # imageId);
     };
-}
+};

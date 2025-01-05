@@ -32,6 +32,22 @@ module {
         return #ok(());
     };
 
+    // Rimuove un admin
+    public func removeAdmin(
+        adminToRemove: Principal,
+        caller: Principal,
+        admins: HashMap.HashMap<Principal, Bool>
+    ) : Result.Result<(), Text> {
+        if (not isAdmin(caller, admins)) {
+            return #err("Unauthorized: Only admins can remove admins.");
+        };
+        if (not isAdmin(adminToRemove, admins)) {
+            return #err("Admin does not exist.");
+        };
+        admins.delete(adminToRemove);
+        return #ok(());
+    };
+
     // Verifica se un utente è admin, altrimenti ritorna errore
     public func requireAdmin(
         caller: Principal,
@@ -42,4 +58,4 @@ module {
         };
         return #ok(());
     };
-}
+};

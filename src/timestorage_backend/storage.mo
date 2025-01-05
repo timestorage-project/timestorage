@@ -5,8 +5,8 @@ import Types "./types";
 module Storage {
     public type UUID = Types.UUID;
     public type ImageRecord = Types.ImageRecord;
-    public type ParamLockStatus = Types.ParamLockStatus;
     public type SchemaLockStatus = Types.SchemaLockStatus;
+    public type ValueLockStatus = Types.ValueLockStatus;
 
     // Mappa per memorizzare UUID -> Struttura JSON
     public func newUUIDStructure() : TrieMap.TrieMap<Text, Text> {
@@ -18,9 +18,14 @@ module Storage {
         TrieMap.TrieMap<Text, ImageRecord>(Text.equal, Text.hash);
     };
 
-    // Mappa per memorizzare lo stato di blocco dei parametri
-    public func newParamLockMap() : TrieMap.TrieMap<Text, ParamLockStatus> {
-        TrieMap.TrieMap<Text, ParamLockStatus>(Text.equal, Text.hash);
+    // Mappa per memorizzare UUID -> Valori JSON
+    public func newValueMap() : TrieMap.TrieMap<Text, Text> {
+        TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
+    };
+
+    // Mappa per memorizzare UUID -> Chiavi estratte dal JSON schema
+    public func newKeyMap() : TrieMap.TrieMap<Text, [Text]> {
+        TrieMap.TrieMap<Text, [Text]>(Text.equal, Text.hash);
     };
 
     // Mappa per memorizzare lo stato di blocco dell'intero schema
@@ -28,8 +33,13 @@ module Storage {
         TrieMap.TrieMap<Text, SchemaLockStatus>(Text.equal, Text.hash);
     };
 
+    // Mappa per memorizzare lo stato di blocco dei valori
+    public func newValueLockMap() : TrieMap.TrieMap<Text, ValueLockStatus> {
+        TrieMap.TrieMap<Text, ValueLockStatus>(Text.equal, Text.hash);
+    };
+
     // Funzione per verificare se un UUID esiste
     public func uuidExists(map : TrieMap.TrieMap<Text, Text>, uuid : Text) : Bool {
         return map.get(uuid) != null;
     };
-}
+};

@@ -31,23 +31,6 @@ module Types {
     metadata: ImageMetadata;
   };
 
-  public type ParamLockStatus = {
-    locked: Bool;
-    lockedBy: ?Principal;
-  };
-
-  public type ParamUpdateRequest = {
-    uuid: Text;
-    key: Text;
-    newValue: Text;
-  };
-
-  public type ParamLockRequest = {
-    uuid: Text;
-    key: Text;
-    lock: Bool;
-  };
-
   public type SchemaLockStatus = {
     locked: Bool;
     lockedBy: ?Principal;
@@ -58,6 +41,42 @@ module Types {
     lock: Bool;
   };
 
+  public type ValueUpdateRequest = {
+    uuid: Text;
+    key: Text;
+    newValue: Text;
+  };
+
+  public type ValueLockStatus = {
+    locked: Bool;
+    lockedBy: ?Principal;
+  };
+
+  public type ValueLockRequest = {
+    uuid: Text;
+    key: Text;
+    lock: Bool;
+  };
+
+  // Richiesta per ottenere lo stato di blocco di un valore
+  public type ValueLockStatusRequest = {
+    uuid: Text;
+    key: Text;
+  };
+
+  // Richiesta per ottenere un valore
+  public type ValueRequest = {
+    uuid: Text;
+    key: Text;
+  };
+  
+  public type ErrorCode = {
+    #InvalidUUID;
+    #SchemaLocked;
+    #ValueLocked;
+    #KeyNotFound;
+    #Unauthorized;
+  };
+
   public type Result<T, E> = Result.Result<T, E>;
 }
-

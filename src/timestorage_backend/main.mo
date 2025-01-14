@@ -6,20 +6,24 @@ import Principal "mo:base/Principal";
 import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Text "mo:base/Text";
-import Debug "mo:base/Debug";
 import TrieMap "mo:base/TrieMap";
 import Array "mo:base/Array";
+import Nat "mo:base/Nat";
+import Int "mo:base/Int";
 
 shared (msg) actor class TimestorageBackend() {
     // Stable state
     stable var uuidToStructureStable : [(Text, Text)] = [];
     stable var uuidKeyValueStable : [(Text, [(Text, Text)])] = [];
+    stable var uuidToFilesStable : [(Text, Storage.FileRecord)] = [];
     stable var adminsStable : [(Principal, Bool)] = [];
     stable var valueLocksStable : [(Text, Types.ValueLockStatus)] = [];
+    stable var fileCounter : Nat = 0;
 
     // Volatile state
     var uuidToStructure = Storage.newUUIDStructure();
     var uuidKeyValueMap = Storage.newUUIDKeyValueMap();
+    var uuidToFiles = Storage.newFileMap();
     var admins = Auth.newAdminMap();
     var valueLocks = Storage.newValueLockMap();
 
@@ -32,6 +36,11 @@ shared (msg) actor class TimestorageBackend() {
         // Restore uuidToStructure
         for ((u, s) in uuidToStructureStable.vals()) {
             uuidToStructure.put(u, s);
+        };
+
+        // Restore uuidToFiles
+        for ((k, v) in uuidToFilesStable.vals()) {
+            uuidToFiles.put(k, v);
         };
 
         // Restore uuidKeyValueMap
@@ -66,6 +75,9 @@ shared (msg) actor class TimestorageBackend() {
         };
         uuidKeyValueStable := arr;
 
+        // Save uuidToFiles
+        uuidToFilesStable := Iter.toArray(uuidToFiles.entries());
+
         // Save admins
         adminsStable := Iter.toArray(admins.entries());
 
@@ -88,8 +100,6 @@ shared (msg) actor class TimestorageBackend() {
 
     // insertUUIDStructure function
     public shared (msg) func insertUUIDStructure(uuid: Text, schema: Text) : async Result.Result<Text, Text> {
-        Debug.print("Starting insertUUIDStructure for UUID: " # uuid);
-
         // Admin check
         switch (Auth.requireAdmin(msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
@@ -112,6 +122,72 @@ shared (msg) actor class TimestorageBackend() {
         uuidKeyValueMap.put(uuid, subMap);
 
         return #ok("UUID inserted successfully.");
+    };
+
+    // Upload an image associated with a UUID
+    public shared (msg) func uploadFile(
+        uuid: Text,
+        base64FileData: Text,
+        metadata: Types.FileMetadata
+    ) : async Result.Result<Text, Text> {
+        switch (Auth.requireAdmin(msg.caller, admins)) {
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
+        };
+
+        if (uuidToStructure.get(uuid) == null) {
+            return #err("Error: UUID does not exist.");
+        };
+
+        if (metadata.fileName.size() == 0 or metadata.mimeType.size() == 0) {
+            return #err("Invalid metadata: File name and mimeType cannot be empty.");
+        };
+
+        // Genera un ID univoco per il file (prima era generateUniqueImageId)
+        let fileId = generateUniqueFileId();
+
+        // Creiamo il record del file (prima era imageRecord)
+        let fileRecord : Storage.FileRecord = {
+            uuid = uuid;
+            fileData = base64FileData; // Base64
+            metadata = metadata;
+        };
+
+        uuidToFiles.put(fileId, fileRecord);
+        return #ok("File uploaded successfully with ID: " # fileId);
+    };
+
+    // Sostituito imageCounter con fileCounter
+    func generateUniqueFileId() : Text {
+        fileCounter += 1;
+        return "file-" # Nat.toText(fileCounter);
+    };
+
+    public shared query (msg) func getFileByUUIDAndId(uuid: Text, fileId: Text) : async Types.Result<Types.FileResponse, Text> {
+        let fileOpt = uuidToFiles.get(fileId);
+
+        switch (fileOpt) {
+        case null {
+            return #err("File not found.");
+        };
+        case (?fileRecord) {
+            if (fileRecord.uuid != uuid) {
+            return #err("File does not belong to the given UUID.");
+            };
+
+            let response: Types.FileResponse = {
+            uuid = fileRecord.uuid;
+            metadata = {
+                fileData = fileRecord.fileData;
+                mimeType = fileRecord.metadata.mimeType;
+                fileName = fileRecord.metadata.fileName;
+                uploadTimestamp = Int.toText(fileRecord.metadata.uploadTimestamp);
+            };
+            };
+            
+            return #ok(response);
+        };
+        };
     };
 
     // updateValue function
@@ -149,7 +225,6 @@ shared (msg) actor class TimestorageBackend() {
 
     // lockAllValues function
     public shared (msg) func lockAllValues(req: Types.ValueLockAllRequest) : async Result.Result<Text, Text> {
-
         // Admin check
         switch (Auth.requireAdmin(msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
@@ -182,7 +257,12 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // getValue function
-    public shared query func getValue(req: Types.ValueRequest) : async Result.Result<Text, Text> {
+    public shared query (msg) func getValue(req: Types.ValueRequest) : async Result.Result<Text, Text> {
+        // Admin check
+        switch (Auth.requireAdmin(msg.caller, admins)) {
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
+        };
         let subMapOpt = uuidKeyValueMap.get(req.uuid);
         let subMap = switch (subMapOpt) {
             case (null) { return #err("UUID not found."); };
@@ -197,7 +277,12 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // getAllValues function
-    public shared query func getAllValues(uuid: Text) : async Result.Result<[(Text, Text)], Text> {
+    public shared query (msg) func getAllValues(uuid: Text) : async Result.Result<[(Text, Text)], Text> {
+        // Admin check
+        switch (Auth.requireAdmin(msg.caller, admins)) {
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
+        };
         let subMapOpt = uuidKeyValueMap.get(uuid);
         switch (subMapOpt) {
             case null { return #err("UUID not found."); };
@@ -258,7 +343,7 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // getValueLockStatus function
-    public shared query func getValueLockStatus(req: Types.ValueLockStatusRequest) : async Result.Result<Types.ValueLockStatus, Text> {
+    public shared query (msg) func getValueLockStatus(req: Types.ValueLockStatusRequest) : async Result.Result<Types.ValueLockStatus, Text> {
         // Admin check
         switch (Auth.requireAdmin(msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
@@ -274,7 +359,7 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // getUUIDInfo function
-    public shared query func getUUIDInfo(uuid: Text) : async Result.Result<Text, Text> {
+    public shared query (msg) func getUUIDInfo(uuid: Text) : async Result.Result<(Text, [Types.FileResponse]), Text> {
         // Retrieve the schema
         let schemaOpt = uuidToStructure.get(uuid);
         let schemaText = switch (schemaOpt) {
@@ -315,7 +400,23 @@ shared (msg) actor class TimestorageBackend() {
             # "\"values\":{" # dataJson # "},"
             # "\"lockStatus\":{" # Utils.mapEntriesToJson(lockStatuses) # "}"
             # "}";
+        
+        var fileResponses : [Types.FileResponse] = [];
+        for ((fileId, record) in uuidToFiles.entries()) {
+            if (record.uuid == uuid) {
+                let responseItem : Types.FileResponse = {
+                    uuid = record.uuid;
+                    metadata = {
+                        fileData = record.fileData;
+                        mimeType = record.metadata.mimeType;
+                        fileName = record.metadata.fileName;
+                        uploadTimestamp = Int.toText(record.metadata.uploadTimestamp);
+                    };
+                };
+                fileResponses := Array.append(fileResponses, [responseItem]);
+            };
+        };
 
-        return #ok(combinedJson);
+        return #ok(combinedJson, fileResponses);
     };
 };

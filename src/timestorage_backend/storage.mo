@@ -4,11 +4,17 @@ import Types "./types";
 
 module Storage {
     public type UUID = Types.UUID;
+    public type FileRecord = Types.FileRecord;
     public type ValueLockStatus = Types.ValueLockStatus;
 
     // Mappa per memorizzare UUID -> schema
     public func newUUIDStructure() : TrieMap.TrieMap<Text, Text> {
         TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
+    };
+
+    // Mappa per memorizzare UUID -> File
+    public func newFileMap() : TrieMap.TrieMap<Text, FileRecord> {
+        TrieMap.TrieMap<Text, FileRecord>(Text.equal, Text.hash);
     };
 
     // Mappa per memorizzare: UUID -> (key -> value)

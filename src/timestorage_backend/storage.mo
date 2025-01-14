@@ -3,7 +3,6 @@ import Text "mo:base/Text";
 import Types "./types";
 
 module Storage {
-    public type UUID = Types.UUID;
     public type FileRecord = Types.FileRecord;
     public type ValueLockStatus = Types.ValueLockStatus;
 

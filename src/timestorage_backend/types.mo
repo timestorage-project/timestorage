@@ -93,12 +93,6 @@ module Types {
     lockedBy: ?Principal;
   };
 
-  public type AuthorizationRole = {
-    admin: Bool;
-    editor: Bool;
-    reader: Bool;
-  };
-
   // Result types
   public type Result<T, E> = Result.Result<T, E>;
   public type Response<T> = Result<T, Text>;

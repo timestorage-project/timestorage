@@ -14,7 +14,7 @@ import Int "mo:base/Int";
 shared (msg) actor class TimestorageBackend() {
 
     type UUID = Types.UUID;
-    type FileRecord = Storage.FileRecord;
+    type FileRecord = Types.FileRecord;
     type ValueLockStatus = Types.ValueLockStatus;
     type Result<T, E> = Types.Result<T, E>;
     type Response<T> = Types.Response<T>;

@@ -143,10 +143,10 @@ shared (msg) actor class TimestorageBackend() {
             return #err("Invalid metadata: File name and mimeType cannot be empty.");
         };
 
-        // Genera un ID univoco per il file (prima era generateUniqueImageId)
+        // Generate a unique file ID
         let fileId = generateUniqueFileId();
 
-        // Creiamo il record del file (prima era imageRecord)
+        // Create a new file record
         let fileRecord : Storage.FileRecord = {
             uuid = uuid;
             fileData = base64FileData; // Base64
@@ -157,12 +157,13 @@ shared (msg) actor class TimestorageBackend() {
         return #ok("File uploaded successfully with ID: " # fileId);
     };
 
-    // Sostituito imageCounter con fileCounter
+    // Helper function to generate a unique file ID
     func generateUniqueFileId() : Text {
         fileCounter += 1;
         return "file-" # Nat.toText(fileCounter);
     };
 
+    // getFileByUUIDAndId function
     public shared query (msg) func getFileByUUIDAndId(uuid: Text, fileId: Text) : async Types.Result<Types.FileResponse, Text> {
         let fileOpt = uuidToFiles.get(fileId);
 

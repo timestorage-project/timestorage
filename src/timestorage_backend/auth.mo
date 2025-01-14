@@ -7,13 +7,15 @@ module Auth {
         HashMap.HashMap<Principal, Bool>(0, Principal.equal, Principal.hash);
     };
 
+    // Function to check if the caller is an admin
     public func isAdmin(caller: Principal, admins: HashMap.HashMap<Principal, Bool>) : Bool {
         switch (admins.get(caller)) {
             case (?_) { return true; };
             case null { return false; };
         };
     };
-
+ 
+    // Function for adding an admin
     public func addAdmin(newAdmin: Principal, caller: Principal, admins: HashMap.HashMap<Principal, Bool>) : Result.Result<(), Text> {
         if (not isAdmin(caller, admins)) {
             return #err("Unauthorized: Only admins can add new admins.");
@@ -25,6 +27,7 @@ module Auth {
         return #ok(());
     };
 
+    // Function to remove an admin
     public func removeAdmin(adminToRemove: Principal, caller: Principal, admins: HashMap.HashMap<Principal, Bool>) : Result.Result<(), Text> {
         if (not isAdmin(caller, admins)) {
             return #err("Unauthorized: Only admins can remove admins.");
@@ -36,6 +39,7 @@ module Auth {
         return #ok(());
     };
 
+    // Function for requiring admin role
     public func requireAdmin(caller: Principal, admins: HashMap.HashMap<Principal, Bool>) : Result.Result<(), Text> {
         if (not isAdmin(caller, admins)) {
             return #err("Unauthorized: Admin role required.");

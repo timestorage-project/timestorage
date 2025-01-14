@@ -8,24 +8,25 @@ import Iter "mo:base/Iter";
 import HashMap "mo:base/HashMap";
 
 module {
-    // Funzione per il mint di nuovi UUID
     public func mint(
         req: Types.MintRequest,
         caller: Principal,
         admins: HashMap.HashMap<Principal, Bool>,
-        insertUUID: (Text, Text) -> (),
+        insertUUID: (Text, Text) -> Result.Result<Text, Text>,
         uuidExists: (Text) -> Bool
     ) : Result.Result<Text, Text> {
+        // Admin check
         switch (Auth.requireAdmin(caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
 
-        // Validazione input
-        if (req.uuids.size() == 0 or req.structures.size() == 0) {
-            return #err("Input validation failed: UUID list and structure cannot be empty.");
+        // Validation
+        if (req.uuids.size() == 0 or Text.size(req.structures) == 0) {
+            return #err("Input validation failed: empty UUID list or structure.");
         };
 
+        // Check each UUID
         for (u in Iter.fromArray(req.uuids)) {
             if (not Utils.isValidUUID(u)) {
                 return #err("Invalid UUID format: " # u);
@@ -35,40 +36,15 @@ module {
             };
         };
 
+        // Insert each UUID with the associated structure
         for (u in Iter.fromArray(req.uuids)) {
-            insertUUID(u, req.structures);
+            let res = insertUUID(u, req.structures);
+            switch (res) {
+                case (#err(e)) { return #err(e); };
+                case (#ok(_)) {};
+            };
         };
 
         return #ok("Mint successful");
     };
-
-    // Funzione per caricare immagini associate a un UUID
-    public func uploadUUIDImage(
-        req: Types.ImageUploadRequest,
-        caller: Principal,
-        admins: HashMap.HashMap<Principal, Bool>,
-        uuidExists: (Text) -> Bool,
-        generateImageId: () -> Text,
-        linkImage: (Text, Text) -> ()
-    ) : Result.Result<Text, Text> {
-        switch (Auth.requireAdmin(caller, admins)) {
-            case (#err(e)) { return #err(e); };
-            case (#ok(())) {};
-        };
-
-        if (not Utils.isValidUUID(req.uuid)) {
-            return #err("Invalid UUID format.");
-        };
-        if (not uuidExists(req.uuid)) {
-            return #err("Error: UUID not found.");
-        };
-        if (req.metadata.fileName.size() == 0 or req.metadata.fileType.size() == 0) {
-            return #err("Invalid metadata: File name and type cannot be empty.");
-        };
-
-        let imageId = generateImageId();
-        linkImage(req.uuid, imageId);
-
-        return #ok("Image upload successful with ID: " # imageId);
-    };
-};
+}

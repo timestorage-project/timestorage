@@ -12,12 +12,19 @@ import Nat "mo:base/Nat";
 import Int "mo:base/Int";
 
 shared (msg) actor class TimestorageBackend() {
+
+    type UUID = Types.UUID;
+    type FileRecord = Storage.FileRecord;
+    type ValueLockStatus = Types.ValueLockStatus;
+    type Result<T, E> = Types.Result<T, E>;
+    type Response<T> = Types.Response<T>;
+
     // Stable state
-    stable var uuidToStructureStable : [(Text, Text)] = [];
-    stable var uuidKeyValueStable : [(Text, [(Text, Text)])] = [];
-    stable var uuidToFilesStable : [(Text, Storage.FileRecord)] = [];
+    stable var uuidToStructureStable : [(UUID, Text)] = [];
+    stable var uuidKeyValueStable : [(UUID, [(Text, Text)])] = [];
+    stable var uuidToFilesStable : [(UUID, FileRecord)] = [];
     stable var adminsStable : [(Principal, Bool)] = [];
-    stable var valueLocksStable : [(Text, Types.ValueLockStatus)] = [];
+    stable var valueLocksStable : [(Text, ValueLockStatus)] = [];
     stable var fileCounter : Nat = 0;
 
     // Volatile state

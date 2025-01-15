@@ -8,7 +8,7 @@ import Iter "mo:base/Iter";
 import HashMap "mo:base/HashMap";
 
 module {
-    //
+    // Function to mint new UUIDs with associated structure
     public func mint(
         req: Types.MintRequest,
         caller: Principal,

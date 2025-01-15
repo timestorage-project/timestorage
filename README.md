@@ -1,339 +1,59 @@
-# Time Storage - Backend Documentation
+# `timestorage`
 
-Welcome to the **Time Storage Backend**! This project provides a highly secure and scalable way to manage and store key-value pairs associated with unique identifiers (UUIDs). It also includes support for file uploads and value locking mechanisms to ensure data integrity. Let's dive into how to set up, use, and interact with the backend API!
+Welcome to your new `timestorage` project and to the Internet Computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
 
----
+To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
 
-## 📂 File Structure Overview
-Here's a breakdown of the most important files:
+To learn more before you start working with `timestorage`, see the following documentation available online:
 
-- **auth.mo**: Handles admin authentication and access control.
-- **logic.mo**: Core business logic of the backend.
-- **main.mo**: Entry point of the backend canister.
-- **storage.mo**: Defines storage maps and structures.
-- **types.mo**: Contains custom types and data models.
-- **utils.mo**: Utility functions for validation and JSON manipulation.
+- [Quick Start](https://internetcomputer.org/docs/current/developer-docs/setup/deploy-locally)
+- [SDK Developer Tools](https://internetcomputer.org/docs/current/developer-docs/setup/install)
+- [Motoko Programming Language Guide](https://internetcomputer.org/docs/current/motoko/main/motoko)
+- [Motoko Language Quick Reference](https://internetcomputer.org/docs/current/motoko/main/language-manual)
 
----
+If you want to start working on your project right away, you might want to try the following commands:
 
-## 🛠️ Setup and Deployment
-
-1. Clone the repository.
-2. Navigate to the project directory.
-3. Run the following command to start the local Internet Computer environment:
-   ```bash
-   dfx start --background
-   ```
-4. Deploy the canister using:
-   ```bash
-   dfx deploy
-   ```
-
----
-
-# 📖 API Documentation
-
-Here is a detailed list of the API endpoints available in the Time Storage Backend. Each endpoint is explained with its parameters, usage examples, and expected responses.
-
----
-
-## 🔸​ **isAdmin**
-
-**Description:** Checks if the caller is an admin.
-
-**Endpoint:**
-```motoko
-public shared query (msg) func isAdmin() : async Bool
-```
-
-**Example Command:**
 ```bash
-dfx canister call timestorage_backend isAdmin
+cd timestorage/
+dfx help
+dfx canister --help
 ```
 
-**Response:**
-- Success: `true`
-- Error: `false`
+## Running the project locally
 
----
+If you want to test your project locally, you can use the following commands:
 
-## 🔸​ **addAdmin**
-
-**Description:** Adds a new admin to the system.
-
-**Endpoint:**
-```motoko
-public shared (msg) func addAdmin(newAdmin: Principal) : async Result.Result<Text, Text>
-```
-
-**Parameters:**
-- `newAdmin` (Principal): The principal ID of the new admin.
-
-**Example Command:**
 ```bash
-dfx canister call timestorage_backend addAdmin '(principal "[principal_id]")'
+# Starts the replica, running in the background
+dfx start --background
+
+# Deploys your canisters to the replica and generates your candid interface
+dfx deploy
 ```
 
-**Response:**
-- Success: `(variant { ok = "New admin added successfully." })`
-- Error: `(variant { err = "Unauthorized access." })`
+Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
 
----
+If you have made changes to your backend canister, you can generate a new candid interface with
 
----
-
-## 1. **insertUUIDStructure**
-
-**Description:** Inserts a new structure for a given UUID.
-
-**Endpoint:**
-```motoko
-public shared (msg) func insertUUIDStructure(uuid: Text, schema: Text) : async Result.Result<Text, Text>
-```
-
-**Parameters:**
-- `uuid` (Text): The unique identifier to associate with the structure.
-- `schema` (Text): The structure in JSON format.
-
-**Example Command:**
 ```bash
-dfx canister call timestorage_backend insertUUIDStructure '("uuid-1234", "{\"name\": \"value\"}")'
+npm run generate
 ```
 
-**Response:**
-- Success: `(variant { ok = "UUID inserted successfully." })`
-- Error: `(variant { err = "Invalid UUID format." })`
+at any time. This is recommended before starting the frontend development server, and will be run automatically any time you run `dfx deploy`.
 
----
+If you are making frontend changes, you can start a development server with
 
-## 2. **uploadFile**
-
-**Description:** Uploads a file and associates it with a given UUID.
-
-**Endpoint:**
-```motoko
-public shared (msg) func uploadFile(uuid: Text, base64FileData: Text, metadata: Types.FileMetadata) : async Result.Result<Text, Text>
-```
-
-**Parameters:**
-- `uuid` (Text): The UUID to associate the file with.
-- `base64FileData` (Text): The file data in Base64 format.
-- `metadata` (Types.FileMetadata): Metadata about the file (e.g., name, type).
-
-**Example Command:**
 ```bash
-dfx canister call timestorage_backend uploadFile '("uuid-1234", "<base64_data>", record { fileName = "example.txt"; mimeType = "text/plain"; uploadTimestamp = 1234567890 })'
+npm start
 ```
 
-**Response:**
-- Success: `(variant { ok = "File uploaded successfully with ID: file-1" })`
-- Error: `(variant { err = "Error: UUID does not exist." })`
+Which will start a server at `http://localhost:8080`, proxying API requests to the replica at port 4943.
 
----
+### Note on frontend environment variables
 
-## 3. **getFileByUUIDAndId**
+If you are hosting frontend code somewhere without using DFX, you may need to make one of the following adjustments to ensure your project does not fetch the root key in production:
 
-**Description:** Retrieves a file associated with a UUID and a file ID.
-
-**Endpoint:**
-```motoko
-public shared query (msg) func getFileByUUIDAndId(uuid: Text, fileId: Text) : async Types.Result<Types.FileResponse, Text>
-```
-
-**Parameters:**
-- `uuid` (Text): The UUID of the file.
-- `fileId` (Text): The unique file ID.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend getFileByUUIDAndId '("uuid-1234", "file-1")'
-```
-
-**Response:**
-- Success: Returns file data and metadata.
-- Error: `(variant { err = "File not found." })`
-
----
-
-## 4. **updateValue**
-
-**Description:** Updates a specific value associated with a UUID.
-
-**Endpoint:**
-```motoko
-public shared (msg) func updateValue(req: Types.ValueUpdateRequest) : async Result.Result<Text, Text>
-```
-
-**Parameters:**
-- `req` (Types.ValueUpdateRequest): The request containing the UUID, key, and new value.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend updateValue '(record { uuid = "uuid-1234"; key = "exampleKey"; newValue = "newValue" })'
-```
-
-**Response:**
-- Success: `(variant { ok = "Value updated successfully." })`
-- Error: `(variant { err = "UUID not found or not initialized." })`
-
----
-
-## 5. **lockValue**
-
-**Description:** Locks or unlocks a specific value for a UUID.
-
-**Endpoint:**
-```motoko
-public shared (msg) func lockValue(req: Types.ValueLockRequest) : async Result.Result<Text, Text>
-```
-
-**Parameters:**
-- `req` (Types.ValueLockRequest): The request containing the UUID, key, and lock status.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend lockValue '(record { uuid = "uuid-1234"; key = "exampleKey"; lock = true })'
-```
-
-**Response:**
-- Success: `(variant { ok = "Value locked successfully." })`
-- Success: `(variant { ok = "Value unlocked successfully." })`
-- Error: `(variant { err = "UUID not found." })`
-
-## 6. **updateManyValues**
-
-**Description:** Updates multiple key-value pairs for a given UUID.
-
-**Endpoint:**
-```motoko
-public shared (msg) func updateManyValues(uuid: Text, updates: [(Text, Text)]) : async Result.Result<Text, [Text]>
-```
-
-**Parameters:**
-- `uuid` (Text): The UUID to update.
-- `updates` ([(Text, Text)]): A list of key-value pairs to update.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend updateManyValues '("uuid-1234", vec { ("key1", "value1"), ("key2", "value2") })'
-```
-
-**Response:**
-- Success: `(variant { ok = "All values updated successfully." })`
-- Error: `(variant { err = ["UUID not found", "Key not found"] })`
-
----
-
-## 7. **lockAllValues**
-
-**Description:** Locks or unlocks all values for a given UUID.
-
-**Endpoint:**
-```motoko
-public shared (msg) func lockAllValues(req: Types.ValueLockAllRequest) : async Result.Result<Text, Text>
-```
-
-**Parameters:**
-- `req` (Types.ValueLockAllRequest): The request containing the UUID and lock status.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend lockAllValues '(record { uuid = "uuid-1234"; lock = true })'
-```
-
-**Response:**
-- Success: `(variant { ok = "All values locked successfully." })`
-- Success: `(variant { ok = "All values unlocked successfully." })`
-- Error: `(variant { err = "UUID not found." })`
-
----
-
-## 8. **getValue**
-
-**Description:** Retrieves a specific value associated with a UUID.
-
-**Endpoint:**
-```motoko
-public shared query (msg) func getValue(req: Types.ValueRequest) : async Result.Result<Text, Text>
-```
-
-**Parameters:**
-- `req` (Types.ValueRequest): The request containing the UUID and key.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend getValue '(record { uuid = "uuid-1234"; key = "exampleKey" })'
-```
-
-**Response:**
-- Success: `(variant { ok = "value" })`
-- Error: `(variant { err = "Key not found." })`
-
----
-
-## 9. **getAllValues**
-
-**Description:** Retrieves all key-value pairs associated with a UUID.
-
-**Endpoint:**
-```motoko
-public shared query (msg) func getAllValues(uuid: Text) : async Result.Result<[(Text, Text)], Text>
-```
-
-**Parameters:**
-- `uuid` (Text): The UUID to retrieve values for.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend getAllValues '("uuid-1234")'
-```
-
-**Response:**
-- Success: `(variant { ok = [("key1", "value1"), ("key2", "value2")] })`
-- Error: `(variant { err = "UUID not found." })`
-
----
-
-## 10. **getValueLockStatus**
-
-**Description:** Retrieves the lock status of a specific value.
-
-**Endpoint:**
-```motoko
-public shared query (msg) func getValueLockStatus(req: Types.ValueLockStatusRequest) : async Result.Result<Types.ValueLockStatus, Text>
-```
-
-**Parameters:**
-- `req` (Types.ValueLockStatusRequest): The request containing the UUID and key.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend getValueLockStatus '(record { uuid = "uuid-1234"; key = "exampleKey" })'
-```
-
-**Response:**
-- Success: `(variant { ok = record { locked = true; lockedBy = ?principal "[principal_id]" } })`
-- Error: `(variant { err = "No lock status found." })`
-
----
-
-## 📌​ **getUUIDInfo**
-
-**Description:** Retrieves all information associated with a UUID.
-
-**Endpoint:**
-```motoko
-public shared query (msg) func getUUIDInfo(uuid: Text) : async Result.Result<(Text, [Types.FileResponse]), Text>
-```
-
-**Parameters:**
-- `uuid` (Text): The UUID to retrieve information for.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend getUUIDInfo '("uuid-1234")'
-```
-
-**Response:**
-- Success: Returns schema, values, and file metadata.
-- Error: `(variant { err = "UUID not found." })`
+- set`DFX_NETWORK` to `ic` if you are using Webpack
+- use your own preferred method to replace `process.env.DFX_NETWORK` in the autogenerated declarations
+  - Setting `canisters -> {asset_canister_id} -> declarations -> env_override to a string` in `dfx.json` will replace `process.env.DFX_NETWORK` with the string in the autogenerated declarations
+- Write your own `createActor` constructor

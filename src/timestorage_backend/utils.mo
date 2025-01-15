@@ -43,5 +43,17 @@ module Utils {
         r := Text.replace(r, #text "\r", "\\r");
         return r;
     };
+
+    // Convert an array of Text to a single Text with a separator
+    public func arrayToText(arr: [Text], separator: Text) : Text {
+        var result = "";
+        for (i in arr.keys()) {
+            result := result # arr[i];
+            if (i < Int.abs(arr.size() - 1 : Int)) {
+                result := result # separator;
+            };
+        };
+        return result;
+    };
 }
 

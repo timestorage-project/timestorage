@@ -231,6 +231,60 @@ shared (msg) actor class TimestorageBackend() {
         return #ok("Value updated successfully.");
     };
 
+    // updateManyValues function
+    public shared (msg) func updateManyValues(uuid: Text, updates: [(Text, Text)]) : async Result.Result<Text, [Text]> {
+        // Admin check
+        switch (Auth.requireAdmin(msg.caller, admins)) {
+            case (#err(e)) { return #err([e]); };
+            case (#ok(())) {};
+        };
+
+        // Check if UUID exists
+        if (uuidToStructure.get(uuid) == null) {
+            return #err(["UUID not found"]);
+        };
+
+        // Retrieve the value submap for this UUID
+        let subMapOpt = uuidKeyValueMap.get(uuid);
+        let subMap = switch (subMapOpt) {
+            case (null) { return #err(["UUID not found or not initialized."]); };
+            case (?m) m;
+        };
+
+        var failedKeys : [Text] = [];
+
+        // Iterate through the updates
+        for ((key, newValue) in updates.vals()) {
+            // Check if the value is locked
+            let lockKey = Storage.makeLockKey(uuid, key);
+            let lockOpt = valueLocks.get(lockKey);
+            let isLocked = switch (lockOpt) {
+                case (?l) { l.locked };
+                case null { false };
+            };
+
+            if (isLocked) {
+                // If the value is locked, add the key to failedKeys
+                failedKeys := Array.append(failedKeys, [key]);
+            } else {
+                // If the key exists, update the value
+                if (subMap.get(key) != null) {
+                    subMap.put(key, newValue);
+                } else {
+                    // If the key does not exist, add it to failedKeys
+                    failedKeys := Array.append(failedKeys, [key]);
+                };
+            };
+        };
+
+        // Return the list of keys that couldn't be updated
+        if (failedKeys.size() > 0) {
+            return #ok("Some keys could not be updated: " # Utils.arrayToText(failedKeys, ", "));
+        } else {
+            return #ok("All values updated successfully.");
+        };
+    };
+
     // lockAllValues function
     public shared (msg) func lockAllValues(req: Types.ValueLockAllRequest) : async Result.Result<Text, Text> {
         // Admin check

@@ -26,7 +26,7 @@ Here's a breakdown of the most important files:
    ```
 4. Deploy the canister using:
    ```bash
-   dfx deploy
+   dfx deploy timestrorage_backend
    ```
 
 ---

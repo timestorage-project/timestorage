@@ -80,8 +80,6 @@ dfx canister call timestorage_backend addAdmin '(principal "[principal_id]")'
 
 ---
 
----
-
 ## 1. **insertUUIDStructure**
 
 **Description:** Inserts a new structure for a given UUID.
@@ -97,7 +95,7 @@ public shared (msg) func insertUUIDStructure(uuid: Text, schema: Text) : async R
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend insertUUIDStructure '("uuid-1234", "{\"name\": \"value\"}")'
+dfx canister call timestorage_backend insertUUIDStructure '("uuid-dummy", "{\"name\": \"value\"}")'
 ```
 
 **Response:**
@@ -122,11 +120,11 @@ public shared (msg) func uploadFile(uuid: Text, base64FileData: Text, metadata: 
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend uploadFile '("uuid-1234", "<base64_data>", record { fileName = "example.txt"; mimeType = "text/plain"; uploadTimestamp = 1234567890 })'
+dfx canister call timestorage_backend uploadFile '("uuid-dummy", "<base64_data>", record { fileName = "example.txt"; mimeType = "text/plain"; uploadTimestamp = 1234567890 })'
 ```
 
 **Response:**
-- Success: `(variant { ok = "File uploaded successfully with ID: file-1" })`
+- Success: `(variant { ok = "File uploaded successfully with ID: file-{NUMBER_GENERATED}" })`
 - Error: `(variant { err = "Error: UUID does not exist." })`
 
 ---
@@ -146,7 +144,7 @@ public shared query (msg) func getFileByUUIDAndId(uuid: Text, fileId: Text) : as
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend getFileByUUIDAndId '("uuid-1234", "file-1")'
+dfx canister call timestorage_backend getFileByUUIDAndId '("uuid-dummy", "file-1")'
 ```
 
 **Response:**
@@ -169,7 +167,7 @@ public shared (msg) func updateValue(req: Types.ValueUpdateRequest) : async Resu
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend updateValue '(record { uuid = "uuid-1234"; key = "exampleKey"; newValue = "newValue" })'
+dfx canister call timestorage_backend updateValue '(record { uuid = "uuid-dummy"; key = "exampleKey"; newValue = "newValue" })'
 ```
 
 **Response:**
@@ -178,29 +176,7 @@ dfx canister call timestorage_backend updateValue '(record { uuid = "uuid-1234";
 
 ---
 
-## 5. **lockValue**
-
-**Description:** Locks or unlocks a specific value for a UUID.
-
-**Endpoint:**
-```motoko
-public shared (msg) func lockValue(req: Types.ValueLockRequest) : async Result.Result<Text, Text>
-```
-
-**Parameters:**
-- `req` (Types.ValueLockRequest): The request containing the UUID, key, and lock status.
-
-**Example Command:**
-```bash
-dfx canister call timestorage_backend lockValue '(record { uuid = "uuid-1234"; key = "exampleKey"; lock = true })'
-```
-
-**Response:**
-- Success: `(variant { ok = "Value locked successfully." })`
-- Success: `(variant { ok = "Value unlocked successfully." })`
-- Error: `(variant { err = "UUID not found." })`
-
-## 6. **updateManyValues**
+## 5. **updateManyValues**
 
 **Description:** Updates multiple key-value pairs for a given UUID.
 
@@ -215,7 +191,7 @@ public shared (msg) func updateManyValues(uuid: Text, updates: [(Text, Text)]) :
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend updateManyValues '("uuid-1234", vec { ("key1", "value1"), ("key2", "value2") })'
+dfx canister call timestorage_backend updateVManyValues '(uuid-dummy", vec { record { "key1"; "new-value1" }; record { "key2"; "new-value2" }})'
 ```
 
 **Response:**
@@ -223,6 +199,29 @@ dfx canister call timestorage_backend updateManyValues '("uuid-1234", vec { ("ke
 - Error: `(variant { err = ["UUID not found", "Key not found"] })`
 
 ---
+
+## 6. **lockValue**
+
+**Description:** Locks or unlocks a specific value for a UUID.
+
+**Endpoint:**
+```motoko
+public shared (msg) func lockValue(req: Types.ValueLockRequest) : async Result.Result<Text, Text>
+```
+
+**Parameters:**
+- `req` (Types.ValueLockRequest): The request containing the UUID, key, and lock status.
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend lockValue '(record { uuid = "uuid-dummy"; key = "exampleKey"; lock = true })'
+```
+
+**Response:**
+- Success: `(variant { ok = "Value locked successfully." })`
+- Success: `(variant { ok = "Value unlocked successfully." })`
+- Error: `(variant { err = "UUID not found." })`
+
 
 ## 7. **lockAllValues**
 
@@ -238,7 +237,7 @@ public shared (msg) func lockAllValues(req: Types.ValueLockAllRequest) : async R
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend lockAllValues '(record { uuid = "uuid-1234"; lock = true })'
+dfx canister call timestorage_backend lockAllValues '(record { uuid = "uuid-dummy"; lock = true })'
 ```
 
 **Response:**
@@ -262,7 +261,7 @@ public shared query (msg) func getValue(req: Types.ValueRequest) : async Result.
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend getValue '(record { uuid = "uuid-1234"; key = "exampleKey" })'
+dfx canister call timestorage_backend getValue '(record { uuid = "uuid-dummy"; key = "exampleKey" })'
 ```
 
 **Response:**
@@ -285,7 +284,7 @@ public shared query (msg) func getAllValues(uuid: Text) : async Result.Result<[(
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend getAllValues '("uuid-1234")'
+dfx canister call timestorage_backend getAllValues '("uuid-dummy")'
 ```
 
 **Response:**
@@ -308,7 +307,7 @@ public shared query (msg) func getValueLockStatus(req: Types.ValueLockStatusRequ
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend getValueLockStatus '(record { uuid = "uuid-1234"; key = "exampleKey" })'
+dfx canister call timestorage_backend getValueLockStatus '(record { uuid = "uuid-dummy"; key = "exampleKey" })'
 ```
 
 **Response:**
@@ -331,7 +330,7 @@ public shared query (msg) func getUUIDInfo(uuid: Text) : async Result.Result<(Te
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend getUUIDInfo '("uuid-1234")'
+dfx canister call timestorage_backend getUUIDInfo '("uuid-dummy")'
 ```
 
 **Response:**

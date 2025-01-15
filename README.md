@@ -333,3 +333,9 @@ public shared query (msg) func getUUIDInfo(uuid: Text) : async Result.Result<(Te
 ```bash
 dfx canister call timestorage_backend getUUIDInfo '("uuid-1234")'
 ```
+
+**Response:**
+- Success: Returns schema, values, and file metadata.
+- Error: `(variant { err = "UUID not found." })`
+
+---

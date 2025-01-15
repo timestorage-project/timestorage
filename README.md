@@ -31,9 +31,9 @@ Here's a breakdown of the most important files:
 
 ---
 
-# 📖 API Documentation
+# 📖 Canister Interaction Documentation
 
-Here is a detailed list of the API endpoints available in the Time Storage Backend. Each endpoint is explained with its parameters, usage examples, and expected responses.
+Here is a detailed list of the canister "endpoints" available in the Time Storage Backend. Each endpoint is explained with its parameters, usage examples, and expected responses.
 
 ---
 

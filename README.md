@@ -149,6 +149,21 @@ dfx canister call timestorage_backend getFileByUUIDAndId '("uuid-dummy", "file-1
 
 **Response:**
 - Success: Returns file data and metadata.
+  ```
+  (
+  variant {
+    ok = record {
+      metadata = record {
+        fileData = "<base64_data>";
+        mimeType = "text/plain";
+        fileName = "example.txt";
+        uploadTimestamp = "1234567890";
+      };
+      uuid = "uuid-dummy";
+    }
+  },
+  )
+  ```
 - Error: `(variant { err = "File not found." })`
 
 ---
@@ -191,12 +206,13 @@ public shared (msg) func updateManyValues(uuid: Text, updates: [(Text, Text)]) :
 
 **Example Command:**
 ```bash
-dfx canister call timestorage_backend updateVManyValues '(uuid-dummy", vec { record { "key1"; "new-value1" }; record { "key2"; "new-value2" }})'
+dfx canister call timestorage_backend updateManyValues '("uuid-dummy", vec { record { "exampleKey"; "new-value1" }; record { "key2"; "new-value2" }; record { "key3"; "value3" } })'
 ```
 
 **Response:**
 - Success: `(variant { ok = "All values updated successfully." })`
 - Error: `(variant { err = ["UUID not found", "Key not found"] })`
+- Error: `(variant { ok = "Some keys could not be updated: key2, key3" })`
 
 ---
 
@@ -265,7 +281,7 @@ dfx canister call timestorage_backend getValue '(record { uuid = "uuid-dummy"; k
 ```
 
 **Response:**
-- Success: `(variant { ok = "value" })`
+- Success: `(variant { ok = "new-value1" })`
 - Error: `(variant { err = "Key not found." })`
 
 ---
@@ -288,7 +304,7 @@ dfx canister call timestorage_backend getAllValues '("uuid-dummy")'
 ```
 
 **Response:**
-- Success: `(variant { ok = [("key1", "value1"), ("key2", "value2")] })`
+- Success: `(variant { ok = vec { record { "exampleKey"; "new-value1" } } })`
 - Error: `(variant { err = "UUID not found." })`
 
 ---
@@ -335,6 +351,26 @@ dfx canister call timestorage_backend getUUIDInfo '("uuid-dummy")'
 
 **Response:**
 - Success: Returns schema, values, and file metadata.
+```
+  (
+  variant {
+    ok = record {
+      "{{\"name\": \"value\"},\"values\":{{\"exampleKey\":\"new-value1\"}},\"lockStatus\":{{\"exampleKey\":\"unlocked\"}}}";
+      vec {
+        record {
+          metadata = record {
+            fileData = "<base64_data>";
+            mimeType = "text/plain";
+            fileName = "example.txt";
+            uploadTimestamp = "1234567890";
+          };
+          uuid = "uuid-dummy";
+        };
+      };
+    }
+  },
+)
+```
 - Error: `(variant { err = "UUID not found." })`
 
 ---

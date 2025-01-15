@@ -132,20 +132,19 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // Upload an image associated with a UUID
-    public shared (msg) func uploadFile(
-        uuid: Text,
-        base64FileData: Text,
-        metadata: Types.FileMetadata
-    ) : async Result.Result<Text, Text> {
+    public shared (msg) func uploadFile(uuid: Text, base64FileData: Text, metadata: Types.FileMetadata) : async Result.Result<Text, Text> {
+        // Admin check
         switch (Auth.requireAdmin(msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
 
+        // Check if the UUID exists
         if (uuidToStructure.get(uuid) == null) {
             return #err("Error: UUID does not exist.");
         };
 
+        // Validate metadata
         if (metadata.fileName.size() == 0 or metadata.mimeType.size() == 0) {
             return #err("Invalid metadata: File name and mimeType cannot be empty.");
         };
@@ -174,6 +173,7 @@ shared (msg) actor class TimestorageBackend() {
     public shared query (msg) func getFileByUUIDAndId(uuid: Text, fileId: Text) : async Types.Result<Types.FileResponse, Text> {
         let fileOpt = uuidToFiles.get(fileId);
 
+        // Check if the file exists and belongs to the given UUID
         switch (fileOpt) {
         case null {
             return #err("File not found.");
@@ -345,6 +345,8 @@ shared (msg) actor class TimestorageBackend() {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
+
+        // Retrieve the value submap for this UUID
         let subMapOpt = uuidKeyValueMap.get(uuid);
         switch (subMapOpt) {
             case null { return #err("UUID not found."); };
@@ -372,6 +374,7 @@ shared (msg) actor class TimestorageBackend() {
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
         let current = valueLocks.get(lockKey);
 
+        // Check the value state
         switch (current) {
             case (?status) {
                 if (status.locked) {
@@ -412,6 +415,7 @@ shared (msg) actor class TimestorageBackend() {
             case (#ok(())) {};
         };
 
+        // Check if the value is locked or not
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
         let statusOpt = valueLocks.get(lockKey);
         switch (statusOpt) {
@@ -479,6 +483,7 @@ shared (msg) actor class TimestorageBackend() {
             };
         };
 
+        // Return the combined JSON and files
         return #ok(combinedJson, fileResponses);
     };
 };

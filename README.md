@@ -59,6 +59,8 @@ dfx canister call timestorage_backend isAdmin
 
 ## 🔸​ **addAdmin**
 
+*⚠️ Admin role required to execute this function*
+
 **Description:** Adds a new admin to the system.
 
 **Endpoint:**
@@ -76,11 +78,40 @@ dfx canister call timestorage_backend addAdmin '(principal "[principal_id]")'
 
 **Response:**
 - Success: `(variant { ok = "New admin added successfully." })`
-- Error: `(variant { err = "Unauthorized access." })`
+- Error: `(variant { err = "Unauthorized: Only admins can add new admins." })`
+- Error: `(variant { err = "Admin already exist." })`
+
+---
+
+## 🔸​ **removeAdmin**
+
+*⚠️ Admin role required to execute this function*
+
+**Description:** Remove an admin from the system.
+
+**Endpoint:**
+```motoko
+public shared (msg) func removeAdmin(adminToRemove: Principal) : async Result.Result<Text, Text>
+```
+
+**Parameters:**
+- `adminToRemove` (Principal): The principal ID of the new admin.
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend removeAdmin '(principal "[principal_id]")'
+```
+
+**Response:**
+- Success: `(variant { ok = "Admin removed successfully." })`
+- Error: `(variant { err = "Unauthorized: Only admins can add remove admins." })`
+- Error: `(variant { err = "Admin does not exist." })`
 
 ---
 
 ## 1. **insertUUIDStructure**
+
+*⚠️ Admin role required to execute this function*
 
 **Description:** Inserts a new structure for a given UUID.
 
@@ -105,6 +136,8 @@ dfx canister call timestorage_backend insertUUIDStructure '("uuid-dummy", "{\"na
 ---
 
 ## 2. **uploadFile**
+
+*⚠️ Admin role required to execute this function*
 
 **Description:** Uploads a file and associates it with a given UUID.
 
@@ -170,6 +203,8 @@ dfx canister call timestorage_backend getFileByUUIDAndId '("uuid-dummy", "file-1
 
 ## 4. **updateValue**
 
+*⚠️ Admin role required to execute this function*
+
 **Description:** Updates a specific value associated with a UUID.
 
 **Endpoint:**
@@ -192,6 +227,8 @@ dfx canister call timestorage_backend updateValue '(record { uuid = "uuid-dummy"
 ---
 
 ## 5. **updateManyValues**
+
+*⚠️ Admin role required to execute this function*
 
 **Description:** Updates multiple key-value pairs for a given UUID.
 
@@ -218,6 +255,8 @@ dfx canister call timestorage_backend updateManyValues '("uuid-dummy", vec { rec
 
 ## 6. **lockValue**
 
+*⚠️ Admin role required to execute this function*
+
 **Description:** Locks or unlocks a specific value for a UUID.
 
 **Endpoint:**
@@ -240,6 +279,8 @@ dfx canister call timestorage_backend lockValue '(record { uuid = "uuid-dummy"; 
 
 
 ## 7. **lockAllValues**
+
+*⚠️ Admin role required to execute this function*
 
 **Description:** Locks or unlocks all values for a given UUID.
 
@@ -265,6 +306,8 @@ dfx canister call timestorage_backend lockAllValues '(record { uuid = "uuid-dumm
 
 ## 8. **getValue**
 
+*⚠️ Admin role required to execute this function*
+
 **Description:** Retrieves a specific value associated with a UUID.
 
 **Endpoint:**
@@ -287,6 +330,8 @@ dfx canister call timestorage_backend getValue '(record { uuid = "uuid-dummy"; k
 ---
 
 ## 9. **getAllValues**
+
+*⚠️ Admin role required to execute this function*
 
 **Description:** Retrieves all key-value pairs associated with a UUID.
 
@@ -311,6 +356,8 @@ dfx canister call timestorage_backend getAllValues '("uuid-dummy")'
 
 ## 10. **getValueLockStatus**
 
+*⚠️ Admin role required to execute this function*
+
 **Description:** Retrieves the lock status of a specific value.
 
 **Endpoint:**
@@ -329,6 +376,42 @@ dfx canister call timestorage_backend getValueLockStatus '(record { uuid = "uuid
 **Response:**
 - Success: `(variant { ok = record { locked = true; lockedBy = ?principal "[principal_id]" } })`
 - Error: `(variant { err = "No lock status found." })`
+
+---
+
+## 11.​ **getAllUUIDs**
+
+*⚠️ Admin role required to execute this function*
+
+**Descrizione:** Retrieves all UUIDs minted
+
+**Endpoint:**
+```motoko
+public shared query (msg) func getAllUUIDs() : async Result.Result<[Text], Text>
+```
+
+**Parameters:**
+- No parameters
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend getAllUUIDs
+```
+
+**Response:**
+- Success: Returns all uuids.
+```
+(
+  variant {
+    ok = vec {
+      "uuid-123";
+      "uuid-456";
+    }
+  }
+)
+```
+
+- Error: `(variant {err="Unauthorized: Admin role required."})`
 
 ---
 
@@ -372,5 +455,3 @@ dfx canister call timestorage_backend getUUIDInfo '("uuid-dummy")'
 )
 ```
 - Error: `(variant { err = "UUID not found." })`
-
----

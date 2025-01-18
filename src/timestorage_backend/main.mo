@@ -105,6 +105,14 @@ shared (msg) actor class TimestorageBackend() {
         };
     };
 
+    // removeAdmin function
+    public shared (msg) func removeAdmin(adminToRemove: Principal) : async Result.Result<Text, Text> {
+        switch (Auth.removeAdmin(adminToRemove, msg.caller, admins)) {
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) { return #ok("Admin removed successfully."); };
+        };
+    };
+
     // insertUUIDStructure function
     public shared (msg) func insertUUIDStructure(uuid: Text, schema: Text) : async Result.Result<Text, Text> {
         // Admin check
@@ -485,5 +493,17 @@ shared (msg) actor class TimestorageBackend() {
 
         // Return the combined JSON and files
         return #ok(combinedJson, fileResponses);
+    };
+
+    // getAllUUIDs function
+    public shared query (msg) func getAllUUIDs() : async Result.Result<[Text], Text> {
+        // Admin check
+        switch (Auth.requireAdmin(msg.caller, admins)) {
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
+        };
+
+        let uuids = Iter.toArray(uuidToStructure.keys());
+        return #ok(uuids);
     };
 };

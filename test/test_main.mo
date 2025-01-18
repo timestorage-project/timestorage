@@ -2,6 +2,7 @@ import Principal "mo:base/Principal";
 import Debug "mo:base/Debug";
 import Text "mo:base/Text";
 import Result "mo:base/Result";
+import Array "mo:base/Array";
 import Types "../src/timestorage_backend/types";
 
 module {
@@ -14,6 +15,8 @@ module {
         lockValue: (Types.ValueLockRequest) -> async Result.Result<Text, Text>;
         getValueLockStatus: (Types.ValueLockStatusRequest) -> async Result.Result<Types.ValueLockStatus, Text>;
         addAdmin: (Principal) -> async Result.Result<Text, Text>;
+        removeAdmin: (Principal) -> async Result.Result<Text, Text>;
+        getAllUUIDs: () -> async Result.Result<[Text], Text>;
     } {
         let backend_id = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai");
         actor(Principal.toText(backend_id));
@@ -133,6 +136,39 @@ module {
         Debug.print("testLockValue: Passed");
     };
 
+    // Test for getAllUUIDs function
+    public func testGetAllUUIDs(deployerPrincipal: Principal) : async () {
+        let backend = await getBackendCanister();
+
+        Debug.print("Testing getAllUUIDs with deployer principal: " # Principal.toText(deployerPrincipal));
+
+        let uuid1 = "uuid-1";
+        let uuid2 = "uuid-2";
+        let uuid3 = "uuid-3";
+
+        let _ = await backend.insertUUIDStructure(uuid1, "schema-1");
+        let _ = await backend.insertUUIDStructure(uuid2, "schema-2");
+        let _ = await backend.insertUUIDStructure(uuid3, "schema-3");
+
+        // Chiama getAllUUIDs
+        let result = await backend.getAllUUIDs();
+        switch (result) {
+            case (#ok(uuids)) {
+                assert uuids.size() == 3;
+                assert Array.find(uuids, func (u: Text) : Bool { u == uuid1 }) != null;
+                assert Array.find(uuids, func (u: Text) : Bool { u == uuid2 }) != null;
+                assert Array.find(uuids, func (u: Text) : Bool { u == uuid3 }) != null;
+                Debug.print("getAllUUIDs returned the correct UUIDs");
+            };
+            case (#err(e)) {
+                Debug.print("testGetAllUUIDs: Failed - " # e);
+                assert false;
+            };
+        };
+
+        Debug.print("testGetAllUUIDs: Passed");
+    };
+
     // Run all main tests
     public func runAllTests(deployerPrincipal: Principal) : async () {
         Debug.print("Running main tests with deployer principal: " # Principal.toText(deployerPrincipal));
@@ -140,6 +176,7 @@ module {
         await testUploadFile(deployerPrincipal);
         await testUpdateValue(deployerPrincipal);
         await testLockValue(deployerPrincipal);
+        await testGetAllUUIDs(deployerPrincipal);
         Debug.print("All main tests passed!");
     };
 };

@@ -1,9 +1,9 @@
 import { FC } from 'react'
 import { Box, Typography, IconButton, styled } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home'
-import ListIcon from '@mui/icons-material/List'
-import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary'
-import PersonIcon from '@mui/icons-material/Person'
+// import ListIcon from '@mui/icons-material/List'
+// import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary'
+// import PersonIcon from '@mui/icons-material/Person'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const BottomNavigation: FC = () => {
@@ -22,7 +22,7 @@ const BottomNavigation: FC = () => {
           Home
         </Typography>
       </IconButton>
-      <IconButton onClick={() => navigate('/forms')} sx={{ color: isActive('/forms') ? '#2e7d32' : '#757575' }}>
+      {/* <IconButton onClick={() => navigate('/forms')} sx={{ color: isActive('/forms') ? '#2e7d32' : '#757575' }}>
         <ListIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Forms
@@ -39,7 +39,7 @@ const BottomNavigation: FC = () => {
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Profile
         </Typography>
-      </IconButton>
+      </IconButton> */}
     </Navigation>
   )
 }

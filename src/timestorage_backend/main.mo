@@ -141,11 +141,11 @@ shared (msg) actor class TimestorageBackend() {
 
     // Upload an image associated with a UUID
     public shared (msg) func uploadFile(uuid: Text, base64FileData: Text, metadata: Types.FileMetadata) : async Result.Result<Text, Text> {
-        // Admin check
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err(e); };
-            case (#ok(())) {};
-        };
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
 
         // Check if the UUID exists
         if (uuidToStructure.get(uuid) == null) {
@@ -208,11 +208,11 @@ shared (msg) actor class TimestorageBackend() {
 
     // updateValue function
     public shared (msg) func updateValue(req: Types.ValueUpdateRequest) : async Result.Result<Text, Text> {
-        // Admin check
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err(e); };
-            case (#ok(())) {};
-        };
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
 
         // Retrieve the value submap for this UUID
         let subMapOpt = uuidKeyValueMap.get(req.uuid);
@@ -241,11 +241,11 @@ shared (msg) actor class TimestorageBackend() {
 
     // updateManyValues function
     public shared (msg) func updateManyValues(uuid: Text, updates: [(Text, Text)]) : async Result.Result<Text, [Text]> {
-        // Admin check
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err([e]); };
-            case (#ok(())) {};
-        };
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err([e]); };
+        //     case (#ok(())) {};
+        // };
 
         // Check if UUID exists
         if (uuidToStructure.get(uuid) == null) {
@@ -328,11 +328,11 @@ shared (msg) actor class TimestorageBackend() {
 
     // getValue function
     public shared query (msg) func getValue(req: Types.ValueRequest) : async Result.Result<Text, Text> {
-        // Admin check
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err(e); };
-            case (#ok(())) {};
-        };
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
         let subMapOpt = uuidKeyValueMap.get(req.uuid);
         let subMap = switch (subMapOpt) {
             case (null) { return #err("UUID not found."); };
@@ -348,11 +348,11 @@ shared (msg) actor class TimestorageBackend() {
 
     // getAllValues function
     public shared query (msg) func getAllValues(uuid: Text) : async Result.Result<[(Text, Text)], Text> {
-        // Admin check
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err(e); };
-            case (#ok(())) {};
-        };
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
 
         // Retrieve the value submap for this UUID
         let subMapOpt = uuidKeyValueMap.get(uuid);
@@ -417,11 +417,11 @@ shared (msg) actor class TimestorageBackend() {
 
     // getValueLockStatus function
     public shared query (msg) func getValueLockStatus(req: Types.ValueLockStatusRequest) : async Result.Result<Types.ValueLockStatus, Text> {
-        // Admin check
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err(e); };
-            case (#ok(())) {};
-        };
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
 
         // Check if the value is locked or not
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
@@ -468,12 +468,17 @@ shared (msg) actor class TimestorageBackend() {
             };
         };
 
-        // Combine schema, data, and lock statuses into a single JSON string
-        let combinedJson = "{" 
-            # schemaText # ","
-            # "\"values\":{" # dataJson # "},"
-            # "\"lockStatus\":{" # Utils.mapEntriesToJson(lockStatuses) # "}"
+
+        // First, remove the outer JSON object from schemaText since it's already a complete JSON
+        let schemaTextTrimmed = Text.trimStart(schemaText, #text "{");
+        let schemaTextFinal = Text.trimEnd(schemaTextTrimmed, #text "}");
+
+        let combinedJson = "{"
+            # schemaTextFinal # "}},"
+            # "\"values\":" # dataJson # ","
+            # "\"lockStatus\":" # Utils.mapEntriesToJson(lockStatuses)
             # "}";
+
         
         var fileResponses : [Types.FileResponse] = [];
         for ((fileId, record) in uuidToFiles.entries()) {

@@ -5,9 +5,12 @@ import HomeIcon from '@mui/icons-material/Home'
 // import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary'
 // import PersonIcon from '@mui/icons-material/Person'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useData } from '@/context/DataContext'
 
 const BottomNavigation: FC = () => {
   const navigate = useNavigate()
+  const { projectId } = useData()
+
   const location = useLocation()
 
   const isActive = (path: string) => {
@@ -16,7 +19,10 @@ const BottomNavigation: FC = () => {
 
   return (
     <Navigation>
-      <IconButton onClick={() => navigate('/')} sx={{ color: isActive('/') ? '#2e7d32' : '#757575' }}>
+      <IconButton
+        onClick={() => navigate('/' + projectId)}
+        sx={{ color: isActive('/' + projectId) ? '#2e7d32' : '#757575' }}
+      >
         <HomeIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Home

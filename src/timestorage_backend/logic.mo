@@ -8,52 +8,61 @@ import Iter "mo:base/Iter";
 import HashMap "mo:base/HashMap";
 
 module {
-    // Funzione per il mint di nuovi UUID
+    // Function to mint new UUIDs with associated structure
     public func mint(
         req: Types.MintRequest,
         caller: Principal,
         admins: HashMap.HashMap<Principal, Bool>,
-        insertUUID: (Text, Text) -> (),
+        insertUUID: (Text, Text) -> Result.Result<Text, Text>,
         uuidExists: (Text) -> Bool
     ) : Result.Result<Text, Text> {
+        
+        // Admin check
         switch (Auth.requireAdmin(caller, admins)) {
-            case (#err(e)) { return #err(e); }; // Non admin
-            case (#ok(())) {};                 // Procede se admin
+            case (#err(e)) return #err(e);
+            case (#ok(())) {};
         };
 
-        // Validazione input
-        if (req.uuids.size() == 0 or req.structures.size() == 0) {
-            return #err("Input validation failed: UUID list and structure cannot be empty.");
+        // Input validation
+        if (req.uuids.size() == 0 or Text.size(req.structures) == 0) {
+            return #err("Input validation failed: empty UUID list or structure.");
         };
 
-        for (u in Iter.fromArray(req.uuids)) {
-            if (not Utils.isValidUUID(u)) {
-                return #err("Invalid UUID format: " # u);
+        // Validate UUIDs format and uniqueness
+        for (uuid in Iter.fromArray(req.uuids)) {
+            if (not Utils.isValidUUID(uuid)) {
+                return #err("Invalid UUID format: " # uuid);
             };
-            if (uuidExists(u)) {
-                return #err("UUID already exists: " # u);
+            if (uuidExists(uuid)) {
+                return #err("UUID already exists: " # uuid);
             };
         };
 
-        for (u in Iter.fromArray(req.uuids)) {
-            insertUUID(u, req.structures);
+        // Insert UUIDs with associated structure
+        for (uuid in Iter.fromArray(req.uuids)) {
+            switch (insertUUID(uuid, req.structures)) {
+                case (#err(e)) return #err(e);
+                case (#ok(_)) {};
+            };
         };
 
-        return #ok("Mint successful");
+        #ok("Mint successful")
     };
 
-    // Funzione per caricare immagini associate a un UUID
-    public func uploadUUIDImage(
-        req: Types.ImageUploadRequest,
+    // Function to upload a file with a given UUID
+    public func uploadUUIDFile(
+        req: Types.FileUploadRequest,
         caller: Principal,
         admins: HashMap.HashMap<Principal, Bool>,
         uuidExists: (Text) -> Bool,
-        generateImageId: () -> Text,
-        linkImage: (Text, Text) -> ()
+        generateFileId: () -> Text,
+        linkFile: (Text, Text) -> ()
     ) : Result.Result<Text, Text> {
+
+        // Admin check
         switch (Auth.requireAdmin(caller, admins)) {
-            case (#err(e)) { return #err(e); }; // Non admin
-            case (#ok(())) {};                 // Procede se admin
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
         };
 
         if (not Utils.isValidUUID(req.uuid)) {
@@ -62,13 +71,15 @@ module {
         if (not uuidExists(req.uuid)) {
             return #err("Error: UUID not found.");
         };
-        if (req.metadata.fileName.size() == 0 or req.metadata.fileType.size() == 0) {
-            return #err("Invalid metadata: File name and type cannot be empty.");
+        if (req.metadata.fileName.size() == 0 or req.metadata.mimeType.size() == 0) {
+            return #err("Invalid metadata: File name and mimeType cannot be empty.");
         };
 
-        let imageId = generateImageId();
-        linkImage(req.uuid, imageId);
+        let fileId = generateFileId();
+        // ex linkImage(req.uuid, imageId)
+        linkFile(req.uuid, fileId);
 
-        return #ok("Image upload successful with ID: " # imageId);
+        return #ok("File upload successful with ID: " # fileId);
     };
+
 }

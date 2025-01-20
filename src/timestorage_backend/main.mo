@@ -5,375 +5,510 @@ import Utils "./utils";
 import Principal "mo:base/Principal";
 import Iter "mo:base/Iter";
 import Result "mo:base/Result";
-import Nat "mo:base/Nat";
+import Text "mo:base/Text";
+import TrieMap "mo:base/TrieMap";
 import Array "mo:base/Array";
+import Nat "mo:base/Nat";
+import Int "mo:base/Int";
 
 shared (msg) actor class TimestorageBackend() {
-    stable var uuidToStructureStable : [(Text, Text)] = [];
-    stable var uuidToImagesStable : [(Text, Storage.ImageRecord)] = [];
+
+    type UUID = Types.UUID;
+    type FileRecord = Types.FileRecord;
+    type ValueLockStatus = Types.ValueLockStatus;
+    type Result<T, E> = Types.Result<T, E>;
+    type Response<T> = Types.Response<T>;
+
+    // Stable state
+    stable var uuidToStructureStable : [(UUID, Text)] = [];
+    stable var uuidKeyValueStable : [(UUID, [(Text, Text)])] = [];
+    stable var uuidToFilesStable : [(UUID, FileRecord)] = [];
     stable var adminsStable : [(Principal, Bool)] = [];
-    stable var paramLocksStable : [(Text, Types.ParamLockStatus)] = [];
-    stable var schemaLocksStable : [(Text, Types.SchemaLockStatus)] = [];
-    stable var imageCounter : Nat = 0;
+    stable var valueLocksStable : [(Text, ValueLockStatus)] = [];
+    stable var fileCounter : Nat = 0;
 
+    // Volatile state
     var uuidToStructure = Storage.newUUIDStructure();
-    var uuidToImages = Storage.newImageMap();
+    var uuidKeyValueMap = Storage.newUUIDKeyValueMap();
+    var uuidToFiles = Storage.newFileMap();
     var admins = Auth.newAdminMap();
-    var paramLocks = Storage.newParamLockMap();
-    var schemaLocks = Storage.newSchemaLockMap();
+    var valueLocks = Storage.newValueLockMap();
 
-    // Inizializza l'admin principale con il deployer dell'actor
+    // Initial admin setup
     let initialAdmin = msg.caller;
     admins.put(initialAdmin, true);
 
+    // Migration functions
     system func postupgrade() {
-        for ((k, v) in uuidToStructureStable.vals()) { uuidToStructure.put(k, v); };
-        for ((k, v) in uuidToImagesStable.vals()) { uuidToImages.put(k, v); };
-        for ((k, v) in adminsStable.vals()) { admins.put(k, v); };
-        for ((k, v) in paramLocksStable.vals()) { paramLocks.put(k, v); };
-        for ((k, v) in schemaLocksStable.vals()) { schemaLocks.put(k, v); };
+        // Restore uuidToStructure
+        for ((u, s) in uuidToStructureStable.vals()) {
+            uuidToStructure.put(u, s);
+        };
+
+        // Restore uuidToFiles
+        for ((k, v) in uuidToFilesStable.vals()) {
+            uuidToFiles.put(k, v);
+        };
+
+        // Restore uuidKeyValueMap
+        for ((u, keyVals) in uuidKeyValueStable.vals()) {
+            let subMap = TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
+            for ((k, v) in keyVals.vals()) {
+                subMap.put(k, v);
+            };
+            uuidKeyValueMap.put(u, subMap);
+        };
+
+        // Restore admins
+        for ((p, isA) in adminsStable.vals()) {
+            admins.put(p, isA);
+        };
+
+        // Restore valueLocks
+        for ((lk, lockVal) in valueLocksStable.vals()) {
+            valueLocks.put(lk, lockVal);
+        };
     };
 
     system func preupgrade() {
+        // Save uuidToStructure
         uuidToStructureStable := Iter.toArray(uuidToStructure.entries());
-        uuidToImagesStable := Iter.toArray(uuidToImages.entries());
+
+        // Save uuidKeyValueMap
+        var arr : [(Text, [(Text, Text)])] = [];
+        for ((u, subMap) in uuidKeyValueMap.entries()) {
+            let keyVals = Iter.toArray(subMap.entries());
+            arr := Array.append(arr, [(u, keyVals)]);
+        };
+        uuidKeyValueStable := arr;
+
+        // Save uuidToFiles
+        uuidToFilesStable := Iter.toArray(uuidToFiles.entries());
+
+        // Save admins
         adminsStable := Iter.toArray(admins.entries());
-        paramLocksStable := Iter.toArray(paramLocks.entries());
-        schemaLocksStable := Iter.toArray(schemaLocks.entries());
+
+        // Save valueLocks
+        valueLocksStable := Iter.toArray(valueLocks.entries());
     };
 
-    // Verifica se il chiamante è admin
+    // isAdmin function
     public shared query (msg) func isAdmin() : async Bool {
         return Auth.isAdmin(msg.caller, admins);
     };
 
-    // Aggiunta di un nuovo admin
+    // addAdmin function
     public shared (msg) func addAdmin(newAdmin: Principal) : async Result.Result<Text, Text> {
         switch (Auth.addAdmin(newAdmin, msg.caller, admins)) {
-        case (#err(e)) { return #err(e); };
-        case (#ok(())) { return #ok("New admin added successfully."); };
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) { return #ok("New admin added successfully."); };
         };
     };
 
-    // Inserimento di un UUID con struttura
-    public shared (msg) func insertUUIDStructure(uuid: Text, structure: Text) : async Result.Result<Text, Text> {
+    // removeAdmin function
+    public shared (msg) func removeAdmin(adminToRemove: Principal) : async Result.Result<Text, Text> {
+        switch (Auth.removeAdmin(adminToRemove, msg.caller, admins)) {
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) { return #ok("Admin removed successfully."); };
+        };
+    };
+
+    // insertUUIDStructure function
+    public shared (msg) func insertUUIDStructure(uuid: Text, schema: Text) : async Result.Result<Text, Text> {
+        // Admin check
         switch (Auth.requireAdmin(msg.caller, admins)) {
-        case (#err(e)) { return #err(e); };
-        case (#ok(())) {};
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
         };
 
+        // Validation
         if (not Utils.isValidUUID(uuid)) {
-        return #err("Invalid UUID format.");
+            return #err("Invalid UUID format.");
         };
-
-        // Controllo se l'UUID esiste già
         if (uuidToStructure.get(uuid) != null) {
-        return #err("UUID already exists.");
+            return #err("UUID already exists.");
         };
 
-        uuidToStructure.put(uuid, structure);
+        // Save the schema
+        uuidToStructure.put(uuid, schema);
+
+        // Initialize the value submap
+        let subMap = TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
+        uuidKeyValueMap.put(uuid, subMap);
+
         return #ok("UUID inserted successfully.");
     };
 
-    // Ottenere tutti gli UUID
+    // Upload an image associated with a UUID
+    public shared (msg) func uploadFile(uuid: Text, base64FileData: Text, metadata: Types.FileMetadata) : async Result.Result<Text, Text> {
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
+
+        // Check if the UUID exists
+        if (uuidToStructure.get(uuid) == null) {
+            return #err("Error: UUID does not exist.");
+        };
+
+        // Validate metadata
+        if (metadata.fileName.size() == 0 or metadata.mimeType.size() == 0) {
+            return #err("Invalid metadata: File name and mimeType cannot be empty.");
+        };
+
+        // Generate a unique file ID
+        let fileId = generateUniqueFileId();
+
+        // Create a new file record
+        let fileRecord : Storage.FileRecord = {
+            uuid = uuid;
+            fileData = base64FileData; // Base64
+            metadata = metadata;
+        };
+
+        uuidToFiles.put(fileId, fileRecord);
+        return #ok("File uploaded successfully with ID: " # fileId);
+    };
+
+    // Helper function to generate a unique file ID
+    func generateUniqueFileId() : Text {
+        fileCounter += 1;
+        return "file-" # Nat.toText(fileCounter);
+    };
+
+    // getFileByUUIDAndId function
+    public shared query (msg) func getFileByUUIDAndId(uuid: Text, fileId: Text) : async Types.Result<Types.FileResponse, Text> {
+        let fileOpt = uuidToFiles.get(fileId);
+
+        // Check if the file exists and belongs to the given UUID
+        switch (fileOpt) {
+        case null {
+            return #err("File not found.");
+        };
+        case (?fileRecord) {
+            if (fileRecord.uuid != uuid) {
+            return #err("File does not belong to the given UUID.");
+            };
+
+            let response: Types.FileResponse = {
+            uuid = fileRecord.uuid;
+            metadata = {
+                fileData = fileRecord.fileData;
+                mimeType = fileRecord.metadata.mimeType;
+                fileName = fileRecord.metadata.fileName;
+                uploadTimestamp = Int.toText(fileRecord.metadata.uploadTimestamp);
+            };
+            };
+            
+            return #ok(response);
+        };
+        };
+    };
+
+    // updateValue function
+    public shared (msg) func updateValue(req: Types.ValueUpdateRequest) : async Result.Result<Text, Text> {
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
+
+        // Retrieve the value submap for this UUID
+        let subMapOpt = uuidKeyValueMap.get(req.uuid);
+        let subMap = switch (subMapOpt) {
+            case (null) { return #err("UUID not found or not initialized."); };
+            case (?m) m;
+        };
+
+        // Check if the value is locked
+        let lockKey = Storage.makeLockKey(req.uuid, req.key);
+        let lockOpt = valueLocks.get(lockKey);
+        switch (lockOpt) {
+            case (?l) {
+                if (l.locked) {
+                    return #err("Value is locked and cannot be modified.");
+                };
+            };
+            case null {};
+        };
+
+        // Update the value
+        subMap.put(req.key, req.newValue);
+
+        return #ok("Value updated successfully.");
+    };
+
+    // updateManyValues function
+    public shared (msg) func updateManyValues(uuid: Text, updates: [(Text, Text)]) : async Result.Result<Text, [Text]> {
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err([e]); };
+        //     case (#ok(())) {};
+        // };
+
+        // Check if UUID exists
+        if (uuidToStructure.get(uuid) == null) {
+            return #err(["UUID not found"]);
+        };
+
+        // Retrieve the value submap for this UUID
+        let subMapOpt = uuidKeyValueMap.get(uuid);
+        let subMap = switch (subMapOpt) {
+            case (null) { return #err(["UUID not found or not initialized."]); };
+            case (?m) m;
+        };
+
+        var failedKeys : [Text] = [];
+
+        // Iterate through the updates
+        for ((key, newValue) in updates.vals()) {
+            // Check if the value is locked
+            let lockKey = Storage.makeLockKey(uuid, key);
+            let lockOpt = valueLocks.get(lockKey);
+            let isLocked = switch (lockOpt) {
+                case (?l) { l.locked };
+                case null { false };
+            };
+
+            if (isLocked) {
+                // If the value is locked, add the key to failedKeys
+                failedKeys := Array.append(failedKeys, [key]);
+            } else {
+                // If the key exists, update the value
+                if (subMap.get(key) != null) {
+                    subMap.put(key, newValue);
+                } else {
+                    // If the key does not exist, add it to failedKeys
+                    failedKeys := Array.append(failedKeys, [key]);
+                };
+            };
+        };
+
+        // Return the list of keys that couldn't be updated
+        if (failedKeys.size() > 0) {
+            return #ok("Some keys could not be updated: " # Utils.arrayToText(failedKeys, ", "));
+        } else {
+            return #ok("All values updated successfully.");
+        };
+    };
+
+    // lockAllValues function
+    public shared (msg) func lockAllValues(req: Types.ValueLockAllRequest) : async Result.Result<Text, Text> {
+        // Admin check
+        switch (Auth.requireAdmin(msg.caller, admins)) {
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
+        };
+
+        // Check UUID existence
+        if (uuidToStructure.get(req.uuid) == null) {
+            return #err("UUID not found.");
+        };
+
+        // Retrieve the value submap for this UUID
+        let subMapOpt = uuidKeyValueMap.get(req.uuid);
+        let subMap = switch (subMapOpt) {
+            case (null) { return #err("UUID not found or not initialized."); };
+            case (?m) m;
+        };
+
+        // Iterate through all keys and lock/unlock them
+        for ((key, _) in subMap.entries()) {
+            let lockKey = Storage.makeLockKey(req.uuid, key);
+            let newStatus : Types.ValueLockStatus = {
+                locked = req.lock;
+                lockedBy = if (req.lock) ?msg.caller else null;
+            };
+            valueLocks.put(lockKey, newStatus);
+        };
+
+        return #ok(if (req.lock) "All values locked successfully." else "All values unlocked successfully.");
+    };
+
+    // getValue function
+    public shared query (msg) func getValue(req: Types.ValueRequest) : async Result.Result<Text, Text> {
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
+        let subMapOpt = uuidKeyValueMap.get(req.uuid);
+        let subMap = switch (subMapOpt) {
+            case (null) { return #err("UUID not found."); };
+            case (?m) m;
+        };
+
+        let valOpt = subMap.get(req.key);
+        switch (valOpt) {
+            case null { return #err("Key not found."); };
+            case (?v) { return #ok(v); };
+        };
+    };
+
+    // getAllValues function
+    public shared query (msg) func getAllValues(uuid: Text) : async Result.Result<[(Text, Text)], Text> {
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
+
+        // Retrieve the value submap for this UUID
+        let subMapOpt = uuidKeyValueMap.get(uuid);
+        switch (subMapOpt) {
+            case null { return #err("UUID not found."); };
+            case (?subMap) {
+                let entries = Iter.toArray(subMap.entries());
+                return #ok(entries);
+            };
+        };
+    };
+
+    // lockValue function
+    public shared (msg) func lockValue(req: Types.ValueLockRequest) : async Result.Result<Text, Text> {
+        // Admin check
+        switch (Auth.requireAdmin(msg.caller, admins)) {
+            case (#err(e)) { return #err(e); };
+            case (#ok(())) {};
+        };
+
+        // Check UUID existence
+        if (uuidToStructure.get(req.uuid) == null) {
+            return #err("UUID not found.");
+        };
+
+        // Determine lock status
+        let lockKey = Storage.makeLockKey(req.uuid, req.key);
+        let current = valueLocks.get(lockKey);
+
+        // Check the value state
+        switch (current) {
+            case (?status) {
+                if (status.locked) {
+                    if (req.lock) {
+                        return #err("Value is already locked.");
+                    } else {
+                        if (status.lockedBy != ?msg.caller) {
+                            return #err("Value is locked by another admin and cannot be unlocked.");
+                        };
+                    };
+                } else {
+                    if (not req.lock) {
+                        return #ok("Value is already unlocked.");
+                    };
+                };
+            };
+            case null {
+                if (not req.lock) {
+                    return #ok("Value is already unlocked.");
+                };
+            };
+        };
+
+        let newStatus : Types.ValueLockStatus = {
+            locked = req.lock;
+            lockedBy = if (req.lock) ?msg.caller else null;
+        };
+        valueLocks.put(lockKey, newStatus);
+
+        return #ok(if (req.lock) "Value locked successfully." else "Value unlocked successfully.");
+    };
+
+    // getValueLockStatus function
+    public shared query (msg) func getValueLockStatus(req: Types.ValueLockStatusRequest) : async Result.Result<Types.ValueLockStatus, Text> {
+        // // Admin check
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
+
+        // Check if the value is locked or not
+        let lockKey = Storage.makeLockKey(req.uuid, req.key);
+        let statusOpt = valueLocks.get(lockKey);
+        switch (statusOpt) {
+            case null { return #err("No lock status found (value not locked)."); };
+            case (?s) { return #ok(s); };
+        };
+    };
+
+    // getUUIDInfo function
+    public shared query (msg) func getUUIDInfo(uuid: Text) : async Result.Result<(Text, [Types.FileResponse]), Text> {
+        // Retrieve the schema
+        let schemaOpt = uuidToStructure.get(uuid);
+        let schemaText = switch (schemaOpt) {
+            case (null) { return #err("UUID not found."); };
+            case (?text) { text };
+        };
+
+        // Retrieve the key/value map
+        let subMapOpt = uuidKeyValueMap.get(uuid);
+        let dataJson = switch (subMapOpt) {
+            case null { "{}"; };
+            case (?map) {
+                let entries = Iter.toArray(map.entries());
+                Utils.mapEntriesToJson(entries);
+            };
+        };
+
+        // Retrieve lock statuses for values
+        var lockStatuses : [(Text, Text)] = [];
+        switch (subMapOpt) {
+            case (null) {};
+            case (?map) {
+                for ((key, _) in map.entries()) {
+                    let lockKey = Storage.makeLockKey(uuid, key);
+                    let lockStatusOpt = valueLocks.get(lockKey);
+                    let lockStatus = switch (lockStatusOpt) {
+                        case (null) { "unlocked"; };
+                        case (?s) { if (s.locked) "locked" else "unlocked"; };
+                    };
+                    lockStatuses := Array.append(lockStatuses, [(key, lockStatus)]);
+                };
+            };
+        };
+
+
+        // First, remove the outer JSON object from schemaText since it's already a complete JSON
+        let schemaTextTrimmed = Text.trimStart(schemaText, #text "{");
+        let schemaTextFinal = Text.trimEnd(schemaTextTrimmed, #text "}");
+
+        let combinedJson = "{"
+            # schemaTextFinal # "}},"
+            # "\"values\":" # dataJson # ","
+            # "\"lockStatus\":" # Utils.mapEntriesToJson(lockStatuses)
+            # "}";
+
+        
+        var fileResponses : [Types.FileResponse] = [];
+        for ((fileId, record) in uuidToFiles.entries()) {
+            if (record.uuid == uuid) {
+                let responseItem : Types.FileResponse = {
+                    uuid = record.uuid;
+                    metadata = {
+                        fileData = record.fileData;
+                        mimeType = record.metadata.mimeType;
+                        fileName = record.metadata.fileName;
+                        uploadTimestamp = Int.toText(record.metadata.uploadTimestamp);
+                    };
+                };
+                fileResponses := Array.append(fileResponses, [responseItem]);
+            };
+        };
+
+        // Return the combined JSON and files
+        return #ok(combinedJson, fileResponses);
+    };
+
+    // getAllUUIDs function
     public shared query (msg) func getAllUUIDs() : async Result.Result<[Text], Text> {
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-        case (#err(e)) { return #err(e); };
-        case (#ok(())) {};
-        };
-
-        return #ok(Iter.toArray(uuidToStructure.keys()));
-    };
-
-    // Caricare un'immagine associata a un UUID
-    public shared (msg) func uploadImage(uuid: Text, base64ImgData: Text, metadata: Types.ImageMetadata) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-        case (#err(e)) { return #err(e); };
-        case (#ok(())) {};
-        };
-
-        if (uuidToStructure.get(uuid) == null) {
-        return #err("Error: UUID does not exist.");
-        };
-
-        if (metadata.fileName.size() == 0 or metadata.fileType.size() == 0) {
-        return #err("Invalid metadata: File name and type cannot be empty.");
-        };
-
-        // Genera un imageId unico
-        let imageId = generateUniqueImageId();
-
-        // Crea il record dell'immagine
-        let imageRecord : Storage.ImageRecord = {
-        uuid = uuid;
-        imageData = base64ImgData; // Base64
-        metadata = metadata;
-        };
-
-        uuidToImages.put(imageId, imageRecord);
-        return #ok("Image uploaded successfully with ID: " # imageId);
-    };
-
-    // Genera un ID univoco per le immagini
-    func generateUniqueImageId() : Text {
-        imageCounter += 1;
-        return "img-" # Nat.toText(imageCounter);
-    };
-
-    // Restituisce la struttura e tutti gli imageId associati ad un dato UUID (no admin required)
-    public shared query (msg) func getUUIDInfo(uuid: Text) : async Result.Result<(Text, [Text]), Text> {
-        let s = uuidToStructure.get(uuid);
-        if (s == null) {
-        return #err("Error: UUID not found.");
-        };
-
-        let structureText = switch (s) {
-        case (?val) val;
-        case null "unreachable"; // non verrà mai eseguito
-        };
-
-        var imageIds : [Text] = [];
-        for ((imgId, record) in uuidToImages.entries()) {
-        if (record.uuid == uuid) {
-            imageIds := Array.append(imageIds, [imgId]);
-        };
-        };
-
-        return #ok((structureText, imageIds));
-    };
-
-    // Restituisce l'immagine dato un imageId (no admin required)
-    public shared query (msg) func getImageByUUIDAndId(uuid: Text, imageId: Text) : async Result.Result<Storage.ImageRecord, Text> {
-        if (not Utils.isValidUUID(uuid)) {
-        return #err("Invalid UUID format.");
-        };
-
-        // Controlla se l'UUID esiste
-        let s = uuidToStructure.get(uuid);
-        if (s == null) {
-        return #err("UUID not found.");
-        };
-
-        let imageRecord = uuidToImages.get(imageId);
-        switch (imageRecord) {
-        case null { return #err("No image found for the given UUID and image ID."); };
-        case (?rec) {
-            if (rec.uuid == uuid) {
-            return #ok(rec);
-            } else {
-            return #err("The image does not belong to the given UUID.");
-            };
-        };
-        };
-    };
-
-    // Funzione per modificare un parametro
-    public shared (msg) func updateParam(req: Types.ParamUpdateRequest) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-        case (#err(e)) { return #err(e); };
-        case (#ok(())) {};
-        };
-
-        // Controlla se l'intero schema è bloccato
-        let schemaLockStatus = schemaLocks.get(req.uuid);
-        switch (schemaLockStatus) {
-        case (?status) {
-            if (status.locked) {
-            return #err("Schema is locked and cannot be modified.");
-            };
-        };
-        case null {};
-        };
-
-        // Controlla se il parametro specifico è bloccato
-        let lockKey = req.uuid # "-" # req.key;
-        let paramLockStatus = paramLocks.get(lockKey);
-        switch (paramLockStatus) {
-        case (?status) {
-            if (status.locked) {
-            return #err("Parameter is locked and cannot be modified.");
-            };
-        };
-        case null {};
-        };
-
-        // Ottieni lo schema JSON associato all'UUID
-        let schema = uuidToStructure.get(req.uuid);
-        switch (schema) {
-        case null { return #err("UUID not found."); };
-        case (?json) {
-            // Verifica se la chiave esiste nello schema
-            let keyExists = Utils.keyExistsInSchema(json, req.key);
-            if (not keyExists) {
-            return #err("Key does not exist in the schema.");
-            };
-
-            // Verifica se il tipo di dato è compatibile
-            //let isTypeValid = Utils.isValueTypeValid(json, req.key, req.newValue);
-            //if (not isTypeValid) {
-            //  return #err("Invalid value type for the specified key.");
-            //};
-
-            // Modifica il valore nel JSON
-            let updatedJson = Utils.updateJsonValue(json, req.key, "\"" # req.newValue # "\"");
-
-            // Aggiorna lo schema nel canister
-            uuidToStructure.put(req.uuid, updatedJson);
-            return #ok("Parameter updated successfully.");
-        };
-        };
-    };
-
-    // Funzione per bloccare/sbloccare un parametro
-    public shared (msg) func lockParam(req: Types.ParamLockRequest) : async Result.Result<Text, Text> {
+        // Admin check
         switch (Auth.requireAdmin(msg.caller, admins)) {
             case (#err(e)) { return #err(e); };
             case (#ok(())) {};
         };
 
-        // Verifica se l'UUID esiste
-        if (uuidToStructure.get(req.uuid) == null) {
-            return #err("UUID not found.");
-        };
-
-        // Controlla se lo schema è già bloccato
-        let schemaLockStatus = schemaLocks.get(req.uuid);
-        switch (schemaLockStatus) {
-            case (?status) {
-            if (status.locked) {
-                return #err("Schema is already locked. Cannot lock individual parameters.");
-            };
-            };
-            case null {};
-        };
-
-        let lockKey = req.uuid # "-" # req.key;
-        let paramLockStatus = paramLocks.get(lockKey);
-
-        switch (paramLockStatus) {
-            case (?status) {
-            if (status.locked) {
-                // Se il parametro è già bloccato
-                if (req.lock) {
-                return #err("Parameter is already locked.");
-                } else {
-                // Se stai cercando di sbloccarlo, verifica che sia bloccato dallo stesso admin
-                if (status.lockedBy != ?msg.caller) {
-                    return #err("Parameter is locked by another admin and cannot be modified.");
-                };
-                };
-            } else {
-                // Se il parametro non è bloccato
-                if (not req.lock) {
-                return #ok("Parameter is already unlocked.");
-                };
-            };
-            };
-            case null {
-            // Se il parametro non è mai stato bloccato
-            if (not req.lock) {
-                return #ok("Parameter is already unlocked.");
-            };
-            };
-        };
-
-        let newStatus : Types.ParamLockStatus = {
-            locked = req.lock;
-            lockedBy = if (req.lock) ?msg.caller else null;
-        };
-
-        paramLocks.put(lockKey, newStatus);
-        return #ok(if (req.lock) "Parameter locked successfully." else "Parameter unlocked successfully.");
-        };
-
-    // Funzione per bloccare/sbloccare l'intero schema
-    public shared (msg) func lockSchema(req: Types.SchemaLockRequest) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err(e); };
-            case (#ok(())) {};
-        };
-
-        // Verifica se l'UUID esiste
-        if (uuidToStructure.get(req.uuid) == null) {
-            return #err("UUID not found.");
-        };
-
-        let schemaLockStatus = schemaLocks.get(req.uuid);
-
-        switch (schemaLockStatus) {
-            case (?status) {
-            if (status.locked) {
-                // Se lo schema è già bloccato
-                if (req.lock) {
-                return #err("Schema is already locked.");
-                } else {
-                // Se stai cercando di sbloccarlo, verifica che sia bloccato dallo stesso admin
-                if (status.lockedBy != ?msg.caller) {
-                    return #err("Schema is locked by another admin and cannot be modified.");
-                };
-                };
-            } else {
-                // Se lo schema non è bloccato
-                if (not req.lock) {
-                return #ok("Schema is already unlocked.");
-                };
-            };
-            };
-            case null {
-            // Se lo schema non è mai stato bloccato
-            if (not req.lock) {
-                return #ok("Schema is already unlocked.");
-            };
-            };
-        };
-
-        let newStatus : Types.SchemaLockStatus = {
-            locked = req.lock;
-            lockedBy = if (req.lock) ?msg.caller else null;
-        };
-
-        schemaLocks.put(req.uuid, newStatus);
-        return #ok(if (req.lock) "Schema locked successfully." else "Schema unlocked successfully.");
-        };
-
-    // Funzione per verificare se l'intero schema è bloccato
-    public shared query (msg) func isSchemaLocked(uuid: Text) : async Result.Result<Bool, Text> {
-        let schemaLockStatus = schemaLocks.get(uuid);
-        switch (schemaLockStatus) {
-        case (?status) { return #ok(status.locked); };
-        case null { return #ok(false); };
-        };
-    };
-
-    // Funzione per verificare se un parametro specifico è bloccato
-    public shared query (msg) func isParamLocked(uuid: Text, key: Text) : async Result.Result<Bool, Text> {
-        // Verifica se l'UUID esiste
-        if (uuidToStructure.get(uuid) == null) {
-            return #err("UUID not found.");
-        };
-
-        // Controlla se lo schema è bloccato
-        let schemaLockStatus = schemaLocks.get(uuid);
-        switch (schemaLockStatus) {
-            case (?status) {
-            if (status.locked) {
-                return #err("Schema is locked. Cannot check parameter lock status.");
-            };
-            };
-            case null {};
-        };
-
-        // Verifica se il parametro è bloccato
-        let lockKey = uuid # "-" # key;
-        let paramLockStatus = paramLocks.get(lockKey);
-
-        switch (paramLockStatus) {
-            case (?status) {
-            return #ok(status.locked);
-            };
-            case null {
-            return #ok(false); // Se il parametro non è mai stato bloccato, restituisci false
-            };
-        };
+        let uuids = Iter.toArray(uuidToStructure.keys());
+        return #ok(uuids);
     };
 };

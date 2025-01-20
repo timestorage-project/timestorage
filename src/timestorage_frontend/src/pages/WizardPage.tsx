@@ -27,6 +27,9 @@ import { useData, WizardQuestion } from '@/context/DataContext'
 import ErrorView from '@/components/ErrorView'
 import LoadingView from '@/components/LoadingView'
 
+import * as canisterService from '../services/canisterService'
+import { fileToBase64, getFileMetadata } from '@/utils/fileUtils'
+
 interface WizardState {
   currentQuestionIndex: number
   answers: Record<string, string | string[]>
@@ -40,6 +43,8 @@ const WizardPage: FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const [saving, setSaving] = useState(false)
+
   const storageKey = `window_installation_wizard_${projectId}`
 
   const [state, setState] = useState<WizardState>(() => {
@@ -52,6 +57,94 @@ const WizardPage: FC = () => {
           isCompleted: false
         }
   })
+
+  const processKey = (key: string): string => {
+    // Remove the #/values/ prefix and replace / with .
+    return key.replace('#/values/', '').replace(/\//g, '.')
+  }
+
+  const handleFileUpload = async (file: File): Promise<string> => {
+    try {
+      const base64Data = await fileToBase64(file)
+      const metadata = getFileMetadata(file)
+      const result = await canisterService.uploadFile(projectId, base64Data, metadata)
+      const fileId = result.match(/ID: (file-\d+)/)?.[1]
+      if (!fileId) {
+        throw new Error('Failed to extract file ID from response')
+      }
+      return fileId
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      throw error
+    }
+  }
+
+  const handlePhotoCapture = async (event: React.ChangeEvent<HTMLInputElement>, multiple: boolean) => {
+    const files = event.target.files
+    if (!files) return
+
+    try {
+      const fileIds = await Promise.all(
+        Array.from(files).map(async file => {
+          return await handleFileUpload(file)
+        })
+      )
+
+      setState(prev => ({
+        ...prev,
+        answers: {
+          ...prev.answers,
+          [currentQuestion.id]: multiple ? fileIds : fileIds[0]
+        }
+      }))
+    } catch (error) {
+      console.error('Error processing photos:', error)
+      setError(error instanceof Error ? error.message : 'Failed to upload photos')
+    }
+  }
+
+  const handleWizardCompletion = async () => {
+    try {
+      setSaving(true) // Start saving
+      setLoading(true)
+
+      // Process each answer and submit it
+      const submissions = Object.entries(state.answers).map(([questionId, answer]) => {
+        // Find the corresponding question to get the refId
+        const question = questions.find(q => q.id === questionId)
+        if (!question?.refId) return null
+
+        // Process the key
+        const processedKey = processKey(question.refId)
+
+        // Handle different types of answers
+        let processedValue = ''
+        if (Array.isArray(answer)) {
+          // For multiselect or photo arrays, join with commas
+          processedValue = answer.join(',')
+        } else if (typeof answer === 'string') {
+          processedValue = answer
+        }
+
+        return { key: processedKey, value: processedValue }
+      })
+
+      // Filter out null values and submit each answer
+      for (const submission of submissions.filter(Boolean)) {
+        if (submission) {
+          await canisterService.updateValue(projectId, submission.key, submission.value)
+        }
+      }
+
+      // Set completion state and navigate
+      setState(prev => ({ ...prev, isCompleted: true }))
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to submit answers')
+    } finally {
+      setLoading(false)
+      setSaving(false)
+    }
+  }
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -77,6 +170,10 @@ const WizardPage: FC = () => {
     localStorage.setItem(storageKey, JSON.stringify(state))
   }, [state, navigate, storageKey])
 
+  if (saving) {
+    return <LoadingView message='Saving your answers...' />
+  }
+
   if (loading && questions.length === 0) {
     return <LoadingView message='Loading installation wizard...' />
   }
@@ -94,7 +191,7 @@ const WizardPage: FC = () => {
 
   const handleNext = () => {
     if (state.currentQuestionIndex === questions.length - 1) {
-      setState(prev => ({ ...prev, isCompleted: true }))
+      handleWizardCompletion()
       return
     }
     setState(prev => ({
@@ -118,37 +215,6 @@ const WizardPage: FC = () => {
         [currentQuestion.id]: value
       }
     }))
-  }
-
-  const handlePhotoCapture = async (event: React.ChangeEvent<HTMLInputElement>, multiple: boolean) => {
-    const files = event.target.files
-    if (!files) return
-
-    try {
-      const photoUrls = await Promise.all(
-        Array.from(files).map(file => {
-          return new Promise<string>(resolve => {
-            const reader = new FileReader()
-            reader.onloadend = () => {
-              resolve(reader.result as string)
-            }
-            reader.readAsDataURL(file)
-          })
-        })
-      )
-
-      setState(prev => ({
-        ...prev,
-        answers: {
-          ...prev.answers,
-          [currentQuestion.id]: multiple
-            ? [...((prev.answers[currentQuestion.id] as string[]) || []), ...photoUrls]
-            : photoUrls[0]
-        }
-      }))
-    } catch (error) {
-      console.error('Error processing photos:', error)
-    }
   }
 
   const handleRemovePhoto = (indexToRemove: number) => {

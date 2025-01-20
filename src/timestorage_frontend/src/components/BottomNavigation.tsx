@@ -1,13 +1,16 @@
 import { FC } from 'react'
 import { Box, Typography, IconButton, styled } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home'
-import ListIcon from '@mui/icons-material/List'
-import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary'
-import PersonIcon from '@mui/icons-material/Person'
+// import ListIcon from '@mui/icons-material/List'
+// import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary'
+// import PersonIcon from '@mui/icons-material/Person'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useData } from '@/context/DataContext'
 
 const BottomNavigation: FC = () => {
   const navigate = useNavigate()
+  const { projectId } = useData()
+
   const location = useLocation()
 
   const isActive = (path: string) => {
@@ -16,13 +19,16 @@ const BottomNavigation: FC = () => {
 
   return (
     <Navigation>
-      <IconButton onClick={() => navigate('/')} sx={{ color: isActive('/') ? '#2e7d32' : '#757575' }}>
+      <IconButton
+        onClick={() => navigate('/' + projectId)}
+        sx={{ color: isActive('/' + projectId) ? '#2e7d32' : '#757575' }}
+      >
         <HomeIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Home
         </Typography>
       </IconButton>
-      <IconButton onClick={() => navigate('/forms')} sx={{ color: isActive('/forms') ? '#2e7d32' : '#757575' }}>
+      {/* <IconButton onClick={() => navigate('/forms')} sx={{ color: isActive('/forms') ? '#2e7d32' : '#757575' }}>
         <ListIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Forms
@@ -39,7 +45,7 @@ const BottomNavigation: FC = () => {
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Profile
         </Typography>
-      </IconButton>
+      </IconButton> */}
     </Navigation>
   )
 }

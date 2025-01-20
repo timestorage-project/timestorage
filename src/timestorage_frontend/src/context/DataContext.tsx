@@ -62,20 +62,35 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined)
 
 /**
- * ---------------------------------------------------------
- * 1) Utility to convert a "section" from the API into DataNode
- * ---------------------------------------------------------
+ * Helper function to retrieve value from the values object
  */
-function mapSectionToDataNode(section: unknown): DataNode {
+function getValueFromPath(values: Record<string, string>, path: string): string {
+  // Remove the #/values/ prefix if present
+  const cleanPath = path.replace('#/values/', '')
+
+  // Try with forward slash
+  if (values[cleanPath] !== undefined) {
+    return values[cleanPath]
+  }
+
+  // Try with dot notation
+  const dotPath = cleanPath.replace('/', '.')
+  if (values[dotPath] !== undefined) {
+    return values[dotPath]
+  }
+
+  // Return default value if not found
+  return '-'
+}
+
+/**
+ * Utility to convert a "section" from the API into DataNode
+ */
+function mapSectionToDataNode(section: unknown, values: Record<string, string> = {}): DataNode {
   const { id, title, icon, description, type, children = [], questions = [] } = section as never
 
-  // If it is a wizard, we store the questions in the same object
-  // and mark `isWizard = true`.
   const isWizard = type === 'wizard'
 
-  // For a data section, we store `children`.
-  // For a wizard section, we store `questions`.
-  // We can unify them in one interface for convenience:
   return {
     id,
     title,
@@ -86,7 +101,7 @@ function mapSectionToDataNode(section: unknown): DataNode {
       : children.map((child: { icon: string; value: string; label: string }) => ({
           icon: child.icon,
           label: child.label,
-          value: child.value
+          value: child.value.startsWith('#/values/') ? getValueFromPath(values, child.value) : child.value
         })),
     questions: isWizard
       ? questions.map((q: { id: string; type: string; question: string; options: string[]; refId: string }) => ({
@@ -116,16 +131,18 @@ function mapSectionToDataNode(section: unknown): DataNode {
  *   }
  * }
  */
-function mapApiResponseToDataStructure(response: { data: { [key: string]: unknown } }): DataStructure {
-  const { data } = response
-
-  console.log('aaa', response)
+function mapApiResponseToDataStructure(response: {
+  data: { [key: string]: unknown }
+  values?: Record<string, string>
+}): DataStructure {
+  const { data, values = {} } = response
+  console.log('Data received', response)
 
   return {
-    productInfo: mapSectionToDataNode(data.productInfo),
-    installationProcess: mapSectionToDataNode(data.installationProcess),
-    maintenanceLog: mapSectionToDataNode(data.maintenanceLog),
-    startInstallation: mapSectionToDataNode(data.startInstallation)
+    productInfo: mapSectionToDataNode(data.productInfo, values),
+    installationProcess: mapSectionToDataNode(data.installationProcess, values),
+    maintenanceLog: mapSectionToDataNode(data.maintenanceLog, values),
+    startInstallation: mapSectionToDataNode(data.startInstallation, values)
   }
 }
 
@@ -168,7 +185,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const location = useLocation()
   const [projectId, setProjectId] = useState<string>('uuid-dummy')
   const [dataLoaded, setDataLoaded] = useState(false)
-  const [locale, setLocale] = useState<'en' | 'it'>('en') // Default to English
+  const [locale] = useState<'en' | 'it'>('en') // Default to English
 
   const translations = locale === 'en' ? en : it
 
@@ -202,7 +219,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     }
 
     loadData()
-  }, [location.pathname, dataLoaded])
+  }, [location.pathname, dataLoaded, translations])
 
   /**
    * Allows us to refetch data on demand (e.g., after a form submission).

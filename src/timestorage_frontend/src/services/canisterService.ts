@@ -36,6 +36,17 @@ export const getUUIDInfo = async (uuid: string) => {
   return result.ok
 }
 
+export const updateValue = async (uuid: string, key: string, value: string) => {
+  const actor = await initializeAgent()
+  const result = await actor.updateValue({ uuid, key, newValue: value })
+
+  if ('err' in result) {
+    throw new Error(result.err)
+  }
+
+  return result.ok
+}
+
 export const getImage = async (uuid: string, imageId: string) => {
   //   const actor = await initializeAgent()
   //   const result = await actor.getImageByUUIDAndId(uuid, imageId)
@@ -46,4 +57,38 @@ export const getImage = async (uuid: string, imageId: string) => {
   //   }
 
   return true
+}
+
+export const uploadFile = async (
+  uuid: string,
+  fileData: string,
+  metadata: {
+    fileName: string
+    mimeType: string
+    uploadTimestamp: bigint
+  }
+) => {
+  const actor = await initializeAgent()
+  const result = await actor.uploadFile(uuid, fileData, metadata)
+
+  if ('err' in result) {
+    throw new Error(result.err)
+  }
+
+  return result.ok
+}
+
+export const getFileByUUIDAndId = async (uuid: string, fileId: string) => {
+  const actor = await initializeAgent()
+  const result = await actor.getFileByUUIDAndId(uuid, fileId)
+
+  if ('err' in result) {
+    throw new Error(result.err)
+  }
+
+  const fileData = result.ok.metadata.fileData
+  const mimeType = result.ok.metadata.mimeType
+
+  // Convert back to displayable format by adding data URL prefix
+  return `data:${mimeType};base64,${fileData}`
 }

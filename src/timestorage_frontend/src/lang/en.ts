@@ -38,5 +38,27 @@ export const en = {
   TOOLS_NEEDED_QUESTION: 'What tools are needed for the installation?',
   INSTALLATION_NOTES_QUESTION: 'Any additional notes for the installation?',
   WINDOW_PHOTO_QUESTION: 'Please upload a photo of the window.',
-  INSTALLATION_PHOTOS_QUESTION: 'Please upload photos of the installation process.'
+  INSTALLATION_PHOTOS_QUESTION: 'Please upload photos of the installation process.',
+
+  // Installation Wizard Questions
+  SCHEDULED_DATE_QUESTION: 'When is the installation scheduled for?',
+  INSTALLER_QUESTION: 'Who is the assigned installer?',
+  DURATION_QUESTION: 'How long will the installation take?',
+  STATUS_QUESTION: 'What is the current status of the installation?',
+  TOOLS_REQUIRED_QUESTION: 'What tools are required?',
+
+  // Status Options (for select)
+  STATUS_PENDING: 'Pending',
+  STATUS_IN_PROGRESS: 'In Progress',
+  STATUS_COMPLETED: 'Completed',
+  STATUS_DELAYED: 'Delayed',
+
+  // Tool Options (for multiselect)
+  TOOL_DRILL: 'Drill',
+  TOOL_LEVEL: 'Level',
+  TOOL_TAPE_MEASURE: 'Tape Measure',
+  TOOL_SCREWDRIVER: 'Screwdriver',
+  TOOL_CAULK_GUN: 'Caulk Gun',
+  TOOL_SAFETY_GLASSES: 'Safety Glasses',
+  TOOL_WORK_GLOVES: 'Work Gloves'
 }

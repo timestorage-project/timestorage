@@ -8,21 +8,21 @@
       }
     },
     "timestorage_frontend": {
-      "dependencies": [
-        "timestorage_backend"
-      ],
-      "source": [
-        "src/timestorage_frontend/dist"
-      ],
+      "dependencies": ["timestorage_backend"],
+      "source": ["src/timestorage_frontend/dist"],
       "type": "assets",
       "workspace": "timestorage_frontend"
+    },
+    "timestorage_admin": {
+      "dependencies": ["timestorage_backend"],
+      "source": ["src/timestorage_admin/dist"],
+      "type": "assets",
+      "workspace": "timestorage_admin"
     },
     "test_runner": {
       "main": "test/test.mo",
       "type": "motoko",
-      "dependencies": [
-        "timestorage_backend"
-      ]
+      "dependencies": ["timestorage_backend"]
     }
   },
   "defaults": {

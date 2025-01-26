@@ -14,7 +14,8 @@
   },
   "type": "module",
   "workspaces": [
-    "src/timestorage_frontend"
+    "src/timestorage_frontend",
+    "src/timestorage_admin"
   ],
   "dependencies": {
     "@dfinity/candid": "^2.2.0"

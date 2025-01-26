@@ -116,10 +116,10 @@ shared (msg) actor class TimestorageBackend() {
     // insertUUIDStructure function
     public shared (msg) func insertUUIDStructure(uuid: Text, schema: Text) : async Result.Result<Text, Text> {
         // Admin check
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err(e); };
-            case (#ok(())) {};
-        };
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
 
         // Validation
         if (not Utils.isValidUUID(uuid)) {
@@ -503,10 +503,10 @@ shared (msg) actor class TimestorageBackend() {
     // getAllUUIDs function
     public shared query (msg) func getAllUUIDs() : async Result.Result<[Text], Text> {
         // Admin check
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err(e); };
-            case (#ok(())) {};
-        };
+        // switch (Auth.requireAdmin(msg.caller, admins)) {
+        //     case (#err(e)) { return #err(e); };
+        //     case (#ok(())) {};
+        // };
 
         let uuids = Iter.toArray(uuidToStructure.keys());
         return #ok(uuids);

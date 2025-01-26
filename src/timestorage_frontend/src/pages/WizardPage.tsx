@@ -165,10 +165,10 @@ const WizardPage: FC = () => {
 
   useEffect(() => {
     if (state.isCompleted) {
-      navigate('/')
+      navigate(`/${projectId}`)
     }
     localStorage.setItem(storageKey, JSON.stringify(state))
-  }, [state, navigate, storageKey])
+  }, [state, navigate, storageKey, projectId])
 
   if (saving) {
     return <LoadingView message='Saving your answers...' />

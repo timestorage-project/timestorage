@@ -194,19 +194,21 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
       // If we already loaded data once, just update the projectId from the path:
       if (dataLoaded) {
         const pathParts = location.pathname.split('/')
-        const newProjectId = pathParts[1] || 'uuid-dummy'
+        const newProjectId = pathParts[1] || ''
         setProjectId(newProjectId)
         return
       }
 
       try {
         setIsLoading(true)
-        // Extract project ID from URL path
         const pathParts = location.pathname.split('/')
-        const newProjectId = pathParts[1] || 'uuid-dummy'
+        const newProjectId = pathParts[1] || ''
+        if (!newProjectId) {
+          setError('No project ID provided')
+          return
+        }
         setProjectId(newProjectId)
 
-        // Fetch the data from your new endpoint
         const result = await fetchData(newProjectId, translations)
         setData(result)
         setDataLoaded(true)

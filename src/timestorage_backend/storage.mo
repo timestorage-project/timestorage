@@ -11,6 +11,11 @@ module Storage {
         TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
     };
 
+    // Map for storing UUID -> Owner
+    public func newUUIDOwnerMap() : TrieMap.TrieMap<Text, Principal> {
+        TrieMap.TrieMap<Text, Principal>(Text.equal, Text.hash);
+    };
+
     // Map for storing UUID -> FileRecord
     public func newFileMap() : TrieMap.TrieMap<Text, FileRecord> {
         TrieMap.TrieMap<Text, FileRecord>(Text.equal, Text.hash);
@@ -30,4 +35,4 @@ module Storage {
     public func makeLockKey(uuid : Text, key : Text) : Text {
         return uuid # "|" # key;
     };
-}
+};

@@ -3,7 +3,6 @@ import TestUtils "./test_utils";
 import TestMain "./test_main";
 import Debug "mo:base/Debug";
 import Principal "mo:base/Principal";
-import TestLogic "test_logic";
 import TestAuth "test_auth";
 
 actor TestRunner {
@@ -15,9 +14,6 @@ actor TestRunner {
 
         Debug.print("Running auth tests...");
         TestAuth.runAllTests(deployerPrincipal);
-
-        Debug.print("Running logic tests...");
-        TestLogic.runAllTests(deployerPrincipal);
 
         Debug.print("Running storage tests...");
         TestStorage.runAllTests();

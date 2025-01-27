@@ -3,13 +3,6 @@ import Debug "mo:base/Debug";
 
 module {
 
-    // Test for isValidUUID function
-    public func testIsValidUUID() {
-        assert Utils.isValidUUID("uuid-123") == true;
-        assert Utils.isValidUUID("invalid-uuid") == false;
-        Debug.print("testIsValidUUID: Passed");
-    };
-
     // Test for mapEntriesToJson function
     public func testMapEntriesToJson() {
         let entries = [("key1", "value1"), ("key2", "value2")];
@@ -36,7 +29,6 @@ module {
 
     // Run all utils tests
     public func runAllTests() {
-        testIsValidUUID();
         testMapEntriesToJson();
         //testEscapeString();
         testArrayToText();

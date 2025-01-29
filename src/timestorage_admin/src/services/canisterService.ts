@@ -7,9 +7,15 @@ import { authService } from 'src/sections/auth/auth';
 let agent: HttpAgent;
 let timestorageActor: TimestorageBackend;
 
-const appCanisterId: string = process.env.CANISTER_ID_TIMESTORAGE_APP || 'asd';
+const appCanisterId: string = process.env.CANISTER_ID_TIMESTORAGE_FRONTEND || 'asd';
 
-export const getAppFrontendCanisterId = (): string => `http://${appCanisterId}.localhost:4943`;
+export const getAppFrontendCanisterId = (): string => {
+  const isLocalEnv = process.env.DFX_NETWORK !== 'ic';
+  if (isLocalEnv) {
+    return `http://${appCanisterId}.localhost:4943`;
+  }
+  return `https://${appCanisterId}.icp0.io`;
+};
 
 const initializeAgent = async () => {
   const isLocalEnv = process.env.DFX_NETWORK !== 'ic';

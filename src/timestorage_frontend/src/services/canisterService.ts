@@ -48,14 +48,6 @@ export const updateValue = async (uuid: string, key: string, value: string) => {
 }
 
 export const getImage = async (uuid: string, imageId: string) => {
-  //   const actor = await initializeAgent()
-  //   const result = await actor.getImageByUUIDAndId(uuid, imageId)
-  console.log('Feature to build')
-
-  //   if ('err' in result) {
-  //     throw new Error(result.err)
-  //   }
-
   return true
 }
 

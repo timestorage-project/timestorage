@@ -575,20 +575,50 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // getAllUUIDs function
-    public shared query (msg) func getAllUUIDs() : async Result.Result<[Text], Text> {
+    public shared query (msg) func getAllUUIDs(ownerPrincipal : ?Principal) : async Result.Result<[Text], Text> {
         if (Auth.isAdmin(msg.caller, admins)) {
-            let uuids = Iter.toArray(uuidToStructure.keys());
-            return #ok(uuids);
-        } else if (Auth.isEditor(msg.caller, editors)) {
-            var editorUuids : [Text] = [];
-            for ((u, owner) in uuidOwners.entries()) {
-                if (owner == msg.caller) {
-                    editorUuids := Array.append(editorUuids, [u]);
+            switch (ownerPrincipal) {
+                case null {
+                    let uuids = Iter.toArray(uuidToStructure.keys());
+                    return #ok(uuids);
+                };
+                case (?principal) {
+                    var ownerUuids : [Text] = [];
+                    for ((u, owner) in uuidOwners.entries()) {
+                        if (owner == principal) {
+                            ownerUuids := Array.append(ownerUuids, [u]);
+                        };
+                    };
+                    return #ok(ownerUuids);
                 };
             };
-            return #ok(editorUuids);
+        } else if (Auth.isEditor(msg.caller, editors)) {
+            switch (ownerPrincipal) {
+                case null {
+                    var editorUuids : [Text] = [];
+                    for ((u, owner) in uuidOwners.entries()) {
+                        if (owner == msg.caller) {
+                            editorUuids := Array.append(editorUuids, [u]);
+                        };
+                    };
+                    return #ok(editorUuids);
+                };
+                case (?principal) {
+                    if (principal == msg.caller) {
+                        var ownerUuids : [Text] = [];
+                        for ((u, owner) in uuidOwners.entries()) {
+                            if (owner == principal) {
+                                ownerUuids := Array.append(ownerUuids, [u]);
+                            };
+                        };
+                        return #ok(ownerUuids);
+                    } else {
+                        return #err("Unauthorized: Can only query your own UUIDs");
+                    };
+                };
+            };
         } else {
-            #err("Unauthorized: Admin o Editor role required.");
+            #err("Unauthorized: Admin or Editor role required.");
         };
     };
 };

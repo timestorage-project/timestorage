@@ -1,6 +1,6 @@
 # Time Storage - Backend Documentation
 
-Welcome to the **Time Storage Backend**! This project provides a highly secure and scalable way to manage and store key-value pairs associated with unique identifiers (UUIDs). It also includes support for file uploads and value locking mechanisms to ensure data integrity. Let's dive into how to set up, use, and interact with the backend API!
+Welcome to the **Time Storage Backend**! This project provides a highly secure and scalable way to manage and store key-value pairs associated with unique identifiers (UUIDs). It also includes support for file uploads and value locking mechanisms to ensure data integrity. Let's dive into how to set up, use, and interact with the canisters!
 
 ---
 
@@ -8,11 +8,10 @@ Welcome to the **Time Storage Backend**! This project provides a highly secure a
 Here's a breakdown of the most important files:
 
 - **auth.mo**: Handles admin authentication and access control.
-- **logic.mo**: Core business logic of the backend.
-- **main.mo**: Entry point of the backend canister.
+- **main.mo**: Entry point and logic of the backend canister.
 - **storage.mo**: Defines storage maps and structures.
 - **types.mo**: Contains custom types and data models.
-- **utils.mo**: Utility functions for validation and JSON manipulation.
+- **utils.mo**: Utility Endpoints for validation and JSON manipulation.
 
 ---
 
@@ -54,6 +53,26 @@ dfx canister call timestorage_backend isAdmin
 **Response:**
 - Success: `true`
 - Error: `false`
+  
+---
+
+## 🔸​ **isEditor**
+
+**Description:** Checks if the caller is an editor.
+
+**Endpoint:**
+```motoko
+public shared query (msg) func isEditor() : async Bool
+```
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend isEditor
+```
+
+**Response:**
+- Success: `true`
+- Error: `false`
 
 ---
 
@@ -83,6 +102,32 @@ dfx canister call timestorage_backend addAdmin '(principal "[principal_id]")'
 
 ---
 
+## 🔸​ **addEditor**
+
+*⚠️ Admin role required to execute this function*
+
+**Description:** Adds a new editor to the system.
+
+**Endpoint:**
+```motoko
+public shared (msg) func addEditor(newEditor : Principal) : async Result.Result<Text, Text>
+```
+
+**Parameters:**
+- `newEditor` (Principal): The principal ID of the new editor.
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend addEditor '(principal "[principal_id]")'
+```
+
+**Response:**
+- Success: `(variant { ok = "New editor added successfully." })`
+- Error: `(variant { err = "Unauthorized: Only admins can add new editors." })`
+- Error: `(variant { err = "Editor already exist." })`
+
+---
+
 ## 🔸​ **removeAdmin**
 
 *⚠️ Admin role required to execute this function*
@@ -95,7 +140,7 @@ public shared (msg) func removeAdmin(adminToRemove: Principal) : async Result.Re
 ```
 
 **Parameters:**
-- `adminToRemove` (Principal): The principal ID of the new admin.
+- `adminToRemove` (Principal): The principal ID of the admin.
 
 **Example Command:**
 ```bash
@@ -109,11 +154,38 @@ dfx canister call timestorage_backend removeAdmin '(principal "[principal_id]")'
 
 ---
 
-## 1. **insertUUIDStructure**
+## 🔸​ **removeEditor**
 
 *⚠️ Admin role required to execute this function*
 
-**Description:** Inserts a new structure for a given UUID.
+**Description:** Remove an editor from the system.
+
+**Endpoint:**
+```motoko
+public shared (msg) func removeEditor(editorToRemove : Principal) : async Result.Result<Text, Text>
+```
+
+**Parameters:**
+- `editorToRemove` (Principal): The principal ID of the editor.
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend editorToRemove '(principal "[principal_id]")'
+```
+
+**Response:**
+- Success: `(variant { ok = "Editor removed successfully." })`
+- Error: `(variant { err = "Unauthorized: Only admins can add remove editors." })`
+- Error: `(variant { err = "Editor does not exist." })`
+
+---
+
+## 1. **insertUUIDStructure**
+
+*⚠️ Admin role required to execute this function*
+*🛠️​ Editor role required to execute this function*
+
+**Description:** Inserts a new structure for a given UUID and memorize the register owner.
 
 **Endpoint:**
 ```motoko
@@ -136,8 +208,6 @@ dfx canister call timestorage_backend insertUUIDStructure '("uuid-dummy", "{\"na
 ---
 
 ## 2. **uploadFile**
-
-*⚠️ Admin role required to execute this function*
 
 **Description:** Uploads a file and associates it with a given UUID.
 
@@ -203,8 +273,6 @@ dfx canister call timestorage_backend getFileByUUIDAndId '("uuid-dummy", "file-1
 
 ## 4. **updateValue**
 
-*⚠️ Admin role required to execute this function*
-
 **Description:** Updates a specific value associated with a UUID.
 
 **Endpoint:**
@@ -227,8 +295,6 @@ dfx canister call timestorage_backend updateValue '(record { uuid = "uuid-dummy"
 ---
 
 ## 5. **updateManyValues**
-
-*⚠️ Admin role required to execute this function*
 
 **Description:** Updates multiple key-value pairs for a given UUID.
 
@@ -255,9 +321,7 @@ dfx canister call timestorage_backend updateManyValues '("uuid-dummy", vec { rec
 
 ## 6. **lockValue**
 
-*⚠️ Admin role required to execute this function*
-
-**Description:** Locks or unlocks a specific value for a UUID.
+**Description:** Locks a specific value for a UUID.
 
 **Endpoint:**
 ```motoko
@@ -274,15 +338,41 @@ dfx canister call timestorage_backend lockValue '(record { uuid = "uuid-dummy"; 
 
 **Response:**
 - Success: `(variant { ok = "Value locked successfully." })`
-- Success: `(variant { ok = "Value unlocked successfully." })`
+- Error: `(variant { err = "Value is already locked." })`
 - Error: `(variant { err = "UUID not found." })`
 
+---
 
-## 7. **lockAllValues**
+## 7. **unlockValue**
 
 *⚠️ Admin role required to execute this function*
 
-**Description:** Locks or unlocks all values for a given UUID.
+**Description:** Unlocks a specific value for a UUID.
+
+**Endpoint:**
+```motoko
+public shared (msg) func unlockValue(req: Types.ValueUnlockRequest) : async Result.Result<Text, Text>
+```
+
+**Parameters:**
+- `req` (Types.ValueUnlockRequest): The request containing the UUID, key.
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend unlockValue '(record { uuid = "uuid-dummy"; key = "exampleKey"})'
+```
+
+**Response:**
+- Success: `(variant { ok = "Value unlocked successfully." })`
+- Error: `(variant { err = "Value is already unlocked." })`
+- Error: `(variant { err = "Value lock status not found." })`
+- Error: `(variant { err = "UUID not found." })`
+
+---
+
+## 8. **lockAllValues**
+
+**Description:** Locks all values for a given UUID.
 
 **Endpoint:**
 ```motoko
@@ -299,14 +389,36 @@ dfx canister call timestorage_backend lockAllValues '(record { uuid = "uuid-dumm
 
 **Response:**
 - Success: `(variant { ok = "All values locked successfully." })`
+- Error: `(variant { err = "UUID not found." })`
+
+---
+
+## 9. **unlockAllValues**
+
+*⚠️ Admin role required to execute this function*
+
+**Description:** Unlocks all values for a given UUID.
+
+**Endpoint:**
+```motoko
+public shared (msg) func unlockAllValues(req : Types.ValueUnlockAllRequest) : async Result.Result<Text, Text>
+```
+
+**Parameters:**
+- `req` (Types.ValueUnlockAllRequest): The request containing the UUID.
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend unlockAllValues '(record { uuid = "uuid-dummy" })'
+```
+
+**Response:**
 - Success: `(variant { ok = "All values unlocked successfully." })`
 - Error: `(variant { err = "UUID not found." })`
 
 ---
 
-## 8. **getValue**
-
-*⚠️ Admin role required to execute this function*
+## 10. **getValue**
 
 **Description:** Retrieves a specific value associated with a UUID.
 
@@ -325,13 +437,12 @@ dfx canister call timestorage_backend getValue '(record { uuid = "uuid-dummy"; k
 
 **Response:**
 - Success: `(variant { ok = "new-value1" })`
+- Error: `(variant { err = "UUID not found." })`
 - Error: `(variant { err = "Key not found." })`
 
 ---
 
-## 9. **getAllValues**
-
-*⚠️ Admin role required to execute this function*
+## 11. **getAllValues**
 
 **Description:** Retrieves all key-value pairs associated with a UUID.
 
@@ -354,9 +465,7 @@ dfx canister call timestorage_backend getAllValues '("uuid-dummy")'
 
 ---
 
-## 10. **getValueLockStatus**
-
-*⚠️ Admin role required to execute this function*
+## 12. **getValueLockStatus**
 
 **Description:** Retrieves the lock status of a specific value.
 
@@ -375,43 +484,44 @@ dfx canister call timestorage_backend getValueLockStatus '(record { uuid = "uuid
 
 **Response:**
 - Success: `(variant { ok = record { locked = true; lockedBy = ?principal "[principal_id]" } })`
-- Error: `(variant { err = "No lock status found." })`
+- Error: `(variant { err = "No lock status found (value not locked)." })`
 
 ---
 
-## 11.​ **getAllUUIDs**
+## 13.​ **getAllUUIDs**
 
 *⚠️ Admin role required to execute this function*
+*🛠️​ Editor role required to execute this function*
 
-**Descrizione:** Retrieves all UUIDs minted
+**Descrizione:** Retrieves all UUIDs minted or UUIDs owned by a specific principal if specified.
 
 **Endpoint:**
 ```motoko
-public shared query (msg) func getAllUUIDs() : async Result.Result<[Text], Text>
+public shared query (msg) func getAllUUIDs(ownerPrincipal : ?Principal) : async Result.Result<[Text], Text>
 ```
 
 **Parameters:**
-- No parameters
+- `ownerPrincipal` (optional): Principal ID to filter UUIDs by owner
 
-**Example Command:**
+**Access Control:**
+- Admins can view all UUIDs or filter by owner
+- Editors can only view their own UUIDs
+- Other roles are unauthorized
+
+**Example Commands:**
 ```bash
+# Get all UUIDs (admin only)
 dfx canister call timestorage_backend getAllUUIDs
+
+# Get UUIDs for specific principal
+dfx canister call timestorage_backend getAllUUIDs '(opt principal [principal_id])'
 ```
 
-**Response:**
-- Success: Returns all uuids.
-```
-(
-  variant {
-    ok = vec {
-      "uuid-123";
-      "uuid-456";
-    }
-  }
-)
-```
+**Responses:**
 
-- Error: `(variant {err="Unauthorized: Admin role required."})`
+- Success: `(variant { ok = vec { "uuid-123"; "uuid-456"; } })`
+- Error: `(variant { err = "Unauthorized: Admin or Editor role required." })`
+- Error: `(variant { err = "Unauthorized: Can only query your own UUIDs" })`
 
 ---
 

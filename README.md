@@ -180,9 +180,22 @@ dfx canister call timestorage_backend editorToRemove '(principal "[principal_id]
 
 ---
 
+### Access Control
+| Operation          | Admin | Editor | Public |
+|-------------------|--------|---------|---------|
+| Add/Remove Admin  |   ✅    |    ❌​    |    ❌​    |
+| Manage UUIDs      |   ✅    |    ✅    |    ❌​    |
+| View All UUIDs    |   ✅    |    ❌​    |    ❌​    |
+| Manage Own UUIDs  |   ✅    |    ✅    |    ❌​    |
+| Lock Values       |   ✅    |    ✅    |    ✅    |
+| Unlock Values     |   ✅    |    ❌​    |    ❌​    |
+
+---
+
 ## 1. **insertUUIDStructure**
 
 *⚠️ Admin role required to execute this function*
+
 *🛠️​ Editor role required to execute this function*
 
 **Description:** Inserts a new structure for a given UUID and memorize the register owner.
@@ -491,6 +504,7 @@ dfx canister call timestorage_backend getValueLockStatus '(record { uuid = "uuid
 ## 13.​ **getAllUUIDs**
 
 *⚠️ Admin role required to execute this function*
+
 *🛠️​ Editor role required to execute this function*
 
 **Descrizione:** Retrieves all UUIDs minted or UUIDs owned by a specific principal if specified.

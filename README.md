@@ -562,7 +562,7 @@ dfx canister call timestorage_backend getUUIDInfo '("uuid-dummy")'
   (
   variant {
     ok = record {
-      "{{\"name\": \"value\"},\"values\":{{\"exampleKey\":\"new-value1\"}},\"lockStatus\":{{\"exampleKey\":\"unlocked\"}}}";
+      "{\"name\": \"value\"},\"values\":{\"exampleKey\":\"new-value1\"},\"lockStatus\":{\"exampleKey\":\"unlocked\"}}";
       vec {
         record {
           metadata = record {

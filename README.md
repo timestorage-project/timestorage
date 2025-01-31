@@ -34,7 +34,7 @@ Here's a breakdown of the most important files:
 
 Here is a detailed list of the canister "endpoints" available in the Time Storage Backend. Each endpoint is explained with its parameters, usage examples, and expected responses.
 
----
+## 👉 **[View the Interactive Mindmap](./mindmap.html)**
 
 ## 🔸​ **isAdmin**
 

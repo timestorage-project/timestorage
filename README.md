@@ -558,7 +558,7 @@ dfx canister call timestorage_backend getUUIDInfo '("uuid-dummy")'
 
 **Response:**
 - Success: Returns schema, values, and file metadata.
-```
+```bash
   (
   variant {
     ok = record {

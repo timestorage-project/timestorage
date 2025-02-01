@@ -4,6 +4,8 @@ import { Actor, HttpAgent } from '@dfinity/agent'
 let agent: HttpAgent
 let timestorageActor: TimestorageBackend
 
+const backendCanisterId = process.env.CANISTER_ID_TIMESTORAGE_BACKEND || 'bkyz2-fmaaa-aaaaa-qaaaq-cai'
+
 const initializeAgent = async () => {
   if (!agent) {
     agent = new HttpAgent({
@@ -14,12 +16,12 @@ const initializeAgent = async () => {
       await agent.fetchRootKey()
     }
   }
-  console.log(process.env.CANISTER_ID_TIMESTORAGE_BACKEND)
+  console.log(backendCanisterId)
 
   if (!timestorageActor) {
     timestorageActor = Actor.createActor<TimestorageBackend>(idlFactory, {
       agent,
-      canisterId: process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string
+      canisterId: backendCanisterId as string
     })
   }
 

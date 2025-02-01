@@ -15,6 +15,7 @@ import {
   updateValue,
 } from 'src/services/canisterService';
 
+import { DataNode } from 'src/entities/icp';
 import { v4 as uuidv4 } from 'uuid';
 import { EquipmentTable } from './equipment-table';
 import type { EquipmentProps } from './equipment-table-row';
@@ -105,11 +106,28 @@ export function EquipmentView() {
         const allUUIDs = await getAllUUIDsWithInfo();
 
         const mappedEquipment = allUUIDs.map(({ uuid, data }) => {
-          const productInfo = data.productInfo;
+          const lookArray = [data.installationProcess, data.productInfo, data.maintenanceLog];
+          const merged = lookArray.reduce<DataNode>(
+            (acc, curr) => {
+              if (!curr) return acc;
+              return {
+                ...acc,
+                children: [...acc.children, ...curr.children],
+              };
+            },
+            {
+              id: '',
+              title: '',
+              description: '',
+              children: [],
+              questions: [],
+              isWizard: false,
+            } as unknown as DataNode
+          );
 
           // Extract values from the children array
           const getValue = (key: string) => {
-            const child = productInfo.children.find((c: { label: string }) =>
+            const child = merged.children.find((c: { label: string }) =>
               c.label.toLowerCase().includes(key.toLowerCase())
             );
             return child?.value || '-';
@@ -122,8 +140,11 @@ export function EquipmentView() {
             model: getValue('model'),
             serialNo: getValue('serial'),
             status: getValue('installer') ? 'installed' : 'to be installed',
-            installationData: getValue('installer') ? 'available' : 'not available',
-            installerName: getValue('installer'),
+            installationData:
+              getValue('INSTALLER_NAME_LABEL') && getValue('INSTALLER_NAME_LABEL') !== '-'
+                ? 'available'
+                : 'not available',
+            installerName: getValue('INSTALLER_NAME_LABEL'),
           };
         });
 

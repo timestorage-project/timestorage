@@ -22,15 +22,23 @@
       "source": ["src/timestorage_admin/dist"],
       "type": "assets",
       "workspace": "timestorage_admin"
-    },
-    "test_runner": {
-      "main": "test/test.mo",
-      "type": "motoko",
-      "dependencies": ["timestorage_backend"]
-    },
-    "internet-identity": {
-      "type": "pull",
-      "id": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral",
+      "canisters": {
+        "test_runner": {
+          "main": "test/test.mo",
+          "type": "motoko",
+          "dependencies": ["timestorage_backend"]
+        },
+        "internet-identity": {
+          "type": "pull",
+          "id": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      }
     }
   },
   "defaults": {

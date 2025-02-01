@@ -198,7 +198,6 @@ dfx canister call timestorage_backend editorToRemove '(principal "[principal_id]
 ---
 
 ### Access Control
-# Access Control
 
 | Operation | Admin | Editor | Public |
 |-----------|-------|--------|--------|

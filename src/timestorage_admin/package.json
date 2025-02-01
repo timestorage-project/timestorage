@@ -45,7 +45,8 @@
     "react-helmet-async": "^2.0.5",
     "react-router-dom": "^6.26.1",
     "simplebar-react": "^3.2.6",
-    "uuid": "^11.0.5"
+    "uuid": "^11.0.5",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@types/node": "^22.5.0",

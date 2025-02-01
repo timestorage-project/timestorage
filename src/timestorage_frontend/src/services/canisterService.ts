@@ -14,11 +14,12 @@ const initializeAgent = async () => {
       await agent.fetchRootKey()
     }
   }
+  console.log(process.env.CANISTER_ID_TIMESTORAGE_BACKEND)
 
   if (!timestorageActor) {
     timestorageActor = Actor.createActor<TimestorageBackend>(idlFactory, {
       agent,
-      canisterId: process.env.CANISTER_ID_TIMESTORAGE_BACKEND || 'bkyz2-fmaaa-aaaaa-qaaaq-cai'
+      canisterId: process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string
     })
   }
 

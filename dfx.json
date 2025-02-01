@@ -8,13 +8,17 @@
       }
     },
     "timestorage_frontend": {
-      "dependencies": ["timestorage_backend"],
+      "dependencies": ["timestorage_backend", "internet-identity"],
       "source": ["src/timestorage_frontend/dist"],
       "type": "assets",
       "workspace": "timestorage_frontend"
     },
     "timestorage_admin": {
-      "dependencies": ["timestorage_backend"],
+      "dependencies": [
+        "timestorage_backend",
+        "internet-identity",
+        "timestorage_frontend"
+      ],
       "source": ["src/timestorage_admin/dist"],
       "type": "assets",
       "workspace": "timestorage_admin"
@@ -23,6 +27,10 @@
       "main": "test/test.mo",
       "type": "motoko",
       "dependencies": ["timestorage_backend"]
+    },
+    "internet-identity": {
+      "type": "pull",
+      "id": "rdmx6-jaaaa-aaaaa-aaadq-cai"
     }
   },
   "defaults": {

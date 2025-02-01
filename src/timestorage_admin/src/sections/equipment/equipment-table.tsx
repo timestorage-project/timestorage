@@ -94,11 +94,11 @@ export function EquipmentTable({
 
   const filteredEquipmentList = equipmentList.filter(
     (row) =>
-      row.brand.toLowerCase().includes(filterName.toLowerCase()) ||
-      row.model.toLowerCase().includes(filterName.toLowerCase()) ||
-      row.serialNo.toLowerCase().includes(filterName.toLowerCase()) ||
-      row.UUID.toLowerCase().includes(filterName.toLowerCase()) ||
-      row.installerName.toLowerCase().includes(filterName.toLowerCase())
+      row.brand?.toLowerCase().includes(filterName.toLowerCase()) ||
+      row.model?.toLowerCase().includes(filterName.toLowerCase()) ||
+      row.serialNo?.toLowerCase().includes(filterName.toLowerCase()) ||
+      row.UUID?.toLowerCase().includes(filterName.toLowerCase()) ||
+      row.installerName?.toLowerCase().includes(filterName.toLowerCase())
   );
 
   const emptyRows =

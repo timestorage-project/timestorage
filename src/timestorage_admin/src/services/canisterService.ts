@@ -1,53 +1,108 @@
-import { Actor, HttpAgent } from '@dfinity/agent';
+import { Actor, HttpAgent, Identity } from '@dfinity/agent';
 import { DataNode, DataStructure } from 'src/entities/icp';
 import { idlFactory } from 'src/icp-definitions';
 import { TimestorageBackend } from 'src/icp-definitions/timestorage_backend.did';
-import { authService } from 'src/sections/auth/auth';
+import { authService, useAuthStore } from 'src/sections/auth/auth';
 
-let agent: HttpAgent;
-let timestorageActor: TimestorageBackend;
+let agent: HttpAgent | undefined;
+let timestorageActor: TimestorageBackend | undefined;
+let currentIdentity: Identity | undefined;
 
-const appCanisterId: string = process.env.CANISTER_ID_TIMESTORAGE_FRONTEND || 'asd';
-
-export const getAppFrontendCanisterId = (): string => {
-  const isLocalEnv = process.env.DFX_NETWORK !== 'ic';
-  if (isLocalEnv) {
-    return `http://${appCanisterId}.localhost:4943`;
-  }
-  return `https://${appCanisterId}.icp0.io`;
-};
+const appCanisterId: string = process.env.CANISTER_ID_TIMESTORAGE_FRONTEND || 'rt5ct-7aaaa-aaaah-qp5ha-cai';
+const devENV_Canister = 'bkyz2-fmaaa-aaaaa-qaaaq-cai';
 
 const initializeAgent = async () => {
   const isLocalEnv = process.env.DFX_NETWORK !== 'ic';
   const host = isLocalEnv ? 'http://localhost:4943' : 'https://ic0.app';
-  // Get the current identity from auth service
 
-  if (!agent) {
-    if (isLocalEnv) {
-      // For local development, use a new agent without identity
-      agent = new HttpAgent({ host });
-      await agent.fetchRootKey(); // This is only needed for local development
-    } else {
-      // For production IC network, use authenticated identity
-      const identity = authService.getIdentity();
-      agent = new HttpAgent({
-        host,
-        identity: identity || undefined,
-      });
+  try {
+    // Get the current state from the auth store
+    const store = useAuthStore.getState();
+    const authClient = store.authClient;
+
+    // If no auth client, initialize it
+    if (!authClient) {
+      await store.init();
     }
-  }
 
-  if (!timestorageActor) {
-    timestorageActor = Actor.createActor<TimestorageBackend>(idlFactory, {
-      agent,
-      canisterId: process.env.CANISTER_ID_TIMESTORAGE_BACKEND || 'bkyz2-fmaaa-aaaaa-qaaaq-cai',
-    });
-  }
+    // Get the updated auth client and check authentication
+    const currentAuthClient = useAuthStore.getState().authClient;
+    if (!currentAuthClient) {
+      throw new Error('Auth client initialization failed');
+    }
 
-  return timestorageActor;
+    const isAuthenticated = await currentAuthClient.isAuthenticated();
+
+    // Get the identity
+    const identity = isAuthenticated ? currentAuthClient.getIdentity() : undefined;
+    const hasIdentityChanged = currentIdentity !== identity;
+
+    if (!agent || hasIdentityChanged) {
+      currentIdentity = identity;
+
+      if (isLocalEnv) {
+        agent = new HttpAgent({ host, identity });
+        await agent.fetchRootKey();
+      } else {
+        agent = new HttpAgent({
+          host,
+          identity,
+        });
+      }
+
+      // Reset timestorageActor when agent changes
+      timestorageActor = undefined;
+    }
+
+    if (!timestorageActor) {
+      timestorageActor = Actor.createActor<TimestorageBackend>(idlFactory, {
+        agent,
+        canisterId: (process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string) || devENV_Canister,
+      });
+
+      console.log('Actor created with identity:', identity?.getPrincipal().toString());
+    }
+
+    return timestorageActor;
+  } catch (error) {
+    console.error('Error initializing agent:', error);
+    throw error;
+  }
+};
+
+export const getFrontendCanisterId = () => appCanisterId;
+export const getFrontendCanisterUrl = () =>
+  process.env.DFX_NETWORK === 'ic'
+    ? `https://${appCanisterId}.ic0.app`
+    : `http://${appCanisterId}.localhost:4943`;
+
+// Update the store subscription to handle auth client changes
+useAuthStore.subscribe((state) => {
+  if (state.authClient && state.isAuthenticated) {
+    const identity = state.authClient.getIdentity();
+    if (currentIdentity !== identity) {
+      agent = undefined;
+      timestorageActor = undefined;
+      currentIdentity = identity;
+    }
+  } else {
+    // Reset when logged out
+    agent = undefined;
+    timestorageActor = undefined;
+    currentIdentity = undefined;
+  }
+});
+
+// Add this helper function to check authentication status
+const ensureAuthenticated = async () => {
+  const store = useAuthStore.getState();
+  if (!store.isAuthenticated) {
+    throw new Error('User is not authenticated');
+  }
 };
 
 export const getUUIDInfo = async (uuid: string) => {
+  await ensureAuthenticated();
   const actor = await initializeAgent();
   const result = await actor.getUUIDInfo(uuid);
 
@@ -59,6 +114,7 @@ export const getUUIDInfo = async (uuid: string) => {
 };
 
 export const updateValue = async (uuid: string, key: string, value: string) => {
+  await ensureAuthenticated();
   const actor = await initializeAgent();
   const result = await actor.updateValue({ uuid, key, newValue: value });
 
@@ -67,18 +123,6 @@ export const updateValue = async (uuid: string, key: string, value: string) => {
   }
 
   return result.ok;
-};
-
-export const getImage = async (uuid: string, imageId: string) => {
-  //   const actor = await initializeAgent()
-  //   const result = await actor.getImageByUUIDAndId(uuid, imageId)
-  console.log('Feature to build');
-
-  //   if ('err' in result) {
-  //     throw new Error(result.err)
-  //   }
-
-  return true;
 };
 
 export const uploadFile = async (
@@ -90,6 +134,7 @@ export const uploadFile = async (
     uploadTimestamp: bigint;
   }
 ) => {
+  await ensureAuthenticated();
   const actor = await initializeAgent();
   const result = await actor.uploadFile(uuid, fileData, metadata);
 
@@ -101,6 +146,7 @@ export const uploadFile = async (
 };
 
 export const getFileByUUIDAndId = async (uuid: string, fileId: string) => {
+  await ensureAuthenticated();
   const actor = await initializeAgent();
   const result = await actor.getFileByUUIDAndId(uuid, fileId);
 
@@ -116,6 +162,7 @@ export const getFileByUUIDAndId = async (uuid: string, fileId: string) => {
 };
 
 export const getAllUUIDs = async () => {
+  await ensureAuthenticated();
   const actor = await initializeAgent();
   const result = await actor.getAllUUIDs();
 
@@ -127,6 +174,7 @@ export const getAllUUIDs = async () => {
 };
 
 export const getAllUUIDsWithInfo = async (translations: { [key: string]: string } = {}) => {
+  await ensureAuthenticated();
   const actor = await initializeAgent();
 
   // First get all UUIDs
@@ -248,6 +296,7 @@ export function getValueFromPath(values: Record<string, string>, path: string): 
 }
 
 export const insertUUIDStructure = async (uuid: string, structure: string) => {
+  await ensureAuthenticated();
   const actor = await initializeAgent();
   const result = await actor.insertUUIDStructure(uuid, structure);
 

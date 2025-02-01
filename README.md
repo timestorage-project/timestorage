@@ -198,14 +198,16 @@ dfx canister call timestorage_backend editorToRemove '(principal "[principal_id]
 ---
 
 ### Access Control
-| Operation          | Admin | Editor | Public |
-|-------------------|--------|---------|---------|
-| Add/Remove Admin  |   ✅    |    ❌​    |    ❌​    |
-| Manage UUIDs      |   ✅    |    ✅    |    ❌​    |
-| View All UUIDs    |   ✅    |    ❌​    |    ❌​    |
-| Manage Own UUIDs  |   ✅    |    ✅    |    ❌​    |
-| Lock Values       |   ✅    |    ✅    |    ✅    |
-| Unlock Values     |   ✅    |    ❌​    |    ❌​    |
+# Access Control
+
+| Operation | Admin | Editor | Public |
+|-----------|-------|--------|--------|
+| Add/Remove Admin | ✅ | ❌ | ❌ |
+| Manage UUIDs | ✅ | ✅ | ❌ |
+| View All UUIDs | ✅ | ❌ | ❌ |
+| Manage Own UUIDs | ✅ | ✅ | ❌ |
+| Lock Values | ✅ | ✅ | ✅ |
+| Unlock Values | ✅ | ❌ | ❌ |
 
 ---
 

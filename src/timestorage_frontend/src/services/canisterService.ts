@@ -4,15 +4,15 @@ import { Actor, HttpAgent } from '@dfinity/agent'
 let agent: HttpAgent
 let timestorageActor: TimestorageBackend
 
-const backendCanisterId = process.env.CANISTER_ID_TIMESTORAGE_BACKEND || 'bkyz2-fmaaa-aaaaa-qaaaq-cai'
+const backendCanisterId = (process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string) || 'r26jp-jiaaa-aaaah-qp5gq-cai'
 
 const initializeAgent = async () => {
+  const isLocalEnv = process.env.DFX_NETWORK !== 'ic'
+  const host = isLocalEnv ? 'http://localhost:4943' : 'https://ic0.app'
   if (!agent) {
-    agent = new HttpAgent({
-      host: process.env.DFX_NETWORK === 'ic' ? 'https://ic0.app' : 'http://localhost:4943'
-    })
+    agent = new HttpAgent({ host })
 
-    if (process.env.DFX_NETWORK !== 'ic') {
+    if (isLocalEnv) {
       await agent.fetchRootKey()
     }
   }

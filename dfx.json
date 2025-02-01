@@ -8,17 +8,13 @@
       }
     },
     "timestorage_frontend": {
-      "dependencies": ["timestorage_backend", "internet-identity"],
+      "dependencies": ["timestorage_backend"],
       "source": ["src/timestorage_frontend/dist"],
       "type": "assets",
       "workspace": "timestorage_frontend"
     },
     "timestorage_admin": {
-      "dependencies": [
-        "timestorage_backend",
-        "internet-identity",
-        "timestorage_frontend"
-      ],
+      "dependencies": ["timestorage_backend", "timestorage_frontend"],
       "source": ["src/timestorage_admin/dist"],
       "type": "assets",
       "workspace": "timestorage_admin"
@@ -48,5 +44,5 @@
     }
   },
   "output_env_file": ".env",
-  "version": 1
+  "version": 2
 }

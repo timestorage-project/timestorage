@@ -73,7 +73,7 @@ const initializeAgent = async () => {
 export const getFrontendCanisterId = () => appCanisterId;
 export const getFrontendCanisterUrl = () =>
   process.env.DFX_NETWORK === 'ic'
-    ? `https://${appCanisterId}.ic0.app`
+    ? `https://${appCanisterId}.icp0.io`
     : `http://${appCanisterId}.localhost:4943`;
 
 // Update the store subscription to handle auth client changes
@@ -86,14 +86,12 @@ useAuthStore.subscribe((state) => {
       currentIdentity = identity;
     }
   } else {
-    // Reset when logged out
     agent = undefined;
     timestorageActor = undefined;
     currentIdentity = undefined;
   }
 });
 
-// Add this helper function to check authentication status
 const ensureAuthenticated = async () => {
   const store = useAuthStore.getState();
   if (!store.isAuthenticated) {

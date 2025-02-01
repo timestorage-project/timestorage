@@ -17,6 +17,7 @@ interface NewEquipmentModalProps {
   onClose: () => void;
   onSubmit: (productInfo: ProductInfo) => Promise<void>;
   loading: boolean;
+  refreshData: () => Promise<void>;
 }
 
 interface ProductInfo {
@@ -41,7 +42,13 @@ const energyRatings = [
 ];
 const windowTypes = ['Double Hung', 'Single Hung', 'Casement', 'Awning'];
 
-export function NewEquipmentModal({ open, onClose, onSubmit, loading }: NewEquipmentModalProps) {
+export function NewEquipmentModal({
+  open,
+  onClose,
+  onSubmit,
+  loading,
+  refreshData,
+}: NewEquipmentModalProps) {
   const [productInfo, setProductInfo] = useState<ProductInfo>({
     serialNumber: '',
     dimensions: '',
@@ -63,6 +70,7 @@ export function NewEquipmentModal({ open, onClose, onSubmit, loading }: NewEquip
   const handleSubmit = async () => {
     if (productInfo.serialNumber.trim()) {
       await onSubmit(productInfo);
+      await refreshData();
       setProductInfo({
         serialNumber: '',
         dimensions: '',

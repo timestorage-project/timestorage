@@ -37,15 +37,15 @@ export interface ProductInfo {
 
 // ----------------------------------------------------------------------
 
-export function EquipmentView() {
+export function EmptyEquipmentView() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [isLoading, setIsLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
 
-  const { setEquipmentList, getNonEmptySerialEquipment } = useEquipmentStore();
-  const equipmentList = getNonEmptySerialEquipment();
+  const { setEquipmentList, getEmptySerialEquipment } = useEquipmentStore();
+  const equipmentList = getEmptySerialEquipment();
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedUUID, setSelectedUUID] = useState('');
@@ -175,7 +175,7 @@ export function EquipmentView() {
     <DashboardContent>
       <Box display="flex" alignItems="center" mb={5}>
         <Typography variant="h4" flexGrow={1}>
-          Equipment
+          Empty Equipment
         </Typography>
         <Button
           variant="contained"

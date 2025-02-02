@@ -4,6 +4,25 @@ Welcome to the **Time Storage Backend**! This project provides a highly secure a
 
 ---
 
+## 🌐 Canister URLs
+
+### Frontend Canisters (Browser Access)
+
+| Canister | URL |
+|----------|-----|
+| timestorage_admin | [https://ru4eh-syaaa-aaaah-qp5hq-cai.icp0.io/](https://ru4eh-syaaa-aaaah-qp5hq-cai.icp0.io/) |
+| timestorage_frontend | [https://rt5ct-7aaaa-aaaah-qp5ha-cai.icp0.io/](https://rt5ct-7aaaa-aaaah-qp5ha-cai.icp0.io/) |
+
+### Backend Canisters (Candid Interface)
+
+| Canister | URL |
+|----------|-----|
+| internet-identity | [https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=rdmx6-jaaaa-aaaaa-aaadq-cai](https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=rdmx6-jaaaa-aaaaa-aaadq-cai) |
+| test_runner | [https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=snmf5-yqaaa-aaaah-qp5oa-cai](https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=snmf5-yqaaa-aaaah-qp5oa-cai) |
+| timestorage_backend | [https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=r26jp-jiaaa-aaaah-qp5gq-cai](https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=r26jp-jiaaa-aaaah-qp5gq-cai) |
+
+---
+
 ## 📂 File Structure Overview
 Here's a breakdown of the most important files:
 
@@ -34,7 +53,7 @@ Here's a breakdown of the most important files:
 
 Here is a detailed list of the canister "endpoints" available in the Time Storage Backend. Each endpoint is explained with its parameters, usage examples, and expected responses.
 
----
+## 👉 **[View the Interactive Mindmap](./mindmap.html)**
 
 ## 🔸​ **isAdmin**
 
@@ -181,14 +200,15 @@ dfx canister call timestorage_backend editorToRemove '(principal "[principal_id]
 ---
 
 ### Access Control
-| Operation          | Admin | Editor | Public |
-|-------------------|--------|---------|---------|
-| Add/Remove Admin  |   ✅    |    ❌​    |    ❌​    |
-| Manage UUIDs      |   ✅    |    ✅    |    ❌​    |
-| View All UUIDs    |   ✅    |    ❌​    |    ❌​    |
-| Manage Own UUIDs  |   ✅    |    ✅    |    ❌​    |
-| Lock Values       |   ✅    |    ✅    |    ✅    |
-| Unlock Values     |   ✅    |    ❌​    |    ❌​    |
+
+| Operation | Admin | Editor | Public |
+|-----------|-------|--------|--------|
+| Add/Remove Admin | ✅ | ❌ | ❌ |
+| Manage UUIDs | ✅ | ✅ | ❌ |
+| View All UUIDs | ✅ | ❌ | ❌ |
+| Manage Own UUIDs | ✅ | ✅ | ❌ |
+| Lock Values | ✅ | ✅ | ✅ |
+| Unlock Values | ✅ | ❌ | ❌ |
 
 ---
 
@@ -558,11 +578,11 @@ dfx canister call timestorage_backend getUUIDInfo '("uuid-dummy")'
 
 **Response:**
 - Success: Returns schema, values, and file metadata.
-```
+```bash
   (
   variant {
     ok = record {
-      "{{\"name\": \"value\"},\"values\":{{\"exampleKey\":\"new-value1\"}},\"lockStatus\":{{\"exampleKey\":\"unlocked\"}}}";
+      "{\"name\": \"value\"},\"values\":{\"exampleKey\":\"new-value1\"},\"lockStatus\":{\"exampleKey\":\"unlocked\"}}";
       vec {
         record {
           metadata = record {

@@ -14,7 +14,10 @@ import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { useRouter, usePathname } from 'src/routes/hooks';
 
-import { _myAccount } from 'src/_mock';
+import { useMyAccount } from 'src/_mock';
+import { useAuthStore } from 'src/store/auth.store';
+import { Tooltip } from '@mui/material';
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -32,7 +35,12 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
 
   const pathname = usePathname();
 
+  const logout = useAuthStore((state) => state.logout);
+
+  const myAccount = useMyAccount(); // Use the hook instead of the static data
+
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenPopover(event.currentTarget);
@@ -50,6 +58,22 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
     [handleClosePopover, router]
   );
 
+  const handleLogout = async () => {
+    await logout();
+    handleClosePopover();
+    router.push('/sign-in');
+  };
+
+  const handleCopyPrincipal = async () => {
+    try {
+      await navigator.clipboard.writeText(myAccount.email);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000); // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy principal ID:', err);
+    }
+  };
+
   return (
     <>
       <IconButton
@@ -64,8 +88,8 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         }}
         {...other}
       >
-        <Avatar src={_myAccount.photoURL} alt={_myAccount.displayName} sx={{ width: 1, height: 1 }}>
-          {_myAccount.displayName.charAt(0).toUpperCase()}
+        <Avatar src={myAccount.photoURL} alt={myAccount.displayName} sx={{ width: 1, height: 1 }}>
+          {myAccount.displayName.charAt(0).toUpperCase()}
         </Avatar>
       </IconButton>
 
@@ -83,12 +107,37 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
       >
         <Box sx={{ p: 2, pb: 1.5 }}>
           <Typography variant="subtitle2" noWrap>
-            {_myAccount?.displayName}
+            {myAccount.displayName}
           </Typography>
 
-          <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-            {_myAccount?.email}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+                flex: 1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              noWrap
+            >
+              {myAccount.email}
+            </Typography>
+
+            <Tooltip title={copySuccess ? 'Copied!' : 'Copy Principal ID'}>
+              <IconButton
+                onClick={handleCopyPrincipal}
+                size="small"
+                sx={{
+                  p: 0.5,
+                  color: copySuccess ? 'success.main' : 'action.active',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                <Iconify icon={copySuccess ? 'eva:checkmark-fill' : 'eva:copy-fill'} width={16} />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
 
         <Divider sx={{ borderStyle: 'dashed' }} />
@@ -129,7 +178,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         <Box sx={{ p: 1 }}>
-          <Button fullWidth color="error" size="medium" variant="text">
+          <Button fullWidth color="error" size="medium" variant="text" onClick={handleLogout}>
             Logout
           </Button>
         </Box>

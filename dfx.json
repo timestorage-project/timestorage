@@ -14,15 +14,27 @@
       "workspace": "timestorage_frontend"
     },
     "timestorage_admin": {
-      "dependencies": ["timestorage_backend"],
+      "dependencies": ["timestorage_backend", "timestorage_frontend"],
       "source": ["src/timestorage_admin/dist"],
       "type": "assets",
       "workspace": "timestorage_admin"
-    },
-    "test_runner": {
-      "main": "test/test.mo",
-      "type": "motoko",
-      "dependencies": ["timestorage_backend"]
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral",
+      "canisters": {
+        "test_runner": {
+          "main": "test/test.mo",
+          "type": "motoko",
+          "dependencies": ["timestorage_backend"]
+        },
+        "internet-identity": {
+          "type": "pull",
+          "id": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      }
     }
   },
   "defaults": {
@@ -32,5 +44,5 @@
     }
   },
   "output_env_file": ".env",
-  "version": 1
+  "version": 2
 }

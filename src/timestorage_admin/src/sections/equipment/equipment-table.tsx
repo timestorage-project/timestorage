@@ -21,19 +21,27 @@ type EquipmentTableProps = {
     uuid: string,
     section: 'productInfo' | 'installationProcess' | 'maintenanceLog' | 'startInstallation'
   ) => void;
+  onSelectRow?: (uuid: string) => void;
+  page: number;
+  rowsPerPage: number;
+  onPageChange: (event: unknown, newPage: number) => void;
+  onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 export function EquipmentTable({
   equipmentList,
   isLoading = false,
   onViewDetail,
+  onSelectRow,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange,
 }: EquipmentTableProps) {
   const [order, setOrder] = useState<Order>('asc');
   const [orderBy, setOrderBy] = useState<keyof EquipmentProps>('brand');
   const [selected, setSelected] = useState<string[]>([]);
   const [filterName, setFilterName] = useState('');
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [page, setPage] = useState(0);
 
   const handleRequestSort = useCallback(
     (property: keyof EquipmentProps) => {
@@ -75,18 +83,19 @@ export function EquipmentTable({
       }
 
       setSelected(newSelected);
+
+      if (onSelectRow) {
+        const selectedEquipment = equipmentList.find((eq) => eq.id === id);
+        if (selectedEquipment) {
+          onSelectRow(selectedEquipment.UUID);
+        }
+      }
     },
-    [selected]
+    [selected, equipmentList, onSelectRow]
   );
 
-  const handleChangePage = useCallback((event: unknown, newPage: number) => {
-    setPage(newPage);
-  }, []);
-
-  const handleChangeRowsPerPage = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  }, []);
+  const handleChangePage = onPageChange;
+  const handleChangeRowsPerPage = onRowsPerPageChange;
 
   const handleFilterByName = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setFilterName(event.target.value);
@@ -94,11 +103,11 @@ export function EquipmentTable({
 
   const filteredEquipmentList = equipmentList.filter(
     (row) =>
-      row.brand.toLowerCase().includes(filterName.toLowerCase()) ||
-      row.model.toLowerCase().includes(filterName.toLowerCase()) ||
-      row.serialNo.toLowerCase().includes(filterName.toLowerCase()) ||
-      row.UUID.toLowerCase().includes(filterName.toLowerCase()) ||
-      row.installerName.toLowerCase().includes(filterName.toLowerCase())
+      row.brand?.toLowerCase().includes(filterName.toLowerCase()) ||
+      row.model?.toLowerCase().includes(filterName.toLowerCase()) ||
+      row.serialNo?.toLowerCase().includes(filterName.toLowerCase()) ||
+      row.UUID?.toLowerCase().includes(filterName.toLowerCase()) ||
+      row.installerName?.toLowerCase().includes(filterName.toLowerCase())
   );
 
   const emptyRows =

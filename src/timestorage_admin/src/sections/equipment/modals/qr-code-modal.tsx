@@ -1,7 +1,18 @@
-import { Dialog, DialogTitle, DialogContent, Box, IconButton } from '@mui/material';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Box,
+  IconButton,
+  Typography,
+  Link,
+  Tooltip,
+  IconButton as MuiIconButton,
+} from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
 import { Iconify } from 'src/components/iconify';
-import { getAppFrontendCanisterId } from 'src/services/canisterService';
+import { getFrontendCanisterUrl } from 'src/services/canisterService';
+import { useState } from 'react';
 
 interface QRCodeModalProps {
   open: boolean;
@@ -10,9 +21,20 @@ interface QRCodeModalProps {
 }
 
 export function QRCodeModal({ open, onClose, uuid }: QRCodeModalProps) {
-  // Construct the full URL using the current hostname
-  const baseURL = getAppFrontendCanisterId();
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const baseURL = getFrontendCanisterUrl();
   const url = `${baseURL}/${uuid}`;
+
+  const handleCopyClick = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000); // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
@@ -23,7 +45,15 @@ export function QRCodeModal({ open, onClose, uuid }: QRCodeModalProps) {
         </IconButton>
       </DialogTitle>
       <DialogContent>
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+            p: 3,
+          }}
+        >
           <QRCodeSVG
             value={url}
             size={256}
@@ -38,6 +68,48 @@ export function QRCodeModal({ open, onClose, uuid }: QRCodeModalProps) {
               excavate: true,
             }}
           />
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              maxWidth: '100%',
+              width: '100%',
+              bgcolor: 'background.neutral',
+              p: 1,
+              borderRadius: 1,
+            }}
+          >
+            <Link
+              href={url}
+              target="_blank"
+              rel="noopener"
+              sx={{
+                flex: 1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                color: 'text.primary',
+                '&:hover': { color: 'primary.main' },
+              }}
+            >
+              {url}
+            </Link>
+
+            <Tooltip title={copySuccess ? 'Copied!' : 'Copy URL'}>
+              <MuiIconButton
+                onClick={handleCopyClick}
+                size="small"
+                sx={{
+                  color: copySuccess ? 'success.main' : 'action.active',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                <Iconify icon={copySuccess ? 'eva:checkmark-fill' : 'eva:copy-fill'} width={16} />
+              </MuiIconButton>
+            </Tooltip>
+          </Box>
         </Box>
       </DialogContent>
     </Dialog>

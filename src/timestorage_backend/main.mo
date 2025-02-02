@@ -277,25 +277,16 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // updateManyValues function
-    public shared (msg) func updateManyValues(uuid : Text, updates : [(Text, Text)]) : async Result.Result<Text, [Text]> {
-
-        // Check if UUID exists
-        if (uuidToStructure.get(uuid) == null) {
-            return #err(["UUID not found"]);
-        };
-
-        // Retrieve the value submap for this UUID
+    public shared (msg) func updateManyValues(uuid : Text, updates : [(Text, Text)]) : async Result.Result<Text, Text> {
         let subMapOpt = uuidKeyValueMap.get(uuid);
         let subMap = switch (subMapOpt) {
-            case (null) { return #err(["UUID not found or not initialized."]) };
+            case (null) { return #err("UUID not found or not initialized.") };
             case (?m) m;
         };
 
         var failedKeys : [Text] = [];
 
-        // Iterate through the updates
         for ((key, newValue) in updates.vals()) {
-            // Check if the value is locked
             let lockKey = Storage.makeLockKey(uuid, key);
             let lockOpt = valueLocks.get(lockKey);
             let isLocked = switch (lockOpt) {
@@ -304,24 +295,87 @@ shared (msg) actor class TimestorageBackend() {
             };
 
             if (isLocked) {
-                // If the value is locked, add the key to failedKeys
                 failedKeys := Array.append(failedKeys, [key]);
             } else {
-                // If the key exists, update the value
-                if (subMap.get(key) != null) {
-                    subMap.put(key, newValue);
-                } else {
-                    // If the key does not exist, add it to failedKeys
-                    failedKeys := Array.append(failedKeys, [key]);
-                };
+                subMap.put(key, newValue);
             };
         };
 
-        // Return the list of keys that couldn't be updated
         if (failedKeys.size() > 0) {
             return #ok("Some keys could not be updated: " # Utils.arrayToText(failedKeys, ", "));
         } else {
             return #ok("All values updated successfully.");
+        };
+    };
+
+    // updateValeAndLock function
+    public shared (msg) func updateValueAndLock(req : Types.ValueUpdateRequest) : async Result.Result<Text, Text> {
+        // Retrieve the value subMap for this UUID
+        let subMapOpt = uuidKeyValueMap.get(req.uuid);
+        let subMap = switch (subMapOpt) {
+            case (null) { return #err("UUID not found or not initialized.") };
+            case (?m) m;
+        };
+
+        // Check if the value is already locked
+        let lockKey = Storage.makeLockKey(req.uuid, req.key);
+        let lockOpt = valueLocks.get(lockKey);
+        switch (lockOpt) {
+            case (?l) {
+                if (l.locked) {
+                    return #err("Value is locked and cannot be modified.");
+                };
+            };
+            case null {};
+        };
+
+        // Update or create the value
+        subMap.put(req.key, req.newValue);
+
+        // Lock the value
+        let newStatus : Types.ValueLockStatus = {
+            locked = true;
+            lockedBy = ?msg.caller;
+        };
+        valueLocks.put(lockKey, newStatus);
+        return #ok("Value updated and locked successfully.");
+    };
+
+    // updateManyValuesAndLock function
+    public shared (msg) func updateManyValuesAndLock(uuid : Text, updates : [(Text, Text)]) : async Result.Result<Text, Text> {
+        let subMapOpt = uuidKeyValueMap.get(uuid);
+        let subMap = switch (subMapOpt) {
+            case (null) { return #err("UUID not found or not initialized.") };
+            case (?m) m;
+        };
+
+        var failedKeys : [Text] = [];
+
+        for ((key, newValue) in updates.vals()) {
+            let lockKey = Storage.makeLockKey(uuid, key);
+            let lockOpt = valueLocks.get(lockKey);
+            let isLocked = switch (lockOpt) {
+                case (?l) { l.locked };
+                case null { false };
+            };
+
+            if (isLocked) {
+                failedKeys := Array.append(failedKeys, [key]);
+            } else {
+                subMap.put(key, newValue);
+
+                let newStatus : Types.ValueLockStatus = {
+                    locked = true;
+                    lockedBy = ?msg.caller;
+                };
+                valueLocks.put(lockKey, newStatus);
+            };
+        };
+
+        if (failedKeys.size() > 0) {
+            return #ok("Some keys could not be updated and locked: " # Utils.arrayToText(failedKeys, ", "));
+        } else {
+            return #ok("All values updated and locked successfully.");
         };
     };
 

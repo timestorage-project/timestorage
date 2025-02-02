@@ -8,7 +8,8 @@ let agent: HttpAgent | undefined;
 let timestorageActor: TimestorageBackend | undefined;
 let currentIdentity: Identity | undefined;
 
-const appCanisterId: string = process.env.CANISTER_ID_TIMESTORAGE_FRONTEND || 'rt5ct-7aaaa-aaaah-qp5ha-cai';
+const appCanisterId: string =
+  process.env.CANISTER_ID_TIMESTORAGE_FRONTEND || 'rt5ct-7aaaa-aaaah-qp5ha-cai';
 const devENV_Canister = 'bkyz2-fmaaa-aaaaa-qaaaq-cai';
 
 const initializeAgent = async () => {
@@ -175,13 +176,11 @@ export const getAllUUIDsWithInfo = async (translations: { [key: string]: string 
   await ensureAuthenticated();
   const actor = await initializeAgent();
 
-  // First get all UUIDs
   const uuidsResult = await actor.getAllUUIDs();
   if ('err' in uuidsResult) {
     throw new Error(uuidsResult.err);
   }
 
-  // For each UUID, get its info
   const uuidsWithInfo = await Promise.all(
     uuidsResult.ok.map(async (uuid) => {
       const infoResult = await actor.getUUIDInfo(uuid);
@@ -192,7 +191,6 @@ export const getAllUUIDsWithInfo = async (translations: { [key: string]: string 
 
       const [jsonString] = infoResult.ok;
 
-      // Apply translations if provided
       let processedJson = jsonString;
       Object.entries(translations).forEach(([localeKey, translation]) => {
         const regex = new RegExp(localeKey, 'g');
@@ -212,13 +210,11 @@ export const getAllUUIDsWithInfo = async (translations: { [key: string]: string 
     })
   );
 
-  // Filter out any failed fetches
   return uuidsWithInfo.filter(
     (info): info is { uuid: string; data: DataStructure } => info !== null
   );
 };
 
-// Helper function copied from DataContext
 export function mapApiResponseToDataStructure(response: {
   data: { [key: string]: unknown };
   values?: Record<string, string>;
@@ -233,7 +229,6 @@ export function mapApiResponseToDataStructure(response: {
   };
 }
 
-// Helper function copied from DataContext
 export function mapSectionToDataNode(
   section: unknown,
   values: Record<string, string> = {}
@@ -277,7 +272,6 @@ export function mapSectionToDataNode(
   };
 }
 
-// Helper function copied from DataContext
 export function getValueFromPath(values: Record<string, string>, path: string): string {
   const cleanPath = path.replace('#/values/', '');
 

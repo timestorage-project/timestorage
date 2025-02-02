@@ -11,6 +11,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Grid from '@mui/material/Grid';
+import { updateValue } from 'src/services/canisterService';
 
 interface NewEquipmentModalProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface NewEquipmentModalProps {
   onSubmit: (productInfo: ProductInfo) => Promise<void>;
   loading: boolean;
   refreshData: () => Promise<void>;
+  selectedUUID?: string;
 }
 
 interface ProductInfo {
@@ -48,6 +50,7 @@ export function NewEquipmentModal({
   onSubmit,
   loading,
   refreshData,
+  selectedUUID,
 }: NewEquipmentModalProps) {
   const [productInfo, setProductInfo] = useState<ProductInfo>({
     serialNumber: '',
@@ -68,9 +71,22 @@ export function NewEquipmentModal({
   };
 
   const handleSubmit = async () => {
-    if (productInfo.serialNumber.trim()) {
-      await onSubmit(productInfo);
+    if (!selectedUUID || !productInfo.serialNumber.trim()) return;
+
+    try {
+      const requests = [
+        updateValue(selectedUUID, 'productInfo.serialNumber', productInfo.serialNumber),
+        updateValue(selectedUUID, 'productInfo.dimensions', productInfo.dimensions),
+        updateValue(selectedUUID, 'productInfo.modelNumber', productInfo.modelNumber),
+        updateValue(selectedUUID, 'productInfo.materialType', productInfo.materialType),
+        updateValue(selectedUUID, 'productInfo.glassType', productInfo.glassType),
+        updateValue(selectedUUID, 'productInfo.energyRating', productInfo.energyRating),
+        updateValue(selectedUUID, 'productInfo.manufacturingDate', productInfo.manufacturingDate),
+        updateValue(selectedUUID, 'productInfo.windowType', productInfo.windowType),
+      ];
+      await Promise.all(requests);
       await refreshData();
+
       setProductInfo({
         serialNumber: '',
         dimensions: '',
@@ -81,9 +97,11 @@ export function NewEquipmentModal({
         manufacturingDate: '',
         windowType: '',
       });
+      onClose();
+    } catch (error) {
+      console.error('Error updating equipment:', error);
     }
   };
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>New Equipment</DialogTitle>

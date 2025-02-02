@@ -21,12 +21,14 @@ type EquipmentTableProps = {
     uuid: string,
     section: 'productInfo' | 'installationProcess' | 'maintenanceLog' | 'startInstallation'
   ) => void;
+  onSelectRow?: (uuid: string) => void;
 };
 
 export function EquipmentTable({
   equipmentList,
   isLoading = false,
   onViewDetail,
+  onSelectRow,
 }: EquipmentTableProps) {
   const [order, setOrder] = useState<Order>('asc');
   const [orderBy, setOrderBy] = useState<keyof EquipmentProps>('brand');
@@ -75,8 +77,15 @@ export function EquipmentTable({
       }
 
       setSelected(newSelected);
+
+      if (onSelectRow) {
+        const selectedEquipment = equipmentList.find((eq) => eq.id === id);
+        if (selectedEquipment) {
+          onSelectRow(selectedEquipment.UUID);
+        }
+      }
     },
-    [selected]
+    [selected, equipmentList, onSelectRow]
   );
 
   const handleChangePage = useCallback((event: unknown, newPage: number) => {

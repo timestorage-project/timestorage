@@ -132,7 +132,7 @@ const WizardPage: FC = () => {
       // Filter out null values and submit each answer
       for (const submission of submissions.filter(Boolean)) {
         if (submission) {
-          await canisterService.updateValue(projectId, submission.key, submission.value)
+          await canisterService.updateValue(projectId, submission.key, submission.value, true)
         }
       }
 

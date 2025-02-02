@@ -112,13 +112,29 @@ export const getUUIDInfo = async (uuid: string) => {
   return result.ok;
 };
 
-export const updateValue = async (uuid: string, key: string, value: string) => {
+export const updateValue = async (
+  uuid: string,
+  key: string,
+  value: string,
+  lock: boolean = false
+) => {
   await ensureAuthenticated();
   const actor = await initializeAgent();
   const result = await actor.updateValue({ uuid, key, newValue: value });
 
   if ('err' in result) {
     throw new Error(result.err);
+  }
+  if (lock) {
+    const lockResult = await actor.lockValue({
+      uuid,
+      key,
+      lock: true,
+    });
+
+    if ('err' in lockResult) {
+      throw new Error(lockResult.err);
+    }
   }
 
   return result.ok;

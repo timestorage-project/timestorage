@@ -22,6 +22,10 @@ type EquipmentTableProps = {
     section: 'productInfo' | 'installationProcess' | 'maintenanceLog' | 'startInstallation'
   ) => void;
   onSelectRow?: (uuid: string) => void;
+  page: number;
+  rowsPerPage: number;
+  onPageChange: (event: unknown, newPage: number) => void;
+  onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 export function EquipmentTable({
@@ -29,13 +33,15 @@ export function EquipmentTable({
   isLoading = false,
   onViewDetail,
   onSelectRow,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange,
 }: EquipmentTableProps) {
   const [order, setOrder] = useState<Order>('asc');
   const [orderBy, setOrderBy] = useState<keyof EquipmentProps>('brand');
   const [selected, setSelected] = useState<string[]>([]);
   const [filterName, setFilterName] = useState('');
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [page, setPage] = useState(0);
 
   const handleRequestSort = useCallback(
     (property: keyof EquipmentProps) => {
@@ -88,14 +94,8 @@ export function EquipmentTable({
     [selected, equipmentList, onSelectRow]
   );
 
-  const handleChangePage = useCallback((event: unknown, newPage: number) => {
-    setPage(newPage);
-  }, []);
-
-  const handleChangeRowsPerPage = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  }, []);
+  const handleChangePage = onPageChange;
+  const handleChangeRowsPerPage = onRowsPerPageChange;
 
   const handleFilterByName = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setFilterName(event.target.value);

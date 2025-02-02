@@ -108,14 +108,14 @@ export function EmptyEquipmentView() {
       }
 
       const requests = [
-        updateValue(uuid, 'productInfo.serialNumber', productInfo.serialNumber),
-        updateValue(uuid, 'productInfo.dimensions', productInfo.dimensions),
-        updateValue(uuid, 'productInfo.modelNumber', productInfo.modelNumber),
-        updateValue(uuid, 'productInfo.materialType', productInfo.materialType),
-        updateValue(uuid, 'productInfo.glassType', productInfo.glassType),
-        updateValue(uuid, 'productInfo.energyRating', productInfo.energyRating),
-        updateValue(uuid, 'productInfo.manufacturingDate', productInfo.manufacturingDate),
-        updateValue(uuid, 'productInfo.windowType', productInfo.windowType),
+        updateValue(uuid, 'productInfo.serialNumber', productInfo.serialNumber, true),
+        updateValue(uuid, 'productInfo.dimensions', productInfo.dimensions, true),
+        updateValue(uuid, 'productInfo.modelNumber', productInfo.modelNumber, true),
+        updateValue(uuid, 'productInfo.materialType', productInfo.materialType, true),
+        updateValue(uuid, 'productInfo.glassType', productInfo.glassType, true),
+        updateValue(uuid, 'productInfo.energyRating', productInfo.energyRating, true),
+        updateValue(uuid, 'productInfo.manufacturingDate', productInfo.manufacturingDate, true),
+        updateValue(uuid, 'productInfo.windowType', productInfo.windowType, true),
       ];
       await Promise.all(requests);
 
@@ -254,6 +254,10 @@ export function EmptyEquipmentView() {
             isLoading={isLoading}
             onSelectRow={handleSelectRow}
             onViewDetail={(uuid, section) => handleOpenDetail(uuid, section)}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </Scrollbar>
 

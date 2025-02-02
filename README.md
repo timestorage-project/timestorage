@@ -27,7 +27,8 @@ Welcome to the **Time Storage Backend**! This project provides a highly secure a
 Here's a breakdown of the most important files:
 
 - **auth.mo**: Handles admin authentication and access control.
-- **main.mo**: Entry point and logic of the backend canister.
+- **logic.mo**:  All business logic of the backend.
+- **main.mo**: Entry point of the backend canister.
 - **storage.mo**: Defines storage maps and structures.
 - **types.mo**: Contains custom types and data models.
 - **utils.mo**: Utility Endpoints for validation and JSON manipulation.
@@ -352,7 +353,56 @@ dfx canister call timestorage_backend updateManyValues '("uuid-dummy", vec { rec
 
 ---
 
-## 6. **lockValue**
+## 6. **updateValueAndLock**
+
+**Description:** Updates a specific value associated with a UUID and locks it to prevent further modifications.
+
+**Endpoint:**
+```motoko
+public shared (msg) func updateValueAndLock(req: Types.ValueUpdateRequest) : async Result.Result<Text, Text>
+```
+
+**Parameters:**
+- `req` (Types.ValueUpdateRequest): The request containing the UUID, key, and new value to be updated and locked.
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend updateValueAndLock '(record { uuid = "uuid-dummy"; key = "exampleKey"; newValue = "newLockedValue" })'
+```
+
+**Response:**
+- Success: `(variant { ok = "Value updated and locked successfully." })`
+- Error: `(variant { err = "Value is already locked." })`
+- Error: `(variant { err = "UUID not found or not initialized." })`
+
+---
+
+## 7. **updateManyValuesAndLock**
+
+**Description:** Updates multiple key-value pairs for a given UUID and locks them to prevent further modifications.
+
+**Endpoint:**
+```motoko
+public shared (msg) func updateManyValuesAndLock(uuid: Text, updates: [(Text, Text)]) : async Result.Result<Text, Text>
+```
+
+**Parameters:**
+- `uuid` (Text): The UUID to update.
+- `updates` ([(Text, Text)]): A list of key-value pairs to be updated and locked.
+
+**Example Command:**
+```bash
+dfx canister call timestorage_backend updateManyValuesAndLock '("uuid-dummy", vec { record { "exampleKey"; "newLockedValue1" }; record { "key2"; "newLockedValue2" } })'
+```
+
+**Response:**
+- Success: `(variant { ok = "All values updated and locked successfully." })`
+- Error: `(variant { err = "Some keys could not be updated and locked: key2, key3" })`
+- Error: `(variant { err = "UUID not found or not initialized." })`
+
+---
+
+## 8. **lockValue**
 
 **Description:** Locks a specific value for a UUID.
 
@@ -376,7 +426,7 @@ dfx canister call timestorage_backend lockValue '(record { uuid = "uuid-dummy"; 
 
 ---
 
-## 7. **unlockValue**
+## 9. **unlockValue**
 
 *⚠️ Admin role required to execute this function*
 
@@ -403,7 +453,7 @@ dfx canister call timestorage_backend unlockValue '(record { uuid = "uuid-dummy"
 
 ---
 
-## 8. **lockAllValues**
+## 10. **lockAllValues**
 
 **Description:** Locks all values for a given UUID.
 
@@ -426,7 +476,7 @@ dfx canister call timestorage_backend lockAllValues '(record { uuid = "uuid-dumm
 
 ---
 
-## 9. **unlockAllValues**
+## 11. **unlockAllValues**
 
 *⚠️ Admin role required to execute this function*
 
@@ -451,7 +501,7 @@ dfx canister call timestorage_backend unlockAllValues '(record { uuid = "uuid-du
 
 ---
 
-## 10. **getValue**
+## 12. **getValue**
 
 **Description:** Retrieves a specific value associated with a UUID.
 
@@ -475,7 +525,7 @@ dfx canister call timestorage_backend getValue '(record { uuid = "uuid-dummy"; k
 
 ---
 
-## 11. **getAllValues**
+## 13. **getAllValues**
 
 **Description:** Retrieves all key-value pairs associated with a UUID.
 
@@ -498,7 +548,7 @@ dfx canister call timestorage_backend getAllValues '("uuid-dummy")'
 
 ---
 
-## 12. **getValueLockStatus**
+## 14. **getValueLockStatus**
 
 **Description:** Retrieves the lock status of a specific value.
 
@@ -521,7 +571,7 @@ dfx canister call timestorage_backend getValueLockStatus '(record { uuid = "uuid
 
 ---
 
-## 13.​ **getAllUUIDs**
+## 15.​ **getAllUUIDs**
 
 *⚠️ Admin role required to execute this function*
 

@@ -156,7 +156,7 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // insertUUIDStructure function
-    public shared (msg) func insertUUIDStructure(uuid : Text, schema : Text) : async Types.Result<Text, Text> {
+    public shared (msg) func insertUUIDStructure(uuid : Types.UUID, schema : Text) : async Types.Result<Text, Text> {
         return Logic.insertUUIDStructure(
             uuid,
             schema,

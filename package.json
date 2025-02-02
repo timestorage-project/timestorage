@@ -12,12 +12,17 @@
     "test": "npm test --workspaces --if-present",
     "init": "chmod +x init.sh && ./init.sh"
   },
+  "bin": {
+    "timestorage": "./cli.cjs"
+  },
   "type": "module",
   "workspaces": [
     "src/timestorage_frontend",
     "src/timestorage_admin"
   ],
   "dependencies": {
-    "@dfinity/candid": "^2.2.0"
+    "chalk": "^4.1.2",
+    "commander": "^9.4.1",
+    "prompts": "^2.4.2"
   }
 }

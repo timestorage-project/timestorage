@@ -1,13 +1,12 @@
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 
-import { _tasks, _posts, _timeline } from 'src/_mock';
+import { _tasks, _timeline } from 'src/_mock';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { AnalyticsNews } from '../analytics-news';
 import { AnalyticsTasks } from '../analytics-tasks';
 import { AnalyticsCurrentVisits } from '../analytics-current-visits';
-import { AnalyticsOrderTimeline } from '../analytics-order-timeline';
 import { AnalyticsWebsiteVisits } from '../analytics-website-visits';
 import { AnalyticsWidgetSummary } from '../analytics-widget-summary';
 import { AnalyticsTrafficBySite } from '../analytics-traffic-by-site';
@@ -20,74 +19,75 @@ export function OverviewAnalyticsView() {
   return (
     <DashboardContent maxWidth="xl">
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
-        Hi, Welcome back 👋
+        Equipment Analytics Dashboard 📊
       </Typography>
 
       <Grid container spacing={3}>
         <Grid xs={12} sm={6} md={3}>
           <AnalyticsWidgetSummary
-            title="Weekly sales"
-            percent={2.6}
-            total={714000}
-            icon={<img alt="icon" src="/assets/icons/glass/ic-glass-bag.svg" />}
+            title="Total Equipment"
+            percent={12.5}
+            total={156}
+            color="primary"
+            icon=""
             chart={{
               categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [22, 8, 35, 50, 82, 84, 77, 12],
+              series: [25, 35, 44, 55, 68, 87, 122, 156],
             }}
           />
         </Grid>
 
         <Grid xs={12} sm={6} md={3}>
           <AnalyticsWidgetSummary
-            title="New users"
-            percent={-0.1}
-            total={1352831}
+            title="Inst. Equipment"
+            percent={12.5}
+            total={156}
             color="secondary"
-            icon={<img alt="icon" src="/assets/icons/glass/ic-glass-users.svg" />}
+            icon=""
             chart={{
               categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [56, 47, 40, 62, 73, 30, 23, 54],
+              series: [25, 35, 44, 55, 68, 87, 122, 156],
             }}
           />
         </Grid>
 
         <Grid xs={12} sm={6} md={3}>
           <AnalyticsWidgetSummary
-            title="Purchase orders"
-            percent={2.8}
-            total={1723315}
+            title="Pending Installation"
+            percent={-2.3}
+            total={33}
             color="warning"
-            icon={<img alt="icon" src="/assets/icons/glass/ic-glass-buy.svg" />}
+            icon=""
             chart={{
               categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [40, 70, 50, 28, 70, 75, 7, 64],
+              series: [5, 7, 9, 10, 10, 10, 20, 33],
             }}
           />
         </Grid>
 
         <Grid xs={12} sm={6} md={3}>
           <AnalyticsWidgetSummary
-            title="Messages"
-            percent={3.6}
-            total={234}
-            color="error"
-            icon={<img alt="icon" src="/assets/icons/glass/ic-glass-message.svg" />}
+            title="Active Installers"
+            percent={5.7}
+            total={24}
+            color="info"
+            icon=""
             chart={{
               categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [56, 30, 23, 54, 47, 40, 62, 73],
+              series: [8, 12, 15, 18, 20, 22, 23, 24],
             }}
           />
         </Grid>
 
         <Grid xs={12} md={6} lg={4}>
           <AnalyticsCurrentVisits
-            title="Current visits"
+            title="Equipment by Type"
             chart={{
               series: [
-                { label: 'America', value: 3500 },
-                { label: 'Asia', value: 2500 },
-                { label: 'Europe', value: 1500 },
-                { label: 'Africa', value: 500 },
+                { label: 'Double Glazed', value: 4344 },
+                { label: 'Triple Glazed', value: 5435 },
+                { label: 'Single Glazed', value: 1443 },
+                { label: 'Special Glass', value: 443 },
               ],
             }}
           />
@@ -95,13 +95,19 @@ export function OverviewAnalyticsView() {
 
         <Grid xs={12} md={6} lg={8}>
           <AnalyticsWebsiteVisits
-            title="Website visits"
+            title="Monthly Equipment Installation"
             subheader="(+43%) than last year"
             chart={{
               categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
               series: [
-                { name: 'Team A', data: [43, 33, 22, 37, 67, 68, 37, 24, 55] },
-                { name: 'Team B', data: [51, 70, 47, 67, 40, 37, 24, 70, 24] },
+                {
+                  name: 'Completed Installations',
+                  data: [44, 55, 57, 56, 61, 58, 63, 60, 66],
+                },
+                {
+                  name: 'Scheduled Installations',
+                  data: [35, 41, 36, 26, 45, 48, 52, 53, 41],
+                },
               ],
             }}
           />
@@ -109,13 +115,13 @@ export function OverviewAnalyticsView() {
 
         <Grid xs={12} md={6} lg={8}>
           <AnalyticsConversionRates
-            title="Conversion rates"
-            subheader="(+43%) than last year"
+            title="Installation Success Rate by Region"
+            subheader="(+8%) than last quarter"
             chart={{
-              categories: ['Italy', 'Japan', 'China', 'Canada', 'France'],
+              categories: ['North', 'South', 'East', 'West', 'Central'],
               series: [
-                { name: '2022', data: [44, 55, 41, 64, 22] },
-                { name: '2023', data: [53, 32, 33, 52, 13] },
+                { name: '2022', data: [88, 85, 87, 86, 82] },
+                { name: '2023', data: [92, 88, 90, 88, 85] },
               ],
             }}
           />
@@ -123,40 +129,101 @@ export function OverviewAnalyticsView() {
 
         <Grid xs={12} md={6} lg={4}>
           <AnalyticsCurrentSubject
-            title="Current subject"
+            title="Equipment Performance Metrics"
             chart={{
-              categories: ['English', 'History', 'Physics', 'Geography', 'Chinese', 'Math'],
+              categories: [
+                'Energy',
+                'Durability',
+                'Installation',
+                'Maintenance',
+                'Cost',
+                'Quality',
+              ],
               series: [
-                { name: 'Series 1', data: [80, 50, 30, 40, 100, 20] },
-                { name: 'Series 2', data: [20, 30, 40, 80, 20, 80] },
-                { name: 'Series 3', data: [44, 76, 78, 13, 43, 10] },
+                { name: 'Target', data: [90, 85, 85, 80, 70, 95] },
+                { name: 'Actual', data: [85, 88, 82, 78, 75, 92] },
+                { name: 'Industry Avg', data: [70, 75, 70, 65, 60, 80] },
               ],
             }}
           />
         </Grid>
 
         <Grid xs={12} md={6} lg={8}>
-          <AnalyticsNews title="News" list={_posts.slice(0, 5)} />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={4}>
-          <AnalyticsOrderTimeline title="Order timeline" list={_timeline} />
+          <AnalyticsNews
+            title="Latest Equipment Updates"
+            list={[
+              {
+                id: '1',
+                title: 'New Triple Glazed Window Series Released',
+                description: 'Introducing our latest innovation in energy-efficient windows',
+                postedAt: '2023-10-01',
+                coverUrl: '/assets/images/covers/cover_1.jpg',
+                totalViews: 1234,
+                totalShares: 45,
+                totalComments: 12,
+                author: {
+                  name: 'Product Team',
+                  avatarUrl: '/assets/images/avatars/avatar_1.jpg',
+                },
+                totalFavorites: 0,
+              },
+              {
+                id: '2',
+                title: 'Installation Process Optimization',
+                description: 'Reduced installation time by 25% with new methodologies',
+                postedAt: '2023-09-28',
+                coverUrl: '/assets/images/covers/cover_2.jpg',
+                totalViews: 987,
+                totalShares: 32,
+                totalComments: 8,
+                author: {
+                  name: 'Installation Team',
+                  avatarUrl: '/assets/images/avatars/avatar_2.jpg',
+                },
+                totalFavorites: 0,
+              },
+              {
+                id: '3',
+                title: 'Sustainability Achievement',
+                description: '90% of our equipment now uses recycled materials',
+                postedAt: '2023-09-25',
+                coverUrl: '/assets/images/covers/cover_3.jpg',
+                totalViews: 654,
+                totalShares: 28,
+                totalComments: 15,
+                author: {
+                  name: 'Sustainability Department',
+                  avatarUrl: '/assets/images/avatars/avatar_3.jpg',
+                },
+                totalFavorites: 0,
+              },
+            ]}
+          />
         </Grid>
 
         <Grid xs={12} md={6} lg={4}>
           <AnalyticsTrafficBySite
-            title="Traffic by site"
+            title="Distribution Channels"
             list={[
-              { value: 'facebook', label: 'Facebook', total: 323234 },
-              { value: 'google', label: 'Google', total: 341212 },
-              { value: 'linkedin', label: 'Linkedin', total: 411213 },
-              { value: 'twitter', label: 'Twitter', total: 443232 },
+              { value: 'direct', label: 'Direct Sales', total: 323234 },
+              { value: 'partners', label: 'Partners', total: 341212 },
+              { value: 'retail', label: 'Retail', total: 411213 },
+              { value: 'online', label: 'Online', total: 443232 },
             ]}
           />
         </Grid>
 
         <Grid xs={12} md={6} lg={8}>
-          <AnalyticsTasks title="Tasks" list={_tasks} />
+          <AnalyticsTasks
+            title="Installation Tasks"
+            list={[
+              { id: '1', name: 'Create New Installation Schedule' },
+              { id: '2', name: 'Quality Check - Batch XYZ' },
+              { id: '3', name: 'Update Installation Guidelines' },
+              { id: '4', name: 'Review Customer Feedback' },
+              { id: '5', name: 'Train New Installers' },
+            ]}
+          />
         </Grid>
       </Grid>
     </DashboardContent>

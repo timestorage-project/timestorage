@@ -89,8 +89,7 @@ export function NavMobile({
     if (open) {
       onClose();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [pathname, onClose, open]);
 
   return (
     <Drawer
@@ -107,7 +106,7 @@ export function NavMobile({
         },
       }}
     >
-      {/* <NavContent data={data} slots={slots} workspaces={workspaces} /> */}
+      <NavContent data={data} slots={slots} workspaces={workspaces} />
     </Drawer>
   );
 }
@@ -175,8 +174,6 @@ export function NavContent({ data, slots, workspaces, sx }: NavContentProps) {
       </Scrollbar>
 
       {slots?.bottomArea}
-
-      {/* <NavUpgrade /> */}
     </>
   );
 }

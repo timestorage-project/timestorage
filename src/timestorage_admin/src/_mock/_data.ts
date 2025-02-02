@@ -1,3 +1,5 @@
+import { useAuthStore } from 'src/store/auth.store';
+import { useEffect, useState } from 'react';
 import {
   _id,
   _price,
@@ -13,12 +15,24 @@ import {
 
 // ----------------------------------------------------------------------
 
-export const _myAccount = {
-  displayName: 'ICP Identity',
-  email: '-',
-  photoURL: '/assets/images/avatar/avatar-25.webp',
-};
+export const useMyAccount = () => {
+  const [account, setAccount] = useState({
+    displayName: 'ICP Identity',
+    email: '-',
+    photoURL: '/assets/images/avatar/avatar-25.webp',
+  });
 
+  const currentPrincipalId = useAuthStore((state) => state.currentPrincipalId);
+
+  useEffect(() => {
+    setAccount((prev) => ({
+      ...prev,
+      email: currentPrincipalId,
+    }));
+  }, [currentPrincipalId]);
+
+  return account;
+};
 // ----------------------------------------------------------------------
 
 export const _users = [...Array(24)].map((_, index) => ({

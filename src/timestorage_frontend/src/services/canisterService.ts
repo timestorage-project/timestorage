@@ -4,21 +4,24 @@ import { Actor, HttpAgent } from '@dfinity/agent'
 let agent: HttpAgent
 let timestorageActor: TimestorageBackend
 
-const initializeAgent = async () => {
-  if (!agent) {
-    agent = new HttpAgent({
-      host: process.env.DFX_NETWORK === 'ic' ? 'https://ic0.app' : 'http://localhost:4943'
-    })
+const backendCanisterId = (process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string) || 'r26jp-jiaaa-aaaah-qp5gq-cai'
 
-    if (process.env.DFX_NETWORK !== 'ic') {
+const initializeAgent = async () => {
+  const isLocalEnv = process.env.DFX_NETWORK !== 'ic'
+  const host = isLocalEnv ? 'http://localhost:4943' : 'https://ic0.app'
+  if (!agent) {
+    agent = new HttpAgent({ host })
+
+    if (isLocalEnv) {
       await agent.fetchRootKey()
     }
   }
+  console.log(backendCanisterId)
 
   if (!timestorageActor) {
     timestorageActor = Actor.createActor<TimestorageBackend>(idlFactory, {
       agent,
-      canisterId: process.env.CANISTER_ID_TIMESTORAGE_BACKEND || 'bkyz2-fmaaa-aaaaa-qaaaq-cai'
+      canisterId: backendCanisterId as string
     })
   }
 
@@ -36,12 +39,24 @@ export const getUUIDInfo = async (uuid: string) => {
   return result.ok
 }
 
-export const updateValue = async (uuid: string, key: string, value: string) => {
+export const updateValue = async (uuid: string, key: string, value: string, lock: boolean = false) => {
   const actor = await initializeAgent()
   const result = await actor.updateValue({ uuid, key, newValue: value })
 
   if ('err' in result) {
     throw new Error(result.err)
+  }
+
+  if (lock) {
+    const lockResult = await actor.lockValue({
+      uuid,
+      key,
+      lock: true
+    })
+
+    if ('err' in lockResult) {
+      throw new Error(lockResult.err)
+    }
   }
 
   return result.ok

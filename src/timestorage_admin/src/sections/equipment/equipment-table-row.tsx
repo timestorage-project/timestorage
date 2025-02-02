@@ -43,9 +43,8 @@ export function EquipmentTableRow({
   onSelectRow,
   onViewDetail,
 }: EquipmentTableRowProps) {
-  
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
-  
+
   const [qrModalOpen, setQrModalOpen] = useState(false);
 
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {

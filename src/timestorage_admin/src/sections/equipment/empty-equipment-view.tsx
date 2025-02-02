@@ -101,26 +101,25 @@ export function EmptyEquipmentView() {
         throw new Error('You must be authenticated to create equipment');
       }
 
-      // Update serial number and other values
+      const uuid = selectedEmptyUUID || `${uuidv4()}`;
+
+      if (!selectedEmptyUUID) {
+        await insertUUIDStructure(uuid, baseStructure);
+      }
+
       const requests = [
-        updateValue(selectedEmptyUUID, 'productInfo.serialNumber', productInfo.serialNumber),
-        updateValue(selectedEmptyUUID, 'productInfo.dimensions', productInfo.dimensions),
-        updateValue(selectedEmptyUUID, 'productInfo.modelNumber', productInfo.modelNumber),
-        updateValue(selectedEmptyUUID, 'productInfo.materialType', productInfo.materialType),
-        updateValue(selectedEmptyUUID, 'productInfo.glassType', productInfo.glassType),
-        updateValue(selectedEmptyUUID, 'productInfo.energyRating', productInfo.energyRating),
-        updateValue(
-          selectedEmptyUUID,
-          'productInfo.manufacturingDate',
-          productInfo.manufacturingDate
-        ),
-        updateValue(selectedEmptyUUID, 'productInfo.windowType', productInfo.windowType),
+        updateValue(uuid, 'productInfo.serialNumber', productInfo.serialNumber),
+        updateValue(uuid, 'productInfo.dimensions', productInfo.dimensions),
+        updateValue(uuid, 'productInfo.modelNumber', productInfo.modelNumber),
+        updateValue(uuid, 'productInfo.materialType', productInfo.materialType),
+        updateValue(uuid, 'productInfo.glassType', productInfo.glassType),
+        updateValue(uuid, 'productInfo.energyRating', productInfo.energyRating),
+        updateValue(uuid, 'productInfo.manufacturingDate', productInfo.manufacturingDate),
+        updateValue(uuid, 'productInfo.windowType', productInfo.windowType),
       ];
       await Promise.all(requests);
 
-      const allUUIDs = await getAllUUIDsWithInfo();
-      setEquipmentList(allUUIDs as unknown as EquipmentProps[]);
-
+      await fetchEquipment();
       setModalOpen(false);
       setSelectedEmptyUUID('');
     } catch (error) {
@@ -128,11 +127,6 @@ export function EmptyEquipmentView() {
     } finally {
       setModalLoading(false);
     }
-  };
-
-  const handleRowClick = (uuid: string) => {
-    setSelectedEmptyUUID(uuid);
-    setModalOpen(true);
   };
 
   const handleOpenDetail = (uuid: string, section: typeof selectedSection) => {
@@ -249,7 +243,6 @@ export function EmptyEquipmentView() {
           setSelectedEmptyUUID('');
         }}
         loading={modalLoading}
-        refreshData={fetchEquipment}
         selectedUUID={selectedEmptyUUID}
         onSubmit={handleCreateEquipment}
       />

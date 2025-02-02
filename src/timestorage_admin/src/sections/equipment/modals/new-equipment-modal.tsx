@@ -11,14 +11,14 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Grid from '@mui/material/Grid';
-import { updateValue } from 'src/services/canisterService';
+import { v4 as uuidv4 } from 'uuid';
+import { insertUUIDStructure, updateValue } from 'src/services/canisterService';
 
 interface NewEquipmentModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (productInfo: ProductInfo) => Promise<void>;
   loading: boolean;
-  refreshData: () => Promise<void>;
   selectedUUID?: string;
 }
 
@@ -49,7 +49,6 @@ export function NewEquipmentModal({
   onClose,
   onSubmit,
   loading,
-  refreshData,
   selectedUUID,
 }: NewEquipmentModalProps) {
   const [productInfo, setProductInfo] = useState<ProductInfo>({
@@ -63,6 +62,8 @@ export function NewEquipmentModal({
     windowType: '',
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleChange = (field: keyof ProductInfo) => (event: any) => {
     setProductInfo((prev) => ({
       ...prev,
@@ -71,21 +72,10 @@ export function NewEquipmentModal({
   };
 
   const handleSubmit = async () => {
-    if (!selectedUUID || !productInfo.serialNumber.trim()) return;
+    if (!productInfo.serialNumber.trim()) return;
 
     try {
-      const requests = [
-        updateValue(selectedUUID, 'productInfo.serialNumber', productInfo.serialNumber),
-        updateValue(selectedUUID, 'productInfo.dimensions', productInfo.dimensions),
-        updateValue(selectedUUID, 'productInfo.modelNumber', productInfo.modelNumber),
-        updateValue(selectedUUID, 'productInfo.materialType', productInfo.materialType),
-        updateValue(selectedUUID, 'productInfo.glassType', productInfo.glassType),
-        updateValue(selectedUUID, 'productInfo.energyRating', productInfo.energyRating),
-        updateValue(selectedUUID, 'productInfo.manufacturingDate', productInfo.manufacturingDate),
-        updateValue(selectedUUID, 'productInfo.windowType', productInfo.windowType),
-      ];
-      await Promise.all(requests);
-      await refreshData();
+      await onSubmit(productInfo);
 
       setProductInfo({
         serialNumber: '',
@@ -97,11 +87,11 @@ export function NewEquipmentModal({
         manufacturingDate: '',
         windowType: '',
       });
-      onClose();
     } catch (error) {
-      console.error('Error updating equipment:', error);
+      console.error('Error submitting equipment:', error);
     }
   };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>New Equipment</DialogTitle>
@@ -242,11 +232,16 @@ export function NewEquipmentModal({
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
+        <Button onClick={onClose} disabled={isSubmitting || loading}>
           Cancel
         </Button>
-        <LoadingButton onClick={handleSubmit} loading={loading} variant="contained">
-          Create
+        <LoadingButton
+          disabled={!productInfo.serialNumber.trim()}
+          onClick={handleSubmit}
+          loading={isSubmitting || loading}
+          variant="contained"
+        >
+          {selectedUUID ? 'Update' : 'Create'}
         </LoadingButton>
       </DialogActions>
     </Dialog>

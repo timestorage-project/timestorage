@@ -7,7 +7,7 @@ import Principal "mo:base/Principal";
 
 actor TestRunner {
     public func runAllTests() : async Text {
-        // Il deployer è ottenuto dal Principal dell'attore TestRunner
+        // Deployer is obtained from the Principal of the TestRunner actor
         let deployerPrincipal = Principal.fromActor(TestRunner);
 
         Debug.print("Running auth tests...");

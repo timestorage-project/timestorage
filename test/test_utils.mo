@@ -3,7 +3,7 @@ import Debug "mo:base/Debug";
 
 module {
 
-    // Test for mapEntriesToJson function
+    // Test for mapEntriesToJson
     public func testMapEntriesToJson() {
         let entries = [("key1", "value1"), ("key2", "value2")];
         let json = Utils.mapEntriesToJson(entries);
@@ -19,7 +19,7 @@ module {
         Debug.print("testEscapeString: Passed");
     };*/
 
-    // Test for arrayToText function
+    // Test for arrayToText
     public func testArrayToText() {
         let arr = ["a", "b", "c"];
         let result = Utils.arrayToText(arr, ", ");

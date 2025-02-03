@@ -5,7 +5,7 @@ import Auth "../src/timestorage_backend/auth";
 import Iter "mo:base/Iter";
 
 module {
-    // Helper: crea una mappa degli admin con il deployer impostato come admin di default
+    // Helper: create an admin map with the deployer set as admin by default
     func createAdminMap(deployerPrincipal : Principal) : HashMap.HashMap<Principal, Bool> {
         let admins = Auth.newAdminMap();
         admins.put(deployerPrincipal, true);
@@ -13,7 +13,7 @@ module {
         return admins;
     };
 
-    // Test della funzione isAdmin
+    // Test for IsAdmin
     public func testIsAdmin(deployerPrincipal : Principal) {
         let admins = createAdminMap(deployerPrincipal);
         let nonAdminPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
@@ -21,12 +21,10 @@ module {
         Debug.print("Deployer Principal: " # Principal.toText(deployerPrincipal));
         Debug.print("Non-Admin Principal: " # Principal.toText(nonAdminPrincipal));
 
-        // Il deployer (admin) deve risultare tale
         let isAdminResult = Auth.isAdmin(deployerPrincipal, admins);
         Debug.print("Is deployer an admin? " # debug_show (isAdminResult));
         assert isAdminResult == true;
 
-        // Un principal non presente nella mappa non è admin
         let isNonAdminResult = Auth.isAdmin(nonAdminPrincipal, admins);
         Debug.print("Is non-admin an admin? " # debug_show (isNonAdminResult));
         assert isNonAdminResult == false;
@@ -34,7 +32,7 @@ module {
         Debug.print("testIsAdmin: Passed");
     };
 
-    // Test della funzione addAdmin
+    // Test for addAdmin
     public func testAddAdmin(deployerPrincipal : Principal) {
         let admins = createAdminMap(deployerPrincipal);
         let newAdminPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
@@ -56,7 +54,6 @@ module {
             };
         };
 
-        // Verifica che un non-admin non possa aggiungere un admin
         let adminsForNonAdminTest = createAdminMap(deployerPrincipal);
         let nonAdminPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
         let addAdminByNonAdminResult = Auth.addAdmin(newAdminPrincipal, nonAdminPrincipal, adminsForNonAdminTest);
@@ -74,15 +71,13 @@ module {
         Debug.print("testAddAdmin: Passed");
     };
 
-    // Test della funzione removeAdmin
+    // Test for removeAdmin
     public func testRemoveAdmin(deployerPrincipal : Principal) {
         let admins = createAdminMap(deployerPrincipal);
         let newAdminPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
 
-        // Aggiungiamo un nuovo admin
         ignore Auth.addAdmin(newAdminPrincipal, deployerPrincipal, admins);
 
-        // Rimuoviamo l'admin appena aggiunto
         let removeAdminResult = Auth.removeAdmin(newAdminPrincipal, deployerPrincipal, admins);
         switch (removeAdminResult) {
             case (#ok(())) {
@@ -95,7 +90,6 @@ module {
             };
         };
 
-        // Verifica che un non-admin non possa rimuovere un admin
         let nonAdminPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
         let removeAdminByNonAdminResult = Auth.removeAdmin(deployerPrincipal, nonAdminPrincipal, admins);
         switch (removeAdminByNonAdminResult) {
@@ -112,7 +106,7 @@ module {
         Debug.print("testRemoveAdmin: Passed");
     };
 
-    // Test della funzione requireAdmin
+    // Test for requireAdmin
     public func testRequireAdmin(deployerPrincipal : Principal) {
         let admins = createAdminMap(deployerPrincipal);
         let nonAdminPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
@@ -143,11 +137,7 @@ module {
         Debug.print("testRequireAdmin: Passed");
     };
 
-    // ======================================
-    // Test per le funzionalità relative all'editor
-    // ======================================
-
-    // Test della funzione isEditor
+    // Test for isEditor
     public func testIsEditor(deployerPrincipal : Principal) {
         let editors = Auth.newEditorMap();
         let nonEditorPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
@@ -155,12 +145,10 @@ module {
         Debug.print("Deployer Principal: " # Principal.toText(deployerPrincipal));
         Debug.print("Non-Editor Principal: " # Principal.toText(nonEditorPrincipal));
 
-        // All'inizio, nessun editor è presente
         let isEditorResult = Auth.isEditor(deployerPrincipal, editors);
         Debug.print("Is deployer an editor? " # debug_show (isEditorResult));
         assert isEditorResult == false;
 
-        // Aggiungiamo il deployer manualmente per testare isEditor
         editors.put(deployerPrincipal, true);
         let isEditorAfterAdd = Auth.isEditor(deployerPrincipal, editors);
         Debug.print("After adding, is deployer an editor? " # debug_show (isEditorAfterAdd));
@@ -169,7 +157,7 @@ module {
         Debug.print("testIsEditor: Passed");
     };
 
-    // Test della funzione addEditor
+    // Test for addEditor
     public func testAddEditor(deployerPrincipal : Principal) {
         let admins = createAdminMap(deployerPrincipal);
         let editors = Auth.newEditorMap();
@@ -192,7 +180,6 @@ module {
             };
         };
 
-        // Verifica che un non-admin non possa aggiungere un editor
         let editorsForNonAdminTest = Auth.newEditorMap();
         let nonAdminPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
         let addEditorByNonAdminResult = Auth.addEditor(newEditorPrincipal, nonAdminPrincipal, admins, editorsForNonAdminTest);
@@ -210,16 +197,14 @@ module {
         Debug.print("testAddEditor: Passed");
     };
 
-    // Test della funzione removeEditor
+    // Test for removeEditor
     public func testRemoveEditor(deployerPrincipal : Principal) {
         let admins = createAdminMap(deployerPrincipal);
         let editors = Auth.newEditorMap();
         let newEditorPrincipal = Principal.fromText("xd7us-q23m2-djaxo-dv2g3-corol-jj5et-jhle6-kborp-xk7gl-x4vfi-pae");
 
-        // Aggiungiamo un nuovo editor
         ignore Auth.addEditor(newEditorPrincipal, deployerPrincipal, admins, editors);
 
-        // Rimuoviamo l'editor appena aggiunto
         let removeEditorResult = Auth.removeEditor(newEditorPrincipal, deployerPrincipal, admins, editors);
         switch (removeEditorResult) {
             case (#ok(())) {
@@ -232,9 +217,7 @@ module {
             };
         };
 
-        // Verifica che un non-admin non possa rimuovere un editor
         let nonAdminPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
-        // Aggiungiamo nuovamente l'editor per testare la rimozione da parte di un non-admin
         ignore Auth.addEditor(newEditorPrincipal, deployerPrincipal, admins, editors);
         let removeEditorByNonAdminResult = Auth.removeEditor(newEditorPrincipal, nonAdminPrincipal, admins, editors);
         switch (removeEditorByNonAdminResult) {
@@ -251,15 +234,13 @@ module {
         Debug.print("testRemoveEditor: Passed");
     };
 
-    // Test della funzione requireAdminOrEditor
+    // Test for requireAdminOrEditor
     public func testRequireAdminOrEditor(deployerPrincipal : Principal) {
         let admins = createAdminMap(deployerPrincipal);
         let editors = Auth.newEditorMap();
         let newEditorPrincipal = Principal.fromText("xd7us-q23m2-djaxo-dv2g3-corol-jj5et-jhle6-kborp-xk7gl-x4vfi-pae");
-        // Aggiungiamo un editor usando i privilegi di admin
         ignore Auth.addEditor(newEditorPrincipal, deployerPrincipal, admins, editors);
 
-        // Caller è admin
         let requireAdminOrEditorResultAdmin = Auth.requireAdminOrEditor(deployerPrincipal, admins, editors);
         switch (requireAdminOrEditorResultAdmin) {
             case (#ok(())) {
@@ -271,7 +252,6 @@ module {
             };
         };
 
-        // Caller è editor
         let requireAdminOrEditorResultEditor = Auth.requireAdminOrEditor(newEditorPrincipal, admins, editors);
         switch (requireAdminOrEditorResultEditor) {
             case (#ok(())) {
@@ -283,7 +263,6 @@ module {
             };
         };
 
-        // Caller non è né admin né editor
         let nonAuthorizedPrincipal = Principal.fromText("un4fu-tqaaa-aaaab-qadjq-cai");
         let requireAdminOrEditorResultNonAuth = Auth.requireAdminOrEditor(nonAuthorizedPrincipal, admins, editors);
         switch (requireAdminOrEditorResultNonAuth) {
@@ -300,7 +279,7 @@ module {
         Debug.print("testRequireAdminOrEditor: Passed");
     };
 
-    // Funzione per eseguire tutti i test di Auth (inclusi quelli per gli editor)
+    // Run all auth tests
     public func runAllTests(deployerPrincipal : Principal) {
         testIsAdmin(deployerPrincipal);
         testAddAdmin(deployerPrincipal);

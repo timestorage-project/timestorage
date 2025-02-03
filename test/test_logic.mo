@@ -44,7 +44,6 @@ module {
         };
     };
 
-    // -------------------------------
     // Test for insertUUIDStructure
     public func testInsertUUIDStructure(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -119,7 +118,6 @@ module {
         Debug.print("testInsertUUIDStructure passed");
     };
 
-    // -------------------------------
     // Test for uploadFile
     public func testUploadFile(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -209,7 +207,6 @@ module {
         Debug.print("testUploadFile passed");
     };
 
-    // -------------------------------
     // Test for getFileByUUIDAndId
     public func testGetFileByUUIDAndId(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -293,7 +290,6 @@ module {
         Debug.print("testGetFileByUUIDAndId passed");
     };
 
-    // -------------------------------
     // Test for updateValue
     public func testUpdateValue(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -338,7 +334,6 @@ module {
         Debug.print("testUpdateValue passed");
     };
 
-    // -------------------------------
     // Test for updateManyValues
     public func testUpdateManyValues(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -371,7 +366,6 @@ module {
         Debug.print("testUpdateManyValues passed");
     };
 
-    // -------------------------------
     // Test for updateValueAndLock
     public func testUpdateValueAndLock(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -409,7 +403,6 @@ module {
         Debug.print("testUpdateValueAndLock passed");
     };
 
-    // -------------------------------
     // Test for updateManyValuesAndLock
     public func testUpdateManyValuesAndLock(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -441,7 +434,6 @@ module {
         Debug.print("testUpdateManyValuesAndLock passed");
     };
 
-    // -------------------------------
     // Test for lockAllValues
     public func testLockAllValues(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -481,7 +473,6 @@ module {
         Debug.print("testLockAllValues passed");
     };
 
-    // -------------------------------
     // Test for unlockAllValues
     public func testUnlockAllValues(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -520,7 +511,6 @@ module {
         Debug.print("testUnlockAllValues passed");
     };
 
-    // -------------------------------
     // Test for getValue
     public func testGetValue(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -560,7 +550,6 @@ module {
         Debug.print("testGetValue passed");
     };
 
-    // -------------------------------
     // Test for getAllValues
     public func testGetAllValues(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -596,7 +585,6 @@ module {
         Debug.print("testGetAllValues passed");
     };
 
-    // -------------------------------
     // Test for lockValue
     public func testLockValue(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -639,7 +627,6 @@ module {
         Debug.print("testLockValue passed");
     };
 
-    // -------------------------------
     // Test for unlockValue
     public func testUnlockValue(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -681,7 +668,6 @@ module {
         Debug.print("testUnlockValue passed");
     };
 
-    // -------------------------------
     // Test for getValueLockStatus
     public func testGetValueLockStatus(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -723,7 +709,6 @@ module {
         Debug.print("testGetValueLockStatus passed");
     };
 
-    // -------------------------------
     // Test for getUUIDInfo
     public func testGetUUIDInfo(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -761,7 +746,6 @@ module {
         Debug.print("testGetUUIDInfo passed");
     };
 
-    // -------------------------------
     // Test for getAllUUIDs
     public func testGetAllUUIDs(adminPrincipal : Principal) {
         let state = createState(adminPrincipal);
@@ -817,7 +801,6 @@ module {
         Debug.print("testGetAllUUIDs passed");
     };
 
-    // -------------------------------
     // Run all Logic tests
     public func runAllTests(adminPrincipal : Principal) {
         testInsertUUIDStructure(adminPrincipal);

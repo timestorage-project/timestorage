@@ -166,7 +166,7 @@ const DetailPage: FC = () => {
 
 const Root = styled('div')`
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #f9fafb;
 `
 
 const ListItemStyled = styled(ListItem)`

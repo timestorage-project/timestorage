@@ -4,43 +4,34 @@ import HomeIcon from '@mui/icons-material/Home'
 // import ListIcon from '@mui/icons-material/List'
 // import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary'
 // import PersonIcon from '@mui/icons-material/Person'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
 
 const BottomNavigation: FC = () => {
   const navigate = useNavigate()
   const { projectId } = useData()
 
-  const location = useLocation()
-
-  const isActive = (path: string) => {
-    return location.pathname === path
-  }
-
   return (
     <Navigation>
-      <IconButton
-        onClick={() => navigate('/' + projectId)}
-        sx={{ color: isActive('/' + projectId) ? '#2e7d32' : '#757575' }}
-      >
+      <IconButton onClick={() => navigate('/' + projectId)}>
         <HomeIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Home
         </Typography>
       </IconButton>
-      {/* <IconButton onClick={() => navigate('/forms')} sx={{ color: isActive('/forms') ? '#2e7d32' : '#757575' }}>
+      {/* <IconButton onClick={() => navigate('/forms')} sx={{ color: isActive('/forms') ? '#e9ccff' : '#757575' }}>
         <ListIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Forms
         </Typography>
       </IconButton>
-      <IconButton onClick={() => navigate('/gallery')} sx={{ color: isActive('/gallery') ? '#2e7d32' : '#757575' }}>
+      <IconButton onClick={() => navigate('/gallery')} sx={{ color: isActive('/gallery') ? '#e9ccff' : '#757575' }}>
         <PhotoLibraryIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Gallery
         </Typography>
       </IconButton>
-      <IconButton onClick={() => navigate('/profile')} sx={{ color: isActive('/profile') ? '#2e7d32' : '#757575' }}>
+      <IconButton onClick={() => navigate('/profile')} sx={{ color: isActive('/profile') ? '#e9ccff' : '#757575' }}>
         <PersonIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Profile

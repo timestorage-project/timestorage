@@ -55,7 +55,7 @@ const Dashboard: FC = () => {
           {regularItems.map(([key, item]) => (
             <Grid item xs={6} key={key}>
               <StyledCard onClick={() => navigate(`/${projectId}/${key}`)}>
-                <Box sx={{ color: '#2e7d32', mb: 1 }}>{getIconComponent(item.icon)}</Box>
+                <Box sx={{ color: '#e9ccff', mb: 1 }}>{getIconComponent(item.icon)}</Box>
                 <Typography variant='h6'>{item.title}</Typography>
                 <Typography variant='body2' color='text.secondary'>
                   {item.description}
@@ -67,13 +67,9 @@ const Dashboard: FC = () => {
 
         {wizardItem && (
           <WizardCard onClick={() => navigate(`/${projectId}/wizard`)} sx={{ mt: 3 }}>
-            <Box sx={{ color: '#ffffff', mb: 1 }}>{getIconComponent(wizardItem[1].icon, true)}</Box>
-            <Typography variant='h6' sx={{ color: '#ffffff' }}>
-              {wizardItem[1].title}
-            </Typography>
-            <Typography variant='body2' sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-              {wizardItem[1].description}
-            </Typography>
+            <Box sx={{ mb: 1 }}>{getIconComponent(wizardItem[1].icon, true)}</Box>
+            <Typography variant='h6'>{wizardItem[1].title}</Typography>
+            <Typography variant='body2'>{wizardItem[1].description}</Typography>
           </WizardCard>
         )}
       </Container>
@@ -85,7 +81,7 @@ const Dashboard: FC = () => {
 
 const Root = styled('div')`
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #f9fafb;
 `
 
 const StyledCard = styled(Paper)`
@@ -93,13 +89,15 @@ const StyledCard = styled(Paper)`
   text-align: left;
   cursor: pointer;
   border-radius: 12px;
-  background-color: #e8f5e9;
+  background-color: #f7f7f8;
   transition: all 0.2s ease-in-out;
   display: flex;
   flex-direction: column;
+  height: 160px;
+  justify-content: flex-start;
 
   &:hover {
-    background-color: #c8e6c9;
+    background-color: rgb(223, 235, 255);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
@@ -110,13 +108,15 @@ const WizardCard = styled(Paper)`
   text-align: left;
   cursor: pointer;
   border-radius: 12px;
-  background-color: #2e7d32;
+  background-color: #e9ccff;
   transition: all 0.2s ease-in-out;
   display: flex;
   flex-direction: column;
+  height: 160px;
+  justify-content: flex-start;
 
   &:hover {
-    background-color: #1b5e20;
+    background-color: rgb(219, 177, 251);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }

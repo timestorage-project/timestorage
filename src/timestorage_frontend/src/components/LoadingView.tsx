@@ -50,7 +50,7 @@ const IconWrapper = styled(Box)`
 `
 
 const StyledConstructionIcon = styled(ConstructionIcon)`
-  color: #e9ccff;
+  color: #95bcf9;
   font-size: 40px;
   position: absolute;
   z-index: 1;
@@ -58,12 +58,12 @@ const StyledConstructionIcon = styled(ConstructionIcon)`
 
 const StyledCircularProgress = styled(CircularProgress)`
   position: absolute;
-  color: #e9ccff;
+  color: #95bcf9;
   z-index: 0;
 `
 
 const LoadingText = styled(Typography)`
-  color: #e9ccff;
+  color: #95bcf9;
   text-align: center;
 `
 

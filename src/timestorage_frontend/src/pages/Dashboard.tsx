@@ -55,7 +55,7 @@ const Dashboard: FC = () => {
           {regularItems.map(([key, item]) => (
             <Grid item xs={6} key={key}>
               <StyledCard onClick={() => navigate(`/${projectId}/${key}`)}>
-                <Box sx={{ color: '#e9ccff', mb: 1 }}>{getIconComponent(item.icon)}</Box>
+                <Box sx={{ color: '#95bcf9', mb: 1 }}>{getIconComponent(item.icon)}</Box>
                 <Typography variant='h6'>{item.title}</Typography>
                 <Typography variant='body2' color='text.secondary'>
                   {item.description}
@@ -89,7 +89,7 @@ const StyledCard = styled(Paper)`
   text-align: left;
   cursor: pointer;
   border-radius: 12px;
-  background-color: #f7f7f8;
+  background-color: #f6f7f8;
   transition: all 0.2s ease-in-out;
   display: flex;
   flex-direction: column;
@@ -97,7 +97,7 @@ const StyledCard = styled(Paper)`
   justify-content: flex-start;
 
   &:hover {
-    background-color: rgb(223, 235, 255);
+    background-color: #dde9fd;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
@@ -108,7 +108,7 @@ const WizardCard = styled(Paper)`
   text-align: left;
   cursor: pointer;
   border-radius: 12px;
-  background-color: #e9ccff;
+  background-color: #eef4fe;
   transition: all 0.2s ease-in-out;
   display: flex;
   flex-direction: column;
@@ -116,7 +116,7 @@ const WizardCard = styled(Paper)`
   justify-content: flex-start;
 
   &:hover {
-    background-color: rgb(219, 177, 251);
+    background-color: #dde9fd;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }

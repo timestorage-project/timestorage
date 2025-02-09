@@ -25,6 +25,9 @@ const config: UserConfig = {
     },
     sourcemap: !!shouldAnalyze
   },
+  define: {
+    'process.env': process.env
+  },
   plugins: [
     react(),
     Checker({

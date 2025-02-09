@@ -19,19 +19,19 @@ const BottomNavigation: FC = () => {
           Home
         </Typography>
       </IconButton>
-      {/* <IconButton onClick={() => navigate('/forms')} sx={{ color: isActive('/forms') ? '#e9ccff' : '#757575' }}>
+      {/* <IconButton onClick={() => navigate('/forms')} sx={{ color: isActive('/forms') ? '#95bcf9' : '#757575' }}>
         <ListIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Forms
         </Typography>
       </IconButton>
-      <IconButton onClick={() => navigate('/gallery')} sx={{ color: isActive('/gallery') ? '#e9ccff' : '#757575' }}>
+      <IconButton onClick={() => navigate('/gallery')} sx={{ color: isActive('/gallery') ? '#95bcf9' : '#757575' }}>
         <PhotoLibraryIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Gallery
         </Typography>
       </IconButton>
-      <IconButton onClick={() => navigate('/profile')} sx={{ color: isActive('/profile') ? '#e9ccff' : '#757575' }}>
+      <IconButton onClick={() => navigate('/profile')} sx={{ color: isActive('/profile') ? '#95bcf9' : '#757575' }}>
         <PersonIcon />
         <Typography variant='caption' sx={{ mt: 0.5 }}>
           Profile

@@ -10,6 +10,6 @@ export type ConfigValue = {
 // ----------------------------------------------------------------------
 
 export const CONFIG: ConfigValue = {
-  appName: 'Timestorage',
+  appName: 'PosaCheck',
   appVersion: packageJson.version,
 };

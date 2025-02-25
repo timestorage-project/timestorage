@@ -186,6 +186,50 @@ shared (msg) actor class TimestorageBackend() {
         return #ok("UUID inserted successfully.");
     };
 
+    // updateUUIDStructure function - allows admins to update the structure of an existing UUID
+    public shared (msg) func updateUUIDStructure(uuid : Text, newSchema : Text) : async Result.Result<Text, Text> {
+        // Check if the caller is an admin
+        switch (Auth.requireAdmin(msg.caller, admins)) {
+            case (#err(e)) { return #err(e) };
+            case (#ok(())) {};
+        };
+
+        // Check if the UUID exists
+        if (uuidToStructure.get(uuid) == null) {
+            return #err("UUID does not exist. Please create it first with insertUUIDStructure.");
+        };
+
+        // Update the structure/schema
+        uuidToStructure.put(uuid, newSchema);
+
+        return #ok("UUID structure updated successfully.");
+    };
+
+    // createEmptyUUID function - creates a UUID without schema, which can be added later
+    public shared (msg) func createEmptyUUID(uuid : Text) : async Result.Result<Text, Text> {
+        // Check if the caller is an admin
+        switch (Auth.requireAdmin(msg.caller, admins)) {
+            case (#err(e)) { return #err(e) };
+            case (#ok(())) {};
+        };
+
+        if (uuidToStructure.get(uuid) != null) {
+            return #err("UUID already exists.");
+        };
+
+        // Save an empty schema
+        uuidToStructure.put(uuid, "{}");
+
+        // Register the owner
+        uuidOwners.put(uuid, msg.caller);
+
+        // Initialize the value submap
+        let subMap = TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
+        uuidKeyValueMap.put(uuid, subMap);
+
+        return #ok("UUID created successfully without structure. Use updateUUIDStructure to add structure later.");
+    };
+
     // Upload an image associated with a UUID
     public shared (msg) func uploadFile(uuid : Text, base64FileData : Text, metadata : Types.FileMetadata) : async Result.Result<Text, Text> {
 
@@ -246,6 +290,55 @@ shared (msg) actor class TimestorageBackend() {
                 return #ok(response);
             };
         };
+    };
+
+    // getFileMetadataByUUIDAndId function
+    public shared query (msg) func getFileMetadataByUUIDAndId(uuid : Text, fileId : Text) : async Types.Result<Types.FileMetadataResponse, Text> {
+        let fileOpt = uuidToFiles.get(fileId);
+
+        // Check if the file exists and belongs to the given UUID
+        switch (fileOpt) {
+            case null {
+                return #err("File not found.");
+            };
+            case (?fileRecord) {
+                if (fileRecord.uuid != uuid) {
+                    return #err("File does not belong to the given UUID.");
+                };
+
+                let response : Types.FileMetadataResponse = {
+                    uuid = fileRecord.uuid;
+                    metadata = {
+                        mimeType = fileRecord.metadata.mimeType;
+                        fileName = fileRecord.metadata.fileName;
+                        uploadTimestamp = Int.toText(fileRecord.metadata.uploadTimestamp);
+                    };
+                };
+
+                return #ok(response);
+            };
+        };
+    };
+
+    // getFileMetadataByUUID function
+    public shared query (msg) func getFileMetadataByUUID(uuid : Text) : async Types.Result<[Types.FileMetadataResponse], Text> {
+        var fileMetadataResponses : [Types.FileMetadataResponse] = [];
+
+        for ((fileId, record) in uuidToFiles.entries()) {
+            if (record.uuid == uuid) {
+                let responseItem : Types.FileMetadataResponse = {
+                    uuid = record.uuid;
+                    metadata = {
+                        mimeType = record.metadata.mimeType;
+                        fileName = record.metadata.fileName;
+                        uploadTimestamp = Int.toText(record.metadata.uploadTimestamp);
+                    };
+                };
+                fileMetadataResponses := Array.append(fileMetadataResponses, [responseItem]);
+            };
+        };
+
+        return #ok(fileMetadataResponses);
     };
 
     // updateValue function

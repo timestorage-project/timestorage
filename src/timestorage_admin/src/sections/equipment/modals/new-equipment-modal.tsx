@@ -35,7 +35,7 @@ interface ProductInfo {
 
 const dimensions = ['36" x 48" x 3"', '24" x 36" x 3"', '30" x 60" x 3"'];
 const modelNumbers = ['WND-2023-X450', 'WND-2023-X350', 'WND-2023-X250'];
-const materialTypes = ['Vinyl', 'Wood', 'Aluminum', 'Fiberglass'];
+const materialTypes = ['Vinyl', 'Wood', 'Aluminum', 'Fiberglass', 'PVC'];
 const glassTypes = ['Double-Pane Low-E', 'Triple-Pane', 'Single-Pane'];
 const energyRatings = [
   'Energy Star Certified - A++',

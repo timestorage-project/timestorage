@@ -89,6 +89,16 @@ module Types {
     };
   };
 
+  // Response types for file metadata only
+  public type FileMetadataResponse = {
+    uuid : UUID;
+    metadata : {
+      mimeType : Text;
+      fileName : Text;
+      uploadTimestamp : Text;
+    };
+  };
+
   public type UUIDInfoResponse = {
     schema : Text;
     values : [(Text, Text)];

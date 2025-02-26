@@ -18,6 +18,8 @@ interface DataNode {
     icon: string
     label: string
     value: string
+    fileType?: string
+    path?: string
   }[]
   /** Used if this is a "wizard" section: */
   questions?: WizardQuestion[]
@@ -30,10 +32,7 @@ interface DataNode {
  * Each key corresponds to a section in your data.
  */
 interface DataStructure {
-  productInfo: DataNode
-  installationProcess: DataNode
-  maintenanceLog: DataNode
-  startInstallation: DataNode
+  [key: string]: DataNode
 }
 
 /** WizardQuestion is used only in wizard sections */
@@ -56,7 +55,7 @@ interface DataContextType {
   error: string | null
   projectId: string
   reloadData: () => Promise<void>
-  getWizardQuestions: () => Promise<WizardQuestion[]>
+  getWizardQuestions: (sectionId: string) => Promise<WizardQuestion[]>
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
@@ -65,20 +64,43 @@ const DataContext = createContext<DataContextType | undefined>(undefined)
  * Helper function to retrieve value from the values object
  */
 function getValueFromPath(values: Record<string, string>, path: string): string {
+  console.log('Looking up path:', path, 'in values:', values)
+
   // Remove the #/values/ prefix if present
   const cleanPath = path.replace('#/values/', '')
 
-  // Try with forward slash
+  // Try with forward slash converted to dot notation
+  const dotPath = cleanPath.replace(/\//g, '.')
+
+  // Try with camelCase converted to snake_case
+  const snakePath = dotPath.replace(/([A-Z])/g, '_$1').toLowerCase()
+
+  console.log('Cleaned paths to try:', { dotPath, snakePath })
+
+  // Try all possible formats
   if (values[cleanPath] !== undefined) {
+    console.log('Found with cleanPath:', cleanPath)
     return values[cleanPath]
   }
 
-  // Try with dot notation
-  const dotPath = cleanPath.replace('/', '.')
   if (values[dotPath] !== undefined) {
+    console.log('Found with dotPath:', dotPath)
     return values[dotPath]
   }
 
+  if (values[snakePath] !== undefined) {
+    console.log('Found with snakePath:', snakePath)
+    return values[snakePath]
+  }
+
+  // One more attempt - try lowercase version
+  const lowerDotPath = dotPath.toLowerCase()
+  if (values[lowerDotPath] !== undefined) {
+    console.log('Found with lowerDotPath:', lowerDotPath)
+    return values[lowerDotPath]
+  }
+
+  console.log('Value not found for path:', path)
   // Return default value if not found
   return '-'
 }
@@ -98,11 +120,17 @@ function mapSectionToDataNode(section: unknown, values: Record<string, string> =
     description,
     children: isWizard
       ? []
-      : children.map((child: { icon: string; value: string; label: string }) => ({
-          icon: child.icon,
-          label: child.label,
-          value: child.value.startsWith('#/values/') ? getValueFromPath(values, child.value) : child.value
-        })),
+      : children.map((child: { icon: string; value: string; label: string; fileType?: string }) => {
+          const originalPath = child.value.startsWith('#/values/') ? child.value : undefined
+
+          return {
+            icon: child.icon,
+            label: child.label,
+            value: originalPath ? getValueFromPath(values, originalPath) : child.value,
+            fileType: child.fileType,
+            path: originalPath // Store the original path
+          }
+        }),
     questions: isWizard
       ? questions.map((q: { id: string; type: string; question: string; options: string[]; refId: string }) => ({
           id: q.id,
@@ -138,12 +166,15 @@ function mapApiResponseToDataStructure(response: {
   const { data, values = {} } = response
   console.log('Data received', response)
 
-  return {
-    productInfo: mapSectionToDataNode(data.productInfo, values),
-    installationProcess: mapSectionToDataNode(data.installationProcess, values),
-    maintenanceLog: mapSectionToDataNode(data.maintenanceLog, values),
-    startInstallation: mapSectionToDataNode(data.startInstallation, values)
+  const result: DataStructure = {}
+
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      result[key] = mapSectionToDataNode(data[key], values)
+    }
   }
+
+  return result
 }
 
 /**
@@ -185,7 +216,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const location = useLocation()
   const [projectId, setProjectId] = useState<string>('uuid-dummy')
   const [dataLoaded, setDataLoaded] = useState(false)
-  const [locale] = useState<'en' | 'it'>('en') // Default to English
+  const [locale] = useState<'en' | 'it'>('it') // Default to Italian
 
   const translations = locale === 'en' ? en : it
 
@@ -243,12 +274,9 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
    * Dynamically returns wizard questions from the "startInstallation" node
    * (or any node that might be a wizard, if you prefer to generalize).
    */
-  const getWizardQuestions = async (): Promise<WizardQuestion[]> => {
-    // In a real scenario, you might do more logic here,
-    // or even store them in the context after fetchData.
+  const getWizardQuestions = async (sectionId: string): Promise<WizardQuestion[]> => {
     if (!data) return []
-    // For this example, we'll assume "startInstallation" is the wizard section.
-    const wizardNode = data.startInstallation
+    const wizardNode = data[sectionId]
     if (!wizardNode?.isWizard || !wizardNode?.questions) return []
     return wizardNode.questions
   }

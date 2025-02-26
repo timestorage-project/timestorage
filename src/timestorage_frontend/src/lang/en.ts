@@ -60,5 +60,47 @@ export const en = {
   TOOL_SCREWDRIVER: 'Screwdriver',
   TOOL_CAULK_GUN: 'Caulk Gun',
   TOOL_SAFETY_GLASSES: 'Safety Glasses',
-  TOOL_WORK_GLOVES: 'Work Gloves'
+  TOOL_WORK_GLOVES: 'Work Gloves',
+
+  // New Labels
+  PRODUCT_DOCUMENTS_TITLE: 'Product Documents',
+  PRODUCT_DOCUMENTS_DESCRIPTION: 'Documentation related to the product.',
+  SCHEDA_TECNICA_LABEL: 'Technical Sheet',
+  DICHIARAZIONE_SOSTANZE_PERICOLOSE_LABEL: 'Declaration of Hazardous Substances',
+  DICHIARAZIONE_DI_PRESTAZIONE_LABEL: 'Declaration of Performance',
+
+  CE_MARKING_TITLE: 'CE Marking',
+  CE_MARKING_DESCRIPTION: 'CE Marking documentation.',
+  MARCATURA_CE_LABEL: 'CE Marking',
+  ETICHETTA_CE_LABEL: 'CE Label',
+
+  MAINTENANCE_DOCUMENTS_TITLE: 'Maintenance Documents',
+  MAINTENANCE_DOCUMENTS_DESCRIPTION: 'Documents related to maintenance.',
+  MANUALE_DI_MANUTENZIONE_LABEL: 'Maintenance Manual',
+
+  INSTALLATION_INFORMATION_TITLE: 'Installation Information',
+  INSTALLATION_INFORMATION_DESCRIPTION: 'Details about the installation.',
+  GIUNTO_SECONDARIO_FRONTALE_ALTO_SX_LABEL: 'Secondary Joint Front Top Left',
+  GIUNTO_SECONDARIO_FRONTALE_BASSO_SX_LABEL: 'Secondary Joint Front Bottom Left',
+  GIUNTO_SECONDARIO_FRONTALE_ALTO_DX_LABEL: 'Secondary Joint Front Top Right',
+  GIUNTO_SECONDARIO_FRONTALE_BASSO_DX_LABEL: 'Secondary Joint Front Bottom Right',
+  GIUNTO_SECONDARIO_FRONTALE_GENERALE_LABEL: 'Secondary Joint Front General',
+  GIUNTO_SECONDARIO_LATERALE_ALTO_SX_LABEL: 'Secondary Joint Side Top Left',
+  GIUNTO_SECONDARIO_LATERALE_BASSO_SX_LABEL: 'Secondary Joint Side Bottom Left',
+  GIUNTO_SECONDARIO_LATERALE_ALTO_DX_LABEL: 'Secondary Joint Side Top Right',
+  GIUNTO_SECONDARIO_LATERALE_BASSO_DX_LABEL: 'Secondary Joint Side Bottom Right',
+  GIUNTO_SECONDARIO_LATERALE_GENERALE_LABEL: 'Secondary Joint Side General',
+
+  INSTALLATION_INFORMATION_WIZARD_TITLE: 'Installation Information Wizard',
+  INSTALLATION_INFORMATION_WIZARD_DESCRIPTION: 'Guided process to collect installation information.',
+  GIUNTO_SECONDARIO_FRONTALE_ALTO_SX_QUESTION: 'Please upload a photo of the secondary joint front top left.',
+  GIUNTO_SECONDARIO_FRONTALE_BASSO_SX_QUESTION: 'Please upload a photo of the secondary joint front bottom left.',
+  GIUNTO_SECONDARIO_FRONTALE_ALTO_DX_QUESTION: 'Please upload a photo of the secondary joint front top right.',
+  GIUNTO_SECONDARIO_FRONTALE_BASSO_DX_QUESTION: 'Please upload a photo of the secondary joint front bottom right.',
+  GIUNTO_SECONDARIO_FRONTALE_GENERALE_QUESTION: 'Please upload a general photo of the secondary joint front.',
+  GIUNTO_SECONDARIO_LATERALE_ALTO_SX_QUESTION: 'Please upload a photo of the secondary joint side top left.',
+  GIUNTO_SECONDARIO_LATERALE_BASSO_SX_QUESTION: 'Please upload a photo of the secondary joint side bottom left.',
+  GIUNTO_SECONDARIO_LATERALE_ALTO_DX_QUESTION: 'Please upload a photo of the secondary joint side top right.',
+  GIUNTO_SECONDARIO_LATERALE_BASSO_DX_QUESTION: 'Please upload a photo of the secondary joint side bottom right.',
+  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Please upload a general photo of the secondary joint side.'
 }

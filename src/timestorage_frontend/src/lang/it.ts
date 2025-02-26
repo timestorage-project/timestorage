@@ -60,5 +60,47 @@ export const it = {
   TOOL_SCREWDRIVER: 'Cacciavite',
   TOOL_CAULK_GUN: 'Pistola per Silicone',
   TOOL_SAFETY_GLASSES: 'Occhiali di Protezione',
-  TOOL_WORK_GLOVES: 'Guanti da Lavoro'
+  TOOL_WORK_GLOVES: 'Guanti da Lavoro',
+
+  // New Labels
+  PRODUCT_DOCUMENTS_TITLE: 'Documenti del Prodotto',
+  PRODUCT_DOCUMENTS_DESCRIPTION: 'Documentazione relativa al prodotto.',
+  SCHEDA_TECNICA_LABEL: 'Scheda Tecnica',
+  DICHIARAZIONE_SOSTANZE_PERICOLOSE_LABEL: 'Dichiarazione Sostanze Pericolose',
+  DICHIARAZIONE_DI_PRESTAZIONE_LABEL: 'Dichiarazione di Prestazione',
+
+  CE_MARKING_TITLE: 'Marcatura CE',
+  CE_MARKING_DESCRIPTION: 'Documentazione della marcatura CE.',
+  MARCATURA_CE_LABEL: 'Marcatura CE',
+  ETICHETTA_CE_LABEL: 'Etichetta CE',
+
+  MAINTENANCE_DOCUMENTS_TITLE: 'Documenti di Manutenzione',
+  MAINTENANCE_DOCUMENTS_DESCRIPTION: 'Documenti relativi alla manutenzione.',
+  MANUALE_DI_MANUTENZIONE_LABEL: 'Manuale di Manutenzione',
+
+  INSTALLATION_INFORMATION_TITLE: "Informazioni sull'Installazione",
+  INSTALLATION_INFORMATION_DESCRIPTION: "Dettagli sull'installazione.",
+  GIUNTO_SECONDARIO_FRONTALE_ALTO_SX_LABEL: 'Giunto Secondario Frontale Alto SX',
+  GIUNTO_SECONDARIO_FRONTALE_BASSO_SX_LABEL: 'Giunto Secondario Frontale Basso SX',
+  GIUNTO_SECONDARIO_FRONTALE_ALTO_DX_LABEL: 'Giunto Secondario Frontale Alto DX',
+  GIUNTO_SECONDARIO_FRONTALE_BASSO_DX_LABEL: 'Giunto Secondario Frontale Basso DX',
+  GIUNTO_SECONDARIO_FRONTALE_GENERALE_LABEL: 'Giunto Secondario Frontale Generale',
+  GIUNTO_SECONDARIO_LATERALE_ALTO_SX_LABEL: 'Giunto Secondario Laterale Alto SX',
+  GIUNTO_SECONDARIO_LATERALE_BASSO_SX_LABEL: 'Giunto Secondario Laterale Basso SX',
+  GIUNTO_SECONDARIO_LATERALE_ALTO_DX_LABEL: 'Giunto Secondario Laterale Alto DX',
+  GIUNTO_SECONDARIO_LATERALE_BASSO_DX_LABEL: 'Giunto Secondario Laterale Basso DX',
+  GIUNTO_SECONDARIO_LATERALE_GENERALE_LABEL: 'Giunto Secondario Laterale Generale',
+
+  INSTALLATION_INFORMATION_WIZARD_TITLE: 'Procedura Guidata Informazioni Installazione',
+  INSTALLATION_INFORMATION_WIZARD_DESCRIPTION: "Processo guidato per raccogliere informazioni sull'installazione.",
+  GIUNTO_SECONDARIO_FRONTALE_ALTO_SX_QUESTION: 'Carica una foto del giunto secondario frontale alto sinistro.',
+  GIUNTO_SECONDARIO_FRONTALE_BASSO_SX_QUESTION: 'Carica una foto del giunto secondario frontale basso sinistro.',
+  GIUNTO_SECONDARIO_FRONTALE_ALTO_DX_QUESTION: 'Carica una foto del giunto secondario frontale alto destro.',
+  GIUNTO_SECONDARIO_FRONTALE_BASSO_DX_QUESTION: 'Carica una foto del giunto secondario frontale basso destro.',
+  GIUNTO_SECONDARIO_FRONTALE_GENERALE_QUESTION: 'Carica una foto generale del giunto secondario frontale.',
+  GIUNTO_SECONDARIO_LATERALE_ALTO_SX_QUESTION: 'Carica una foto del giunto secondario laterale alto sinistro.',
+  GIUNTO_SECONDARIO_LATERALE_BASSO_SX_QUESTION: 'Carica una foto del giunto secondario laterale basso sinistro.',
+  GIUNTO_SECONDARIO_LATERALE_ALTO_DX_QUESTION: 'Carica una foto del giunto secondario laterale alto destro.',
+  GIUNTO_SECONDARIO_LATERALE_BASSO_DX_QUESTION: 'Carica una foto del giunto secondario laterale basso destro.',
+  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Carica una foto generale del giunto secondario laterale.'
 }

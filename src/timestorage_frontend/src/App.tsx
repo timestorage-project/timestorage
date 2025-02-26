@@ -12,7 +12,8 @@ const App: FC = () => {
         <Routes>
           <Route path='/' element={<Navigate to={window.location.pathname.split('/')[1] || ''} replace />} />
           <Route path='/:projectId' element={<Dashboard />} />
-          <Route path='/:projectId/:type' element={<DetailPage />} />
+          <Route path='/:projectId/:sectionId' element={<DetailPage />} />
+          <Route path='/:projectId/wizard/:sectionId' element={<WizardPage />} />
           <Route path='/:projectId/wizard' element={<WizardPage />} />
           <Route path='/:projectId/forms' element={<div>Forms Page</div>} />
           <Route path='/:projectId/gallery' element={<div>Gallery Page</div>} />

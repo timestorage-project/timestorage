@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState } from 'react'
+import { FC, useCallback, useEffect, useState, useRef } from 'react'
 import {
   Box,
   Container,
@@ -9,7 +9,9 @@ import {
   ListItemText,
   ListItemIcon,
   ImageList,
-  ImageListItem
+  ImageListItem,
+  Button,
+  CircularProgress
 } from '@mui/material'
 import { useParams } from 'react-router-dom'
 import BottomNavigation from '@/components/BottomNavigation'
@@ -18,32 +20,50 @@ import Header from '../components/Header'
 import ErrorView from '@/components/ErrorView'
 import LoadingView from '@/components/LoadingView'
 import * as canisterService from '../services/canisterService'
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
+import FileUploadIcon from '@mui/icons-material/FileUpload'
+import { fileToBase64, getFileMetadata } from '@/utils/fileUtils'
 
 interface FileCache {
-  [key: string]: string
+  [key: string]: {
+    metadata: FileMetadata
+    data?: string
+  }
+}
+
+interface FileMetadata {
+  fileId: string
+  fileName: string
+  mimeType: string
+  isImage: boolean
+  uploadTimestamp: string
 }
 
 const DetailPage: FC = () => {
-  const { type } = useParams()
-  const { data, isLoading, error, projectId } = useData()
+  const { sectionId } = useParams<{ sectionId: string }>()
+  const { data, isLoading, error, projectId, reloadData } = useData()
   const [fileCache, setFileCache] = useState<FileCache>({})
   const [loadingFiles, setLoadingFiles] = useState<string[]>([])
+  const [uploadingKeys, setUploadingKeys] = useState<string[]>([])
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
 
-  const isFileId = (value: string) => /^file-\d+$/.test(value)
-
-  const loadFile = useCallback(
+  // Load just the metadata for a file (fast)
+  const loadFileMetadata = useCallback(
     async (fileId: string) => {
       if (fileCache[fileId] || loadingFiles.includes(fileId)) return
 
       try {
         setLoadingFiles(prev => [...prev, fileId])
-        const fileData = await canisterService.getFileByUUIDAndId(projectId, fileId)
+        // Using the metadata-only endpoint
+        const metadata = await canisterService.getFileMetadataByUUIDAndId(projectId, fileId)
         setFileCache(prev => ({
           ...prev,
-          [fileId]: fileData
+          [fileId]: {
+            metadata
+          }
         }))
       } catch (error) {
-        console.error(`Error loading file ${fileId}:`, error)
+        console.error(`Error loading file metadata ${fileId}:`, error)
       } finally {
         setLoadingFiles(prev => prev.filter(id => id !== fileId))
       }
@@ -51,17 +71,118 @@ const DetailPage: FC = () => {
     [fileCache, loadingFiles, projectId]
   )
 
+  const downloadFileContent = useCallback(
+    async (fileId: string) => {
+      // If we're already loading, don't start another request
+      if (loadingFiles.includes(fileId)) return
+
+      try {
+        setLoadingFiles(prev => [...prev, fileId])
+
+        // Check if this file is in our cache already
+        const cachedFile = fileCache[fileId]
+        const isImage = cachedFile?.metadata.isImage
+
+        // If we already have the data cached
+        if (cachedFile?.data) {
+          // For non-images (documents), trigger download automatically
+          if (!isImage) {
+            const linkElement = document.createElement('a')
+            linkElement.href = cachedFile.data
+            linkElement.download = cachedFile.metadata.fileName
+            document.body.appendChild(linkElement)
+            linkElement.click()
+            document.body.removeChild(linkElement)
+          }
+          // For images, we just display them (already handled in the render function)
+          return
+        }
+
+        // We don't have the data, so fetch it
+        const fileData = await canisterService.downloadFileContent(projectId, fileId)
+
+        // Update the cache with the new data
+        setFileCache(prev => ({
+          ...prev,
+          [fileId]: {
+            ...prev[fileId],
+            data: fileData.dataUrl
+          }
+        }))
+
+        // For non-images, automatically trigger download after fetching
+        if (!isImage) {
+          setTimeout(() => {
+            const linkElement = document.createElement('a')
+            linkElement.href = fileData.dataUrl
+            linkElement.download = fileCache[fileId].metadata.fileName
+            document.body.appendChild(linkElement)
+            linkElement.click()
+            document.body.removeChild(linkElement)
+          }, 100) // Small delay to ensure state update completes
+        }
+      } catch (error) {
+        console.error(`Error downloading file ${fileId}:`, error)
+      } finally {
+        setLoadingFiles(prev => prev.filter(id => id !== fileId))
+      }
+    },
+    [fileCache, loadingFiles, projectId]
+  )
+
+  const handleFileUpload = async (file: File, refId: string): Promise<void> => {
+    try {
+      setUploadingKeys(prev => [...prev, refId])
+      const base64Data = await fileToBase64(file)
+      const metadata = getFileMetadata(file)
+      const result = await canisterService.uploadFile(projectId, base64Data, metadata)
+      const fileId = result.match(/ID: (file-\d+)/)?.[1]
+
+      if (!fileId) {
+        throw new Error('Failed to extract file ID from response')
+      }
+
+      // Just extract the key part from the refId path, preserving its exact format
+      const key = refId.replace('#/values/', '')
+
+      console.log('Upload complete. Using key path:', key, 'for fileId:', fileId)
+
+      // Use the exact key as it appears in the refId
+      await canisterService.updateValue(projectId, key, fileId, true)
+
+      // Reload data after successful upload
+      await reloadData()
+    } catch (error) {
+      console.error('Error uploading file:', error)
+    } finally {
+      setUploadingKeys(prev => prev.filter(key => key !== refId))
+    }
+  }
+
+  const handleUploadPdf = (event: React.ChangeEvent<HTMLInputElement>, refId: string) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    const file = files[0]
+    if (!file.type.includes('pdf')) {
+      alert('Please upload a PDF file')
+      return
+    }
+
+    handleFileUpload(file, refId)
+  }
+
   useEffect(() => {
-    // Pre-load all file values
-    if (data && type) {
-      const pageData = data[type as keyof typeof data]
+    // Pre-load only file metadata for all files (fast)
+    if (data && sectionId && data[sectionId]) {
+      const pageData = data[sectionId]
       pageData.children?.forEach(item => {
-        if (isFileId(item.value)) {
-          loadFile(item.value)
+        if (canisterService.isFileId(item.value)) {
+          loadFileMetadata(item.value)
         }
       })
     }
-  }, [data, type, loadFile])
+  }, [data, sectionId, loadFileMetadata])
 
   if (isLoading && !data) {
     return <LoadingView message='Loading page...' />
@@ -71,51 +192,133 @@ const DetailPage: FC = () => {
     return <ErrorView message={error} />
   }
 
-  if (!data || !type || !data[type as keyof typeof data]) {
-    return <div>No data available</div>
+  if (!data || !sectionId || !data[sectionId]) {
+    return <ErrorView message={`Section "${sectionId}" not found`} />
   }
 
-  const pageData = data[type as keyof typeof data]
+  const pageData = data[sectionId]
 
-  const renderValue = (item: { label: string; value: string }) => {
-    if (isFileId(item.value)) {
-      if (loadingFiles.includes(item.value)) {
-        return <Typography color='text.secondary'>Loading file...</Typography>
+  const renderValue = (item: { label: string; value: string; fileType?: string; path?: string }) => {
+    console.log('Processing item:', item) // Add this for debugging
+
+    // Check if it's a file reference
+    if (canisterService.isFileId(item.value)) {
+      const fileId = item.value
+      console.log('Found file ID:', fileId)
+
+      // If we're still loading the metadata
+      if (loadingFiles.includes(fileId) && !fileCache[fileId]) {
+        return <CircularProgress size={20} />
       }
-      if (fileCache[item.value]) {
-        const isImage = fileCache[item.value].startsWith('data:image/')
-        if (isImage) {
-          return (
-            <img
-              src={fileCache[item.value]}
-              alt={item.label}
-              style={{
-                maxWidth: '100%',
-                maxHeight: '200px',
-                objectFit: 'contain',
-                borderRadius: '4px'
-              }}
-            />
-          )
-        }
-        // For non-image files, show a download link
+
+      const fileInfo = fileCache[fileId]
+      console.log(fileInfo)
+
+      // If we failed to load metadata
+      if (!fileInfo) {
+        return <Typography color='error'>Failed to load file</Typography>
+      }
+
+      const { metadata } = fileInfo
+
+      // If it's an image and we have the data (content was downloaded)
+      if (metadata.isImage && fileInfo.data) {
         return (
-          <a
-            href={fileCache[item.value]}
-            download={`${item.label}.${fileCache[item.value].split(';')[0].split('/')[1]}`}
-          >
-            Download File
-          </a>
+          <img
+            src={fileInfo.data}
+            alt={metadata.fileName}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '200px',
+              objectFit: 'contain',
+              borderRadius: '4px'
+            }}
+          />
         )
       }
-      return <Typography color='error'>Failed to load file</Typography>
+
+      // If it's an image but we haven't downloaded the content yet
+      if (metadata.isImage && !fileInfo.data) {
+        return (
+          <Button
+            variant='outlined'
+            startIcon={
+              <span role='img' aria-label='Image'>
+                🖼️
+              </span>
+            }
+            onClick={() => downloadFileContent(fileId)}
+            disabled={loadingFiles.includes(fileId)}
+          >
+            {loadingFiles.includes(fileId) ? 'Loading...' : `View ${metadata.fileName}`}
+          </Button>
+        )
+      }
+
+      // For PDF or other non-image files - single button approach
+      const isPdf = metadata.mimeType.includes('pdf') || item.fileType === 'PDF'
+      const icon = isPdf ? (
+        <PictureAsPdfIcon />
+      ) : (
+        <span role='img' aria-label='File'>
+          {canisterService.getFileIcon(metadata.mimeType)}
+        </span>
+      )
+
+      return (
+        <Box>
+          <Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
+            {metadata.fileName} ({metadata.mimeType.split('/')[1]})
+          </Typography>
+          <Button
+            variant={fileInfo.data ? 'contained' : 'outlined'}
+            startIcon={icon}
+            onClick={() => downloadFileContent(fileId)}
+            disabled={loadingFiles.includes(fileId)}
+          >
+            {loadingFiles.includes(fileId) ? 'Downloading...' : 'Download'}
+          </Button>
+        </Box>
+      )
     }
+    console.log(item.value, item)
+    // For empty values that should be PDF files, show upload button
+    if ((item.value === '-' || item.value === '') && item.fileType === 'PDF') {
+      const inputId = `file-upload-${item.label.replace(/\s+/g, '-').toLowerCase()}`
+      const refId = item.path || `#/values/${sectionId}/${item.label.replace(/\s+/g, '_').toLowerCase()}`
+
+      console.log('Creating upload button for:', refId)
+
+      return (
+        <Box>
+          <input
+            type='file'
+            id={inputId}
+            accept='application/pdf'
+            style={{ display: 'none' }}
+            onChange={e => handleUploadPdf(e, refId)}
+            ref={el => (fileInputRefs.current[inputId] = el)}
+          />
+          <Button
+            variant='outlined'
+            startIcon={<FileUploadIcon />}
+            endIcon={<PictureAsPdfIcon />}
+            onClick={() => fileInputRefs.current[inputId]?.click()}
+            disabled={uploadingKeys.includes(refId)}
+            sx={{ mt: 1 }}
+          >
+            {uploadingKeys.includes(refId) ? 'Uploading...' : 'Upload PDF'}
+          </Button>
+        </Box>
+      )
+    }
+
     return item.value
   }
 
   return (
     <Root>
-      <Header title={`Window Installation - ${projectId}`} showMenu={true} />
+      <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
 
       <Container maxWidth='sm' sx={{ mt: 4, mb: 10 }}>
         <Typography variant='h5' sx={{ mb: 3 }}>
@@ -134,7 +337,7 @@ const DetailPage: FC = () => {
                 primary={item.label}
                 secondary={renderValue(item)}
                 secondaryTypographyProps={{
-                  component: 'div' // This allows rendering complex content in secondary text
+                  component: 'div'
                 }}
               />
             </ListItemStyled>

@@ -1,7 +1,7 @@
 export const idlFactory = ({ IDL }) => {
   const Result = IDL.Variant({ ok: IDL.Text, err: IDL.Text })
-  const Result_5 = IDL.Variant({ ok: IDL.Vec(IDL.Text), err: IDL.Text })
-  const Result_4 = IDL.Variant({
+  const Result_4 = IDL.Variant({ ok: IDL.Vec(IDL.Text), err: IDL.Text })
+  const Result_3 = IDL.Variant({
     ok: IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
     err: IDL.Text
   })
@@ -15,9 +15,25 @@ export const idlFactory = ({ IDL }) => {
     }),
     uuid: UUID
   })
-  const Result__1 = IDL.Variant({ ok: FileResponse, err: IDL.Text })
-  const Result_3 = IDL.Variant({
-    ok: IDL.Tuple(IDL.Text, IDL.Vec(FileResponse)),
+  const Result__1_2 = IDL.Variant({ ok: FileResponse, err: IDL.Text })
+  const FileMetadataResponse = IDL.Record({
+    metadata: IDL.Record({
+      mimeType: IDL.Text,
+      fileName: IDL.Text,
+      uploadTimestamp: IDL.Text
+    }),
+    uuid: UUID
+  })
+  const Result__1_1 = IDL.Variant({
+    ok: IDL.Vec(FileMetadataResponse),
+    err: IDL.Text
+  })
+  const Result__1 = IDL.Variant({
+    ok: FileMetadataResponse,
+    err: IDL.Text
+  })
+  const Result_2 = IDL.Variant({
+    ok: IDL.Tuple(IDL.Text, IDL.Vec(FileMetadataResponse)),
     err: IDL.Text
   })
   const ValueRequest = IDL.Record({ key: IDL.Text, uuid: IDL.Text })
@@ -29,7 +45,7 @@ export const idlFactory = ({ IDL }) => {
     locked: IDL.Bool,
     lockedBy: IDL.Opt(IDL.Principal)
   })
-  const Result_2 = IDL.Variant({ ok: ValueLockStatus, err: IDL.Text })
+  const Result_1 = IDL.Variant({ ok: ValueLockStatus, err: IDL.Text })
   const ValueLockAllRequest = IDL.Record({
     lock: IDL.Bool,
     uuid: IDL.Text
@@ -39,7 +55,11 @@ export const idlFactory = ({ IDL }) => {
     lock: IDL.Bool,
     uuid: IDL.Text
   })
-  const Result_1 = IDL.Variant({ ok: IDL.Text, err: IDL.Vec(IDL.Text) })
+  const ValueUnlockAllRequest = IDL.Record({ uuid: IDL.Text })
+  const ValueUnlockRequest = IDL.Record({
+    key: IDL.Text,
+    uuid: IDL.Text
+  })
   const ValueUpdateRequest = IDL.Record({
     key: IDL.Text,
     uuid: IDL.Text,
@@ -53,19 +73,30 @@ export const idlFactory = ({ IDL }) => {
   })
   const TimestorageBackend = IDL.Service({
     addAdmin: IDL.Func([IDL.Principal], [Result], []),
-    getAllUUIDs: IDL.Func([], [Result_5], ['query']),
-    getAllValues: IDL.Func([IDL.Text], [Result_4], ['query']),
-    getFileByUUIDAndId: IDL.Func([IDL.Text, IDL.Text], [Result__1], ['query']),
-    getUUIDInfo: IDL.Func([IDL.Text], [Result_3], ['query']),
+    addEditor: IDL.Func([IDL.Principal], [Result], []),
+    createEmptyUUID: IDL.Func([IDL.Text], [Result], []),
+    getAllUUIDs: IDL.Func([IDL.Opt(IDL.Principal)], [Result_4], ['query']),
+    getAllValues: IDL.Func([IDL.Text], [Result_3], ['query']),
+    getFileByUUIDAndId: IDL.Func([IDL.Text, IDL.Text], [Result__1_2], ['query']),
+    getFileMetadataByUUID: IDL.Func([IDL.Text], [Result__1_1], ['query']),
+    getFileMetadataByUUIDAndId: IDL.Func([IDL.Text, IDL.Text], [Result__1], ['query']),
+    getUUIDInfo: IDL.Func([IDL.Text], [Result_2], ['query']),
     getValue: IDL.Func([ValueRequest], [Result], ['query']),
-    getValueLockStatus: IDL.Func([ValueLockStatusRequest], [Result_2], ['query']),
+    getValueLockStatus: IDL.Func([ValueLockStatusRequest], [Result_1], ['query']),
     insertUUIDStructure: IDL.Func([IDL.Text, IDL.Text], [Result], []),
     isAdmin: IDL.Func([], [IDL.Bool], ['query']),
+    isEditor: IDL.Func([], [IDL.Bool], ['query']),
     lockAllValues: IDL.Func([ValueLockAllRequest], [Result], []),
     lockValue: IDL.Func([ValueLockRequest], [Result], []),
     removeAdmin: IDL.Func([IDL.Principal], [Result], []),
-    updateManyValues: IDL.Func([IDL.Text, IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))], [Result_1], []),
+    removeEditor: IDL.Func([IDL.Principal], [Result], []),
+    unlockAllValues: IDL.Func([ValueUnlockAllRequest], [Result], []),
+    unlockValue: IDL.Func([ValueUnlockRequest], [Result], []),
+    updateManyValues: IDL.Func([IDL.Text, IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))], [Result], []),
+    updateManyValuesAndLock: IDL.Func([IDL.Text, IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))], [Result], []),
+    updateUUIDStructure: IDL.Func([IDL.Text, IDL.Text], [Result], []),
     updateValue: IDL.Func([ValueUpdateRequest], [Result], []),
+    updateValueAndLock: IDL.Func([ValueUpdateRequest], [Result], []),
     uploadFile: IDL.Func([IDL.Text, IDL.Text, FileMetadata], [Result], [])
   })
   return TimestorageBackend

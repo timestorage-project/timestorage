@@ -707,7 +707,7 @@ shared (msg) actor class TimestorageBackend() {
                 let responseItem : Types.FileResponse = {
                     uuid = record.uuid;
                     metadata = {
-                        fileData = record.fileData;
+                        fileData = ""; // Remove actual file data from the response
                         mimeType = record.metadata.mimeType;
                         fileName = record.metadata.fileName;
                         uploadTimestamp = Int.toText(record.metadata.uploadTimestamp);

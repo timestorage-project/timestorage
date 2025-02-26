@@ -12,11 +12,15 @@ import {
   Radio,
   RadioGroup,
   LinearProgress,
-  Fade
+  Fade,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl
 } from '@mui/material'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import PhotoCamera from '@mui/icons-material/PhotoCamera'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -38,14 +42,33 @@ interface WizardState {
 
 const WizardPage: FC = () => {
   const navigate = useNavigate()
-  const { projectId, getWizardQuestions } = useData()
+  const { projectId, getWizardQuestions, data } = useData()
+  const { sectionId } = useParams<{ sectionId: string }>()
+  const [availableWizards, setAvailableWizards] = useState<{ id: string; title: string }[]>([])
+  const [selectedWizard, setSelectedWizard] = useState<string | null>(sectionId || null)
   const [questions, setQuestions] = useState<WizardQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const [saving, setSaving] = useState(false)
 
-  const storageKey = `window_installation_wizard_${projectId}`
+  // Effect to find all available wizard sections when data is loaded
+  useEffect(() => {
+    if (data) {
+      const wizards = Object.entries(data)
+        .filter(([_, section]) => section.isWizard)
+        .map(([key, section]) => ({ id: key, title: section.title }))
+
+      setAvailableWizards(wizards)
+
+      // If no wizard is selected and we have wizards available, select the first one
+      if (!selectedWizard && wizards.length > 0) {
+        setSelectedWizard(wizards[0].id)
+      }
+    }
+  }, [data, selectedWizard])
+
+  const storageKey = `window_installation_wizard_${projectId}_${selectedWizard}`
 
   const [state, setState] = useState<WizardState>(() => {
     const saved = localStorage.getItem(storageKey)
@@ -80,6 +103,7 @@ const WizardPage: FC = () => {
   }
 
   const handlePhotoCapture = async (event: React.ChangeEvent<HTMLInputElement>, multiple: boolean) => {
+    if (!currentQuestion) return
     const files = event.target.files
     if (!files) return
 
@@ -146,11 +170,14 @@ const WizardPage: FC = () => {
     }
   }
 
+  // Changed to use selectedWizard for fetching questions
   useEffect(() => {
     const loadQuestions = async () => {
+      if (!selectedWizard) return
+
       try {
         setLoading(true)
-        const questionData = await getWizardQuestions()
+        const questionData = await getWizardQuestions(selectedWizard)
         setQuestions(questionData)
         setError(null)
       } catch (err) {
@@ -161,14 +188,32 @@ const WizardPage: FC = () => {
     }
 
     loadQuestions()
-  }, [getWizardQuestions])
+  }, [getWizardQuestions, selectedWizard])
+
+  // Reset state when changing wizards
+  useEffect(() => {
+    if (selectedWizard) {
+      const saved = localStorage.getItem(storageKey)
+      setState(
+        saved
+          ? JSON.parse(saved)
+          : {
+              currentQuestionIndex: 0,
+              answers: {},
+              isCompleted: false
+            }
+      )
+    }
+  }, [selectedWizard, storageKey])
 
   useEffect(() => {
     if (state.isCompleted) {
       navigate(`/${projectId}`)
     }
-    localStorage.setItem(storageKey, JSON.stringify(state))
-  }, [state, navigate, storageKey, projectId])
+    if (selectedWizard) {
+      localStorage.setItem(storageKey, JSON.stringify(state))
+    }
+  }, [state, navigate, storageKey, projectId, selectedWizard])
 
   if (saving) {
     return <LoadingView message='Saving your answers...' />
@@ -180,6 +225,38 @@ const WizardPage: FC = () => {
 
   if (error) {
     return <ErrorView message={error} />
+  }
+
+  if (!selectedWizard) {
+    return (
+      <Root>
+        <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
+        <Container maxWidth='sm' sx={{ mt: 8, textAlign: 'center' }}>
+          <Typography variant='h5' gutterBottom>
+            Select a Wizard
+          </Typography>
+
+          {availableWizards.length === 0 ? (
+            <Typography>No wizards available</Typography>
+          ) : (
+            <Box sx={{ mt: 4 }}>
+              {availableWizards.map(wizard => (
+                <Button
+                  key={wizard.id}
+                  variant='contained'
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  onClick={() => setSelectedWizard(wizard.id)}
+                >
+                  {wizard.title}
+                </Button>
+              ))}
+            </Box>
+          )}
+        </Container>
+        <BottomNavigation />
+      </Root>
+    )
   }
 
   if (questions.length === 0) {
@@ -228,7 +305,6 @@ const WizardPage: FC = () => {
       }
     }))
   }
-
   const renderQuestion = () => {
     const currentAnswer = state.answers[currentQuestion.id]
 
@@ -381,9 +457,33 @@ const WizardPage: FC = () => {
     }
   }
 
+  const renderWizardSelector = () => {
+    if (availableWizards.length <= 1) return null
+
+    return (
+      <FormControl sx={{ minWidth: 200, mb: 3 }}>
+        <InputLabel id='wizard-selector-label'>Select Wizard</InputLabel>
+        <Select
+          labelId='wizard-selector-label'
+          value={selectedWizard}
+          label='Select Wizard'
+          onChange={e => setSelectedWizard(e.target.value)}
+        >
+          {availableWizards.map(wizard => (
+            <MenuItem key={wizard.id} value={wizard.id}>
+              {wizard.title}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    )
+  }
+
+  const wizardTitle = data?.[selectedWizard]?.title || 'Wizard'
+
   return (
     <Root>
-      <Header title={`Window Installation - ${projectId}`} showMenu={true} />
+      <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
 
       <LinearProgress
         variant='determinate'
@@ -392,6 +492,12 @@ const WizardPage: FC = () => {
       />
 
       <Container maxWidth='sm' sx={{ mt: 4, mb: 10 }}>
+        {renderWizardSelector()}
+
+        <Typography variant='h5' sx={{ mb: 3 }}>
+          {wizardTitle}
+        </Typography>
+
         <QuestionContainer>
           <Fade key={currentQuestion.id} in timeout={400}>
             <Box>
@@ -429,7 +535,7 @@ const Root = styled('div')`
 `
 
 const QuestionContainer = styled(Box)`
-  min-height: calc(100vh - 180px);
+  min-height: calc(100vh - 220px);
   display: flex;
   flex-direction: column;
   justify-content: center;

@@ -7,6 +7,14 @@ export interface FileMetadata {
   fileName: string
   uploadTimestamp: Timestamp
 }
+export interface FileMetadataResponse {
+  metadata: {
+    mimeType: string
+    fileName: string
+    uploadTimestamp: string
+  }
+  uuid: UUID
+}
 export interface FileResponse {
   metadata: {
     fileData: string
@@ -17,28 +25,40 @@ export interface FileResponse {
   uuid: UUID
 }
 export type Result = { ok: string } | { err: string }
-export type Result_1 = { ok: string } | { err: Array<string> }
-export type Result_2 = { ok: ValueLockStatus } | { err: string }
-export type Result_3 = { ok: [string, Array<FileResponse>] } | { err: string }
-export type Result_4 = { ok: Array<[string, string]> } | { err: string }
-export type Result_5 = { ok: Array<string> } | { err: string }
-export type Result__1 = { ok: FileResponse } | { err: string }
+export type Result_1 = { ok: ValueLockStatus } | { err: string }
+export type Result_2 = { ok: [string, Array<FileMetadataResponse>] } | { err: string }
+export type Result_3 = { ok: Array<[string, string]> } | { err: string }
+export type Result_4 = { ok: Array<string> } | { err: string }
+export type Result__1 = { ok: FileMetadataResponse } | { err: string }
+export type Result__1_1 = { ok: Array<FileMetadataResponse> } | { err: string }
+export type Result__1_2 = { ok: FileResponse } | { err: string }
 export type Timestamp = bigint
 export interface TimestorageBackend {
   addAdmin: ActorMethod<[Principal], Result>
-  getAllUUIDs: ActorMethod<[], Result_5>
-  getAllValues: ActorMethod<[string], Result_4>
-  getFileByUUIDAndId: ActorMethod<[string, string], Result__1>
-  getUUIDInfo: ActorMethod<[string], Result_3>
+  addEditor: ActorMethod<[Principal], Result>
+  createEmptyUUID: ActorMethod<[string], Result>
+  getAllUUIDs: ActorMethod<[[] | [Principal]], Result_4>
+  getAllValues: ActorMethod<[string], Result_3>
+  getFileByUUIDAndId: ActorMethod<[string, string], Result__1_2>
+  getFileMetadataByUUID: ActorMethod<[string], Result__1_1>
+  getFileMetadataByUUIDAndId: ActorMethod<[string, string], Result__1>
+  getUUIDInfo: ActorMethod<[string], Result_2>
   getValue: ActorMethod<[ValueRequest], Result>
-  getValueLockStatus: ActorMethod<[ValueLockStatusRequest], Result_2>
+  getValueLockStatus: ActorMethod<[ValueLockStatusRequest], Result_1>
   insertUUIDStructure: ActorMethod<[string, string], Result>
   isAdmin: ActorMethod<[], boolean>
+  isEditor: ActorMethod<[], boolean>
   lockAllValues: ActorMethod<[ValueLockAllRequest], Result>
   lockValue: ActorMethod<[ValueLockRequest], Result>
   removeAdmin: ActorMethod<[Principal], Result>
-  updateManyValues: ActorMethod<[string, Array<[string, string]>], Result_1>
+  removeEditor: ActorMethod<[Principal], Result>
+  unlockAllValues: ActorMethod<[ValueUnlockAllRequest], Result>
+  unlockValue: ActorMethod<[ValueUnlockRequest], Result>
+  updateManyValues: ActorMethod<[string, Array<[string, string]>], Result>
+  updateManyValuesAndLock: ActorMethod<[string, Array<[string, string]>], Result>
+  updateUUIDStructure: ActorMethod<[string, string], Result>
   updateValue: ActorMethod<[ValueUpdateRequest], Result>
+  updateValueAndLock: ActorMethod<[ValueUpdateRequest], Result>
   uploadFile: ActorMethod<[string, string, FileMetadata], Result>
 }
 export type UUID = string
@@ -60,6 +80,13 @@ export interface ValueLockStatusRequest {
   uuid: string
 }
 export interface ValueRequest {
+  key: string
+  uuid: string
+}
+export interface ValueUnlockAllRequest {
+  uuid: string
+}
+export interface ValueUnlockRequest {
   key: string
   uuid: string
 }

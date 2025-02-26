@@ -4,6 +4,10 @@ import InfoIcon from '@mui/icons-material/Info'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import DownloadIcon from '@mui/icons-material/Download'
 import BuildIcon from '@mui/icons-material/Build'
+import ConstructionIcon from '@mui/icons-material/Construction'
+import DescriptionIcon from '@mui/icons-material/Description'
+import VerifiedIcon from '@mui/icons-material/Verified'
+
 import { useNavigate } from 'react-router-dom/dist'
 import BottomNavigation from '@/components/BottomNavigation'
 import { useData } from '@/context/DataContext'
@@ -36,15 +40,22 @@ const Dashboard: FC = () => {
         return <DownloadIcon />
       case 'build':
         return <BuildIcon />
+      case 'construction':
+        return <ConstructionIcon />
+      case 'description':
+        return <DescriptionIcon />
+      case 'verified':
+        return <VerifiedIcon />
       default:
         return <InfoIcon />
     }
   }
   const regularItems = Object.entries(data).filter(([_, item]) => !item.isWizard)
-  const wizardItem = Object.entries(data).find(([_, item]) => item.isWizard)
+  const wizardItems = Object.entries(data).filter(([_, item]) => item.isWizard)
+
   return (
     <Root>
-      <Header title={`Window Installation - ${projectId}`} showMenu={true} />
+      <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
 
       <Container maxWidth='sm' sx={{ mt: 4, mb: 10 }}>
         <Typography variant='h5' sx={{ mb: 3 }}>
@@ -65,12 +76,24 @@ const Dashboard: FC = () => {
           ))}
         </Grid>
 
-        {wizardItem && (
-          <WizardCard onClick={() => navigate(`/${projectId}/wizard`)} sx={{ mt: 3 }}>
-            <Box sx={{ mb: 1 }}>{getIconComponent(wizardItem[1].icon, true)}</Box>
-            <Typography variant='h6'>{wizardItem[1].title}</Typography>
-            <Typography variant='body2'>{wizardItem[1].description}</Typography>
-          </WizardCard>
+        {wizardItems.length > 0 && (
+          <>
+            <Typography variant='h5' sx={{ mt: 4, mb: 2 }}>
+              Installation Wizards
+            </Typography>
+
+            <Grid container spacing={2}>
+              {wizardItems.map(([key, item]) => (
+                <Grid item xs={12} key={key}>
+                  <WizardCard onClick={() => navigate(`/${projectId}/wizard/${key}`)}>
+                    <Box sx={{ mb: 1 }}>{getIconComponent(item.icon, true)}</Box>
+                    <Typography variant='h6'>{item.title}</Typography>
+                    <Typography variant='body2'>{item.description}</Typography>
+                  </WizardCard>
+                </Grid>
+              ))}
+            </Grid>
+          </>
         )}
       </Container>
 

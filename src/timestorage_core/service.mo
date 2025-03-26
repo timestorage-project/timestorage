@@ -1,7 +1,7 @@
 import Types "./types";
 import StorageCanister "canister:timestorage_core_storage";
 
-module {
+module Service {
     public func createCompany(brand : Text, contacts : Text, bio : Text, typeValue : Nat, subtypeValue : Nat) : async Nat {
         await StorageCanister.createCompany(brand, contacts, bio, typeValue, subtypeValue);
     };

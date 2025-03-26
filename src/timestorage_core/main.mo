@@ -1,85 +1,66 @@
-import TrieMap "mo:base/TrieMap";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
-import Iter "mo:base/Iter";
 import Text "mo:base/Text";
 import Error "mo:base/Error";
+import Iter "mo:base/Iter";
 import Types "./types";
 import Service "./service";
+import Auth "./auth";
 
 shared (msg) actor class Core() {
 
-    // Stato stabile per gli admin
-    stable var adminsStable : [(Principal, Bool)] = [];
-    var admins = TrieMap.TrieMap<Principal, Bool>(Principal.equal, Principal.hash);
+    let authStore = Auth.initAuthStore(msg.caller);
 
-    // Imposta il chiamante iniziale come admin
-    let initialAdmin = msg.caller;
-    admins.put(initialAdmin, true);
+    stable var adminsStable : [(Principal, Bool)] = [];
 
     // Upgrade hooks
     system func preupgrade() {
-        adminsStable := Iter.toArray(admins.entries());
+        adminsStable := Iter.toArray(authStore.admins.entries());
     };
 
     system func postupgrade() {
         // Restore admins
         for ((p, isA) in adminsStable.vals()) {
-            admins.put(p, isA);
+            authStore.admins.put(p, isA);
         };
     };
 
-    // Gestione admin
-    public shared (msg) func addAdmin(newAdmin : Principal) : async Result.Result<Text, Text> {
-        if (isAdmin(msg.caller)) {
-            admins.put(newAdmin, true);
-            return #ok("New admin added successfully.");
-        } else {
-            return #err("Unauthorized: Only admins can add other admins");
+    public shared (msg) func initializeStorageAccess() : async Result.Result<Text, Text> {
+        switch (Auth.requireAdmin(authStore, msg.caller)) {
+            case (#err(e)) { return #err(e) };
+            case (#ok(_)) {
+                try {
+                    let success = await Service.ensureAuthorization();
+                    if (success) {
+                        return #ok("Storage access successfully initialized");
+                    } else {
+                        return #err("Failed to initialize storage access");
+                    };
+                } catch (e) {
+                    return #err("Error initializing storage access: " # errorToText(e));
+                };
+            };
         };
+    };
+
+    public shared (msg) func addAdmin(newAdmin : Principal) : async Result.Result<Text, Text> {
+        return Auth.addAdmin(authStore, msg.caller, newAdmin);
     };
 
     public shared (msg) func removeAdmin(admin : Principal) : async Result.Result<Text, Text> {
-        if (isAdmin(msg.caller) and not Principal.equal(admin, msg.caller)) {
-            admins.delete(admin);
-            return #ok("Admin removed successfully.");
-        } else {
-            if (Principal.equal(admin, msg.caller)) {
-                return #err("Cannot remove yourself as admin");
-            };
-            return #err("Unauthorized: Admin privileges required");
-        };
+        return Auth.removeAdmin(authStore, msg.caller, admin);
     };
 
-    // Verifica se il chiamante è un admin
-    private func isAdmin(caller : Principal) : Bool {
-        switch (admins.get(caller)) {
-            case (?true) { return true };
-            case _ { return false };
-        };
+    public shared query (msg) func isAdmin() : async Bool {
+        return Auth.isAdmin(authStore, msg.caller);
     };
 
-    // Richiede che il chiamante sia un admin
-    private func requireAdmin(caller : Principal) : Result.Result<(), Text> {
-        if (not isAdmin(caller)) {
-            return #err("Unauthorized: Admin role required");
-        };
-        return #ok(());
-    };
-
-    // Funzioni pubbliche di verifica ruoli
-    public shared query (msg) func isUserAdmin() : async Bool {
-        return isAdmin(msg.caller);
-    };
-
-    // Funzione helper per gestire errori
     private func errorToText(e : Error.Error) : Text {
-        Error.message(e);
+        return Error.message(e);
     };
 
-    // Gestione aziende
     public shared (msg) func createCompany(brand : Text, contacts : Text, bio : Text, typeValue : Nat, subtypeValue : Nat) : async Result.Result<Nat, Text> {
-        switch (requireAdmin(msg.caller)) {
+        switch (Auth.requireAdmin(authStore, msg.caller)) {
             case (#err(e)) { return #err(e) };
             case (#ok(_)) {
                 try {
@@ -92,7 +73,6 @@ shared (msg) actor class Core() {
         };
     };
 
-    // Nota: questa funzione deve essere shared (non query) perché fa chiamate intercanister
     public shared (msg) func getCompany(id : Nat) : async Result.Result<?Types.Company, Text> {
         try {
             let company = await Service.getCompany(id);
@@ -103,7 +83,7 @@ shared (msg) actor class Core() {
     };
 
     public shared (msg) func updateCompany(id : Nat, brand : ?Text, contacts : ?Text, bio : ?Text, typeValue : ?Nat, subtypeValue : ?Nat) : async Result.Result<Bool, Text> {
-        switch (requireAdmin(msg.caller)) {
+        switch (Auth.requireAdmin(authStore, msg.caller)) {
             case (#err(e)) { return #err(e) };
             case (#ok(_)) {
                 try {
@@ -117,7 +97,7 @@ shared (msg) actor class Core() {
     };
 
     public shared (msg) func addWorkspaceToCompany(companyId : Nat, title : Text, image : Text, qrCodes : [Text], models : [Text]) : async Result.Result<Bool, Text> {
-        switch (requireAdmin(msg.caller)) {
+        switch (Auth.requireAdmin(authStore, msg.caller)) {
             case (#err(e)) { return #err(e) };
             case (#ok(_)) {
                 try {
@@ -130,9 +110,8 @@ shared (msg) actor class Core() {
         };
     };
 
-    // Gestione utenti
     public shared (msg) func createUser(email : Text, firstName : Text, lastName : Text, photo : Text, contacts : Text, bio : Text, typeValue : Nat, subtypeValue : Nat, roles : [Types.Role], companyId : ?Nat) : async Result.Result<Nat, Text> {
-        switch (requireAdmin(msg.caller)) {
+        switch (Auth.requireAdmin(authStore, msg.caller)) {
             case (#err(e)) { return #err(e) };
             case (#ok(_)) {
                 try {
@@ -145,7 +124,6 @@ shared (msg) actor class Core() {
         };
     };
 
-    // Nota: questa funzione deve essere shared (non query) perché fa chiamate intercanister
     public shared (msg) func getUser(id : Nat) : async Result.Result<?Types.User, Text> {
         try {
             let user = await Service.getUser(id);
@@ -156,7 +134,7 @@ shared (msg) actor class Core() {
     };
 
     public shared (msg) func updateUser(id : Nat, email : ?Text, firstName : ?Text, lastName : ?Text, photo : ?Text, contacts : ?Text, bio : ?Text, typeValue : ?Nat, subtypeValue : ?Nat, companyId : ?Nat) : async Result.Result<Bool, Text> {
-        switch (requireAdmin(msg.caller)) {
+        switch (Auth.requireAdmin(authStore, msg.caller)) {
             case (#err(e)) { return #err(e) };
             case (#ok(_)) {
                 try {
@@ -169,9 +147,8 @@ shared (msg) actor class Core() {
         };
     };
 
-    // Funzioni per QR code
     public shared (msg) func addQrInstalled(userId : Nat, qrCode : Text, timestamp : Nat64) : async Result.Result<Bool, Text> {
-        switch (requireAdmin(msg.caller)) {
+        switch (Auth.requireAdmin(authStore, msg.caller)) {
             case (#err(e)) { return #err(e) };
             case (#ok(_)) {
                 try {
@@ -185,7 +162,7 @@ shared (msg) actor class Core() {
     };
 
     public shared (msg) func addQrCreated(userId : Nat, qrCode : Text) : async Result.Result<Bool, Text> {
-        switch (requireAdmin(msg.caller)) {
+        switch (Auth.requireAdmin(authStore, msg.caller)) {
             case (#err(e)) { return #err(e) };
             case (#ok(_)) {
                 try {

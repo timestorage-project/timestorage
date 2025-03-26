@@ -7,15 +7,41 @@
         "version": "0.8.6"
       }
     },
+    "timestorage_core_storage": {
+      "main": "src/timestorage_core_storage/main.mo",
+      "type": "motoko",
+      "motoko": {
+        "version": "0.8.6"
+      }
+    },
+    "timestorage_core": {
+      "main": "src/timestorage_core/main.mo",
+      "type": "motoko",
+      "dependencies": [
+        "timestorage_core_storage"
+      ],
+      "motoko": {
+        "version": "0.8.6"
+      }
+    },
     "timestorage_frontend": {
-      "dependencies": ["timestorage_backend"],
-      "source": ["src/timestorage_frontend/dist"],
+      "dependencies": [
+        "timestorage_backend"
+      ],
+      "source": [
+        "src/timestorage_frontend/dist"
+      ],
       "type": "assets",
       "workspace": "timestorage_frontend"
     },
     "timestorage_admin": {
-      "dependencies": ["timestorage_backend", "timestorage_frontend"],
-      "source": ["src/timestorage_admin/dist"],
+      "dependencies": [
+        "timestorage_backend",
+        "timestorage_frontend"
+      ],
+      "source": [
+        "src/timestorage_admin/dist"
+      ],
       "type": "assets",
       "workspace": "timestorage_admin"
     }
@@ -28,7 +54,9 @@
         "test_runner": {
           "main": "test/test.mo",
           "type": "motoko",
-          "dependencies": ["timestorage_backend"]
+          "dependencies": [
+            "timestorage_backend"
+          ]
         },
         "internet-identity": {
           "type": "pull",

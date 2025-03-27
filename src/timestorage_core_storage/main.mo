@@ -2,25 +2,29 @@ import Principal "mo:base/Principal";
 import Iter "mo:base/Iter";
 import TrieMap "mo:base/TrieMap";
 import Nat "mo:base/Nat";
+import Bool "mo:base/Bool";
 import StorageService "./storage_service";
 import StorageTypes "./storage_types";
 
 shared (msg) actor class CoreStorage() {
-    // Stato stabile per autorizzazione e storage
+    // Stable state for authorization and storage
     stable var authorizedPrincipalsStable : [(Principal, Bool)] = [];
-    var authorizedPrincipals = TrieMap.TrieMap<Principal, Bool>(Principal.equal, Principal.hash);
+    stable var authorizedCanistersStable : [(Principal, Bool)] = [];
 
-    // Dati stabili per le aziende e gli utenti
+    var authorizedPrincipals = TrieMap.TrieMap<Principal, Bool>(Principal.equal, Principal.hash);
+    var authorizedCanisters = TrieMap.TrieMap<Principal, Bool>(Principal.equal, Principal.hash);
+
+    // Stable data for companies and users
     stable var companiesStable : [(Nat, StorageTypes.Company)] = [];
     stable var usersStable : [(Nat, StorageTypes.User)] = [];
     stable var nextCompanyId : Nat = 1;
     stable var nextUserId : Nat = 1;
 
-    // Imposta il chiamante iniziale come autorizzato
+    // Set initial caller as authorized
     let initialPrincipal = msg.caller;
     authorizedPrincipals.put(initialPrincipal, true);
 
-    // Inizializza lo stato dello storage
+    // Initialize storage state
     var storageState = StorageService.restoreState(
         companiesStable,
         usersStable,
@@ -31,6 +35,7 @@ shared (msg) actor class CoreStorage() {
     // Upgrade hooks
     system func preupgrade() {
         authorizedPrincipalsStable := Iter.toArray(authorizedPrincipals.entries());
+        authorizedCanistersStable := Iter.toArray(authorizedCanisters.entries());
         companiesStable := Iter.toArray(storageState.companies.entries());
         usersStable := Iter.toArray(storageState.users.entries());
         nextCompanyId := storageState.nextCompanyId;
@@ -38,14 +43,20 @@ shared (msg) actor class CoreStorage() {
     };
 
     system func postupgrade() {
-        // Ripristina i principal autorizzati
+        // Restore authorized principals and canisters
         authorizedPrincipals := TrieMap.fromEntries<Principal, Bool>(
             authorizedPrincipalsStable.vals(),
             Principal.equal,
             Principal.hash,
         );
 
-        // Ripristina lo stato dello storage
+        authorizedCanisters := TrieMap.fromEntries<Principal, Bool>(
+            authorizedCanistersStable.vals(),
+            Principal.equal,
+            Principal.hash,
+        );
+
+        // Restore storage state
         storageState := StorageService.restoreState(
             companiesStable,
             usersStable,
@@ -54,20 +65,60 @@ shared (msg) actor class CoreStorage() {
         );
     };
 
-    // Funzione per verificare se un principal è autorizzato
-    private func isAuthorized(caller : Principal) : Bool {
+    // Check if a principal is authorized
+    private func checkAuthorization(caller : Principal) : Bool {
+        // Initial admin is always authorized
+        if (Principal.equal(caller, initialPrincipal)) {
+            return true;
+        };
+
         switch (authorizedPrincipals.get(caller)) {
             case (?true) { return true };
-            case _ { return false };
+            case _ {
+                // Check if it's an authorized canister
+                switch (authorizedCanisters.get(caller)) {
+                    case (?true) { return true };
+                    case _ { return false };
+                };
+            };
         };
     };
 
-    // Controllo di autorizzazione
+    // Authorization check for all operations
     private func requireAuthorization(caller : Principal) : () {
-        assert (isAuthorized(caller));
+        assert (checkAuthorization(caller));
     };
 
-    // Funzioni di gestione dello storage
+    // Public method to manage authorization (add or remove)
+    public shared (msg) func manageAuthorization(principal : Principal, shouldAuthorize : Bool) : async Bool {
+        // Only authorized principals can modify authorizations
+        if (not checkAuthorization(msg.caller)) {
+            return false;
+        };
+
+        if (shouldAuthorize) {
+            // Add authorization
+            authorizedPrincipals.put(principal, true);
+            return true;
+        } else {
+            // Don't allow removal of initial admin
+            if (Principal.equal(principal, initialPrincipal)) {
+                return false;
+            };
+
+            // Prevent removal of the last principal authorized
+            let currentAuthorized = Iter.toArray(authorizedPrincipals.keys());
+            if (currentAuthorized.size() <= 1) {
+                return false;
+            };
+
+            // Remove authorization
+            authorizedPrincipals.delete(principal);
+            return true;
+        };
+    };
+
+    // Storage management functions
     public shared (msg) func createCompany(brand : Text, contacts : Text, bio : Text, typeValue : Nat, subtypeValue : Nat) : async Nat {
         requireAuthorization(msg.caller);
         StorageService.createCompany(storageState, brand, contacts, bio, typeValue, subtypeValue);

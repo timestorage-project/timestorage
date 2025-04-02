@@ -50,4 +50,13 @@ module Utils {
         };
         return result;
     };
+
+    public func contains<T>(array : [T], element : T, equal : (T, T) -> Bool) : Bool {
+        for (item in array.vals()) {
+            if (equal(item, element)) {
+                return true;
+            };
+        };
+        return false;
+    };
 };

@@ -96,6 +96,15 @@ module Types {
     files : [FileResponse];
   };
 
+  public type FileMetadataResponse = {
+    uuid : UUID;
+    metadata : {
+      mimeType : Text;
+      fileName : Text;
+      uploadTimestamp : Text;
+    };
+  };
+
   // State types
   public type ValueLockStatus = {
     locked : Bool;

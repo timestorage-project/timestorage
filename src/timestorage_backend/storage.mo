@@ -31,6 +31,16 @@ module Storage {
         TrieMap.TrieMap<Text, ValueLockStatus>(Text.equal, Text.hash);
     };
 
+    // Nuova mappa per memorizzare l'associazione tra modelli e file (Model -> [FileIDs])
+    public func newModelFilesMap() : TrieMap.TrieMap<Text, [Text]> {
+        TrieMap.TrieMap<Text, [Text]>(Text.equal, Text.hash);
+    };
+
+    // Nuova mappa per memorizzare l'associazione tra file e modelli (FileID -> [Models])
+    public func newFileModelsMap() : TrieMap.TrieMap<Text, [Text]> {
+        TrieMap.TrieMap<Text, [Text]>(Text.equal, Text.hash);
+    };
+
     // Generates the key for the value lock map
     public func makeLockKey(uuid : Text, key : Text) : Text {
         return uuid # "|" # key;

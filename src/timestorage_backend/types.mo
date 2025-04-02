@@ -11,8 +11,10 @@ module Types {
   public type StableStorage = {
     uuidToStructure : [(Text, Text)];
     uuidKeyValue : [(Text, [(Text, Text)])];
-    uuidToFiles : [(Text, FileRecord)];
+    globalFiles : [(Text, FileRecord)]; // Global files storage
     admins : [(Principal, Bool)];
+    editors : [(Principal, Bool)];
+    uuidOwners : [(Text, Principal)];
     valueLocks : [(Text, ValueLockStatus)];
     fileCounter : Nat;
   };
@@ -72,12 +74,6 @@ module Types {
     metadata : FileMetadata;
   };
 
-  public type FileUploadRequest = {
-    uuid : UUID;
-    fileData : Text;
-    metadata : FileMetadata;
-  };
-
   // Response types
   public type FileResponse = {
     uuid : UUID;
@@ -89,13 +85,6 @@ module Types {
     };
   };
 
-  public type UUIDInfoResponse = {
-    schema : Text;
-    values : [(Text, Text)];
-    lockStatuses : [(Text, Text)];
-    files : [FileResponse];
-  };
-
   public type FileMetadataResponse = {
     uuid : UUID;
     metadata : {
@@ -103,6 +92,13 @@ module Types {
       fileName : Text;
       uploadTimestamp : Text;
     };
+  };
+
+  public type UUIDInfoResponse = {
+    schema : Text;
+    values : [(Text, Text)];
+    lockStatuses : [(Text, Text)];
+    fileIds : [Text];
   };
 
   // State types

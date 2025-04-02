@@ -1,9 +1,7 @@
 import Debug "mo:base/Debug";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
-import Nat "mo:base/Nat";
 import Array "mo:base/Array";
-import Iter "mo:base/Iter";
 import TrieMap "mo:base/TrieMap";
 import HashMap "mo:base/HashMap";
 
@@ -116,178 +114,6 @@ module {
         };
 
         Debug.print("testInsertUUIDStructure passed");
-    };
-
-    // Test for uploadFile
-    public func testUploadFile(adminPrincipal : Principal) {
-        let state = createState(adminPrincipal);
-        // Insert a UUID first
-        let _ = Logic.insertUUIDStructure(
-            "uuid-file",
-            "schema-file",
-            state.uuidToStructure,
-            state.uuidKeyValueMap,
-            state.uuidOwners,
-            adminPrincipal,
-            state.admins,
-            state.editors,
-        );
-        let fileMetadata : Types.FileMetadata = {
-            fileName = "file.txt";
-            mimeType = "text/plain";
-            uploadTimestamp = 123;
-        };
-        let (result, newCounter) = Logic.uploadFile(
-            "uuid-file",
-            "base64data",
-            fileMetadata,
-            state.uuidToStructure,
-            state.uuidToFiles,
-            0,
-            adminPrincipal,
-        );
-        switch (result) {
-            case (#ok(msg)) {
-                Debug.print("testUploadFile: " # msg);
-                assert Text.startsWith(msg, #text("File uploaded successfully with ID:"));
-            };
-            case (#err(e)) {
-                Debug.print("testUploadFile failed: " # e);
-                assert false;
-            };
-        };
-
-        // Error: upload for non-existent UUID
-        let (resultErr, _) = Logic.uploadFile(
-            "non-existent",
-            "data",
-            fileMetadata,
-            state.uuidToStructure,
-            state.uuidToFiles,
-            newCounter,
-            adminPrincipal,
-        );
-        switch (resultErr) {
-            case (#err(e)) {
-                Debug.print("testUploadFile non-existent UUID: " # e);
-                assert e == "Error: UUID does not exist.";
-            };
-            case (#ok(_)) {
-                Debug.print("testUploadFile: Upload should have failed for non-existent UUID.");
-                assert false;
-            };
-        };
-
-        // Error: invalid metadata (empty fileName)
-        let invalidMetadata : Types.FileMetadata = {
-            fileName = "";
-            mimeType = "text/plain";
-            uploadTimestamp = 123;
-        };
-        let (resultInvalid, _) = Logic.uploadFile(
-            "uuid-file",
-            "data",
-            invalidMetadata,
-            state.uuidToStructure,
-            state.uuidToFiles,
-            newCounter,
-            adminPrincipal,
-        );
-        switch (resultInvalid) {
-            case (#err(e)) {
-                Debug.print("testUploadFile invalid metadata: " # e);
-                assert e == "Invalid metadata: File name and mimeType cannot be empty.";
-            };
-            case (#ok(_)) {
-                Debug.print("testUploadFile: Upload should have failed for invalid metadata.");
-                assert false;
-            };
-        };
-
-        Debug.print("testUploadFile passed");
-    };
-
-    // Test for getFileByUUIDAndId
-    public func testGetFileByUUIDAndId(adminPrincipal : Principal) {
-        let state = createState(adminPrincipal);
-        let _ = Logic.insertUUIDStructure(
-            "uuid-file2",
-            "schema-file2",
-            state.uuidToStructure,
-            state.uuidKeyValueMap,
-            state.uuidOwners,
-            adminPrincipal,
-            state.admins,
-            state.editors,
-        );
-        let fileMetadata : Types.FileMetadata = {
-            fileName = "document.pdf";
-            mimeType = "application/pdf";
-            uploadTimestamp = 456;
-        };
-        let (uploadResult, _) = Logic.uploadFile(
-            "uuid-file2",
-            "pdfdata",
-            fileMetadata,
-            state.uuidToStructure,
-            state.uuidToFiles,
-            0,
-            adminPrincipal,
-        );
-        var fileId : Text = "";
-        switch (uploadResult) {
-            case (#ok(msg)) {
-                let parts = Iter.toArray(Text.split(msg, #text(": ")));
-                if (parts.size() > 0) {
-                    fileId := parts[parts.size() - 1];
-                };
-            };
-            case (#err(e)) {
-                Debug.print("testGetFileByUUIDAndId: Upload failed - " # e);
-                assert false;
-            };
-        };
-
-        // Retrieve file with correct UUID and fileId
-        let getResult = Logic.getFileByUUIDAndId("uuid-file2", fileId, state.uuidToFiles);
-        switch (getResult) {
-            case (#ok(fileResponse)) {
-                Debug.print("testGetFileByUUIDAndId: File retrieved - " # fileResponse.metadata.fileName);
-                assert fileResponse.uuid == "uuid-file2";
-            };
-            case (#err(e)) {
-                Debug.print("testGetFileByUUIDAndId failed: " # e);
-                assert false;
-            };
-        };
-
-        // Error: incorrect UUID for the fileId
-        let getResultWrong = Logic.getFileByUUIDAndId("wrong-uuid", fileId, state.uuidToFiles);
-        switch (getResultWrong) {
-            case (#err(e)) {
-                Debug.print("testGetFileByUUIDAndId wrong UUID: " # e);
-                assert e == "File does not belong to the given UUID.";
-            };
-            case (#ok(_)) {
-                Debug.print("testGetFileByUUIDAndId: Should have failed for wrong UUID.");
-                assert false;
-            };
-        };
-
-        // Error: non-existent fileId
-        let getResultNonExistent = Logic.getFileByUUIDAndId("uuid-file2", "non-existent", state.uuidToFiles);
-        switch (getResultNonExistent) {
-            case (#err(e)) {
-                Debug.print("testGetFileByUUIDAndId non-existent fileId: " # e);
-                assert e == "File not found.";
-            };
-            case (#ok(_)) {
-                Debug.print("testGetFileByUUIDAndId: Should have failed for non-existent fileId.");
-                assert false;
-            };
-        };
-
-        Debug.print("testGetFileByUUIDAndId passed");
     };
 
     // Test for updateValue
@@ -732,10 +558,8 @@ module {
 
         let result = Logic.getUUIDInfo("uuid-info", state.uuidToStructure, state.uuidKeyValueMap, state.valueLocks, state.uuidToFiles);
         switch (result) {
-            case (#ok((json, fileResponses))) {
+            case (#ok((json))) {
                 Debug.print("testGetUUIDInfo: JSON info: " # json);
-                Debug.print("testGetUUIDInfo: Number of files: " # Nat.toText(fileResponses.size()));
-                assert fileResponses.size() == 1;
             };
             case (#err(e)) {
                 Debug.print("testGetUUIDInfo failed: " # e);
@@ -804,8 +628,6 @@ module {
     // Run all Logic tests
     public func runAllTests(adminPrincipal : Principal) {
         testInsertUUIDStructure(adminPrincipal);
-        testUploadFile(adminPrincipal);
-        testGetFileByUUIDAndId(adminPrincipal);
         testUpdateValue(adminPrincipal);
         testUpdateManyValues(adminPrincipal);
         testUpdateValueAndLock(adminPrincipal);

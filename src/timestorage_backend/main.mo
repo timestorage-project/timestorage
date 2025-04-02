@@ -2,6 +2,7 @@ import Storage "./storage";
 import Types "./types";
 import Auth "./auth";
 import Utils "./utils";
+import FileStorage "./filestorage";
 import Principal "mo:base/Principal";
 import Iter "mo:base/Iter";
 import Result "mo:base/Result";
@@ -9,7 +10,6 @@ import Text "mo:base/Text";
 import TrieMap "mo:base/TrieMap";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
-import Int "mo:base/Int";
 
 shared (msg) actor class TimestorageBackend() {
 
@@ -22,29 +22,21 @@ shared (msg) actor class TimestorageBackend() {
     // Stable state
     stable var uuidToStructureStable : [(UUID, Text)] = [];
     stable var uuidKeyValueStable : [(UUID, [(Text, Text)])] = [];
-    stable var uuidToFilesStable : [(UUID, FileRecord)] = [];
+    stable var globalFilesStable : [(Text, FileRecord)] = []; // Global files storage
     stable var adminsStable : [(Principal, Bool)] = [];
     stable var editorsStable : [(Principal, Bool)] = [];
     stable var uuidOwnersStable : [(Text, Principal)] = [];
     stable var valueLocksStable : [(Text, ValueLockStatus)] = [];
     stable var fileCounter : Nat = 0;
 
-    // Nuovo stato stabile per template/modelli
-    stable var modelToFilesStable : [(Text, [Text])] = []; // Modello -> [FileIDs]
-    stable var fileToModelsStable : [(Text, [Text])] = []; // FileID -> [Modelli]
-
     // Volatile state
     var uuidToStructure = Storage.newUUIDStructure();
     var uuidKeyValueMap = Storage.newUUIDKeyValueMap();
-    var uuidToFiles = Storage.newFileMap();
+    var globalFiles = Storage.newFileMap(); // Global files storage
     var admins = Auth.newAdminMap();
     var editors = Auth.newEditorMap();
     var uuidOwners = Storage.newUUIDOwnerMap();
     var valueLocks = Storage.newValueLockMap();
-
-    // Nuovo stato volatile per template/modelli
-    var modelToFiles = Storage.newModelFilesMap(); // Modello -> [FileIDs]
-    var fileToModels = Storage.newFileModelsMap(); // FileID -> [Modelli]
 
     // Initial admin setup
     let initialAdmin = msg.caller;
@@ -57,9 +49,9 @@ shared (msg) actor class TimestorageBackend() {
             uuidToStructure.put(u, s);
         };
 
-        // Restore uuidToFiles
-        for ((k, v) in uuidToFilesStable.vals()) {
-            uuidToFiles.put(k, v);
+        // Restore globalFiles
+        for ((k, v) in globalFilesStable.vals()) {
+            globalFiles.put(k, v);
         };
 
         // Restore uuidKeyValueMap
@@ -96,16 +88,6 @@ shared (msg) actor class TimestorageBackend() {
                 uuidOwners.put(u, initialAdmin);
             };
         };
-
-        // Restore modelToFiles
-        for ((model, fileIds) in modelToFilesStable.vals()) {
-            modelToFiles.put(model, fileIds);
-        };
-
-        // Restore fileToModels
-        for ((fileId, models) in fileToModelsStable.vals()) {
-            fileToModels.put(fileId, models);
-        };
     };
 
     system func preupgrade() {
@@ -120,8 +102,8 @@ shared (msg) actor class TimestorageBackend() {
         };
         uuidKeyValueStable := arr;
 
-        // Save uuidToFiles
-        uuidToFilesStable := Iter.toArray(uuidToFiles.entries());
+        // Save globalFiles
+        globalFilesStable := Iter.toArray(globalFiles.entries());
 
         // Save uuidOwners
         uuidOwnersStable := Iter.toArray(uuidOwners.entries());
@@ -134,12 +116,6 @@ shared (msg) actor class TimestorageBackend() {
 
         // Save valueLocks
         valueLocksStable := Iter.toArray(valueLocks.entries());
-
-        // Save modelToFiles
-        modelToFilesStable := Iter.toArray(modelToFiles.entries());
-
-        // Save fileToModels
-        fileToModelsStable := Iter.toArray(fileToModels.entries());
     };
 
     // isAdmin function
@@ -186,7 +162,6 @@ shared (msg) actor class TimestorageBackend() {
 
     // insertUUIDStructure function
     public shared (msg) func insertUUIDStructure(uuid : Text, schema : Text) : async Result.Result<Text, Text> {
-
         switch (Auth.requireAdminOrEditor(msg.caller, admins, editors)) {
             case (#err(e)) { return #err(e) };
             case (#ok(())) {};
@@ -253,319 +228,133 @@ shared (msg) actor class TimestorageBackend() {
         return #ok("UUID created successfully without structure. Use updateUUIDStructure to add structure later.");
     };
 
-    // Upload an image associated with a UUID and optional model
-    public shared (msg) func uploadFile(uuid : Text, base64FileData : Text, metadata : Types.FileMetadata, modelId : ?Text) : async Result.Result<Text, Text> {
+    // Upload a file to the global storage
+    public shared (msg) func uploadGlobalFile(base64FileData : Text, metadata : Types.FileMetadata) : async Result.Result<Text, Text> {
+        let (result, newCounter) = FileStorage.uploadGlobalFile(
+            base64FileData,
+            metadata,
+            globalFiles,
+            fileCounter,
+        );
 
-        // Check if the UUID exists
-        if (uuidToStructure.get(uuid) == null) {
-            return #err("Error: UUID does not exist.");
+        // Aggiorna il contatore solo se l'operazione ha avuto successo
+        switch (result) {
+            case (#ok(_)) { fileCounter := newCounter };
+            case (#err(_)) {};
         };
 
-        // Validate metadata
-        if (metadata.fileName.size() == 0 or metadata.mimeType.size() == 0) {
-            return #err("Invalid metadata: File name and mimeType cannot be empty.");
-        };
-
-        // Generate a unique file ID
-        let fileId = generateUniqueFileId();
-
-        // Create a new file record
-        let fileRecord : Storage.FileRecord = {
-            uuid = uuid;
-            fileData = base64FileData; // Base64
-            metadata = metadata;
-        };
-
-        uuidToFiles.put(fileId, fileRecord);
-
-        // Se è fornito un ID del modello, associa il file a quel modello
-        switch (modelId) {
-            case (null) {
-                // Nessun modello specificato, nessuna associazione da fare
-            };
-            case (?model) {
-                // Aggiungi fileId all'elenco dei file associati al modello
-                let existingFiles = switch (modelToFiles.get(model)) {
-                    case (null) { [] };
-                    case (?files) { files };
-                };
-
-                if (not Utils.contains<Text>(existingFiles, fileId, Text.equal)) {
-                    let updatedFiles = Array.append(existingFiles, [fileId]);
-                    modelToFiles.put(model, updatedFiles);
-                };
-
-                // Aggiungi il modello all'elenco dei modelli associati al file
-                let existingModels = switch (fileToModels.get(fileId)) {
-                    case (null) { [] };
-                    case (?models) { models };
-                };
-
-                if (not Utils.contains<Text>(existingModels, model, Text.equal)) {
-                    let updatedModels = Array.append(existingModels, [model]);
-                    fileToModels.put(fileId, updatedModels);
-                };
-            };
-        };
-
-        return #ok("File uploaded successfully with ID: " # fileId);
+        return result;
     };
 
-    // Helper function to generate a unique file ID
-    func generateUniqueFileId() : Text {
-        fileCounter += 1;
-        return "file-" # Nat.toText(fileCounter);
+    // Associate a global file with a UUID
+    public shared (msg) func associateFileWithUUID(uuid : Text, fileId : Text) : async Result.Result<Text, Text> {
+        FileStorage.associateFileWithUUID(
+            uuid,
+            fileId,
+            uuidToStructure,
+            uuidKeyValueMap,
+            globalFiles,
+        );
     };
 
-    // Nuova funzione: associa un file esistente a un modello
-    public shared (msg) func associateFileToModel(fileId : Text, modelId : Text) : async Result.Result<Text, Text> {
-        // Verifica se il file esiste
-        let fileOpt = uuidToFiles.get(fileId);
-        switch (fileOpt) {
-            case (null) {
-                return #err("File not found.");
-            };
-            case (?_) {
-                // Aggiungi il fileId all'elenco dei file del modello
-                let existingFiles = switch (modelToFiles.get(modelId)) {
-                    case (null) { [] };
-                    case (?files) { files };
-                };
-
-                if (not Utils.contains<Text>(existingFiles, fileId, Text.equal)) {
-                    let updatedFiles = Array.append(existingFiles, [fileId]);
-                    modelToFiles.put(modelId, updatedFiles);
-                } else {
-                    return #err("File already associated with this model.");
-                };
-
-                // Aggiungi il modello all'elenco dei modelli del file
-                let existingModels = switch (fileToModels.get(fileId)) {
-                    case (null) { [] };
-                    case (?models) { models };
-                };
-
-                if (not Utils.contains<Text>(existingModels, modelId, Text.equal)) {
-                    let updatedModels = Array.append(existingModels, [modelId]);
-                    fileToModels.put(fileId, updatedModels);
-                };
-
-                return #ok("File associated with model successfully.");
-            };
-        };
+    // Disassociate a global file from a UUID
+    public shared (msg) func disassociateFileFromUUID(uuid : Text, fileId : Text) : async Result.Result<Text, Text> {
+        FileStorage.disassociateFileFromUUID(
+            uuid,
+            fileId,
+            uuidToStructure,
+            uuidKeyValueMap,
+        );
     };
 
-    // Nuova funzione: dissocia un file da un modello
-    public shared (msg) func disassociateFileFromModel(fileId : Text, modelId : Text) : async Result.Result<Text, Text> {
-        // Verifica se il file esiste
-        let fileOpt = uuidToFiles.get(fileId);
-        switch (fileOpt) {
-            case (null) {
-                return #err("File not found.");
-            };
-            case (?_) {
-                // Rimuovi il fileId dall'elenco dei file del modello
-                let existingFiles = switch (modelToFiles.get(modelId)) {
-                    case (null) { [] };
-                    case (?files) { files };
-                };
-
-                if (Utils.contains<Text>(existingFiles, fileId, Text.equal)) {
-                    let updatedFiles = Array.filter<Text>(existingFiles, func(id) { id != fileId });
-                    modelToFiles.put(modelId, updatedFiles);
-                } else {
-                    return #err("File is not associated with this model.");
-                };
-
-                // Rimuovi il modello dall'elenco dei modelli del file
-                let existingModels = switch (fileToModels.get(fileId)) {
-                    case (null) { [] };
-                    case (?models) { models };
-                };
-
-                if (Utils.contains<Text>(existingModels, modelId, Text.equal)) {
-                    let updatedModels = Array.filter<Text>(existingModels, func(id) { id != modelId });
-                    fileToModels.put(fileId, updatedModels);
-                };
-
-                return #ok("File disassociated from model successfully.");
-            };
-        };
+    // Get a global file by ID
+    public shared query (msg) func getGlobalFile(fileId : Text) : async Types.Result<Types.FileResponse, Text> {
+        FileStorage.getGlobalFile(fileId, globalFiles);
     };
 
-    // Nuova funzione: ottieni tutti i file associati a un modello
-    public shared query (msg) func getFilesByModel(modelId : Text) : async Types.Result<[Types.FileMetadataResponse], Text> {
-        var fileResponses : [Types.FileMetadataResponse] = [];
-
-        let fileIds = switch (modelToFiles.get(modelId)) {
-            case (null) { return #ok([]) };
-            case (?ids) { ids };
-        };
-
-        for (fileId in fileIds.vals()) {
-            let fileOpt = uuidToFiles.get(fileId);
-
-            switch (fileOpt) {
-                case (null) {
-                    // File ID exists in the model but actual file not found, skip
-                };
-                case (?record) {
-                    let responseItem : Types.FileMetadataResponse = {
-                        uuid = record.uuid;
-                        metadata = {
-                            mimeType = record.metadata.mimeType;
-                            fileName = record.metadata.fileName;
-                            uploadTimestamp = Int.toText(record.metadata.uploadTimestamp);
-                        };
-                    };
-                    fileResponses := Array.append(fileResponses, [responseItem]);
-                };
-            };
-        };
-
-        return #ok(fileResponses);
+    // Get metadata for a global file
+    public shared query (msg) func getGlobalFileMetadata(fileId : Text) : async Types.Result<Types.FileMetadataResponse, Text> {
+        FileStorage.getGlobalFileMetadata(fileId, globalFiles);
     };
 
-    // Nuova funzione: crea un nuovo UUID e associa automaticamente i file dal modello
-    public shared (msg) func createUUIDFromModel(uuid : Text, schema : Text, modelId : Text) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdminOrEditor(msg.caller, admins, editors)) {
-            case (#err(e)) { return #err(e) };
-            case (#ok(())) {};
-        };
-
-        if (uuidToStructure.get(uuid) != null) {
-            return #err("UUID already exists.");
-        };
-
-        // Save the schema
-        uuidToStructure.put(uuid, schema);
-
-        // Register the owner
-        uuidOwners.put(uuid, msg.caller);
-
-        // Initialize the value submap
-        let subMap = TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
-        uuidKeyValueMap.put(uuid, subMap);
-
-        // Associa i file dal modello al nuovo UUID
-        var associatedFiles : Nat = 0;
-        let modelFiles = switch (modelToFiles.get(modelId)) {
-            case (null) { [] };
-            case (?files) { files };
-        };
-
-        for (fileId in modelFiles.vals()) {
-            let fileOpt = uuidToFiles.get(fileId);
-
-            switch (fileOpt) {
-                case (null) {
-                    // Skip file if not found
-                };
-                case (?fileRecord) {
-                    // Crea una copia del file per il nuovo UUID
-                    let newFileId = generateUniqueFileId();
-
-                    let newFileRecord : Storage.FileRecord = {
-                        uuid = uuid; // Il nuovo UUID
-                        fileData = fileRecord.fileData;
-                        metadata = fileRecord.metadata;
-                    };
-
-                    uuidToFiles.put(newFileId, newFileRecord);
-                    associatedFiles += 1;
-                };
-            };
-        };
-
-        return #ok("UUID created successfully with " # Nat.toText(associatedFiles) # " files associated from model.");
+    // Get all files associated with a UUID
+    public shared query (msg) func getUUIDAssociatedFiles(uuid : Text) : async Types.Result<[Types.FileMetadataResponse], Text> {
+        FileStorage.getUUIDAssociatedFiles(
+            uuid,
+            uuidToStructure,
+            uuidKeyValueMap,
+            globalFiles,
+        );
     };
 
-    // getFileByUUIDAndId function
-    public shared query (msg) func getFileByUUIDAndId(uuid : Text, fileId : Text) : async Types.Result<Types.FileResponse, Text> {
-        let fileOpt = uuidToFiles.get(fileId);
-
-        // Check if the file exists and belongs to the given UUID
-        switch (fileOpt) {
-            case null {
-                return #err("File not found.");
-            };
-            case (?fileRecord) {
-                if (fileRecord.uuid != uuid) {
-                    return #err("File does not belong to the given UUID.");
-                };
-
-                let response : Types.FileResponse = {
-                    uuid = fileRecord.uuid;
-                    metadata = {
-                        fileData = fileRecord.fileData;
-                        mimeType = fileRecord.metadata.mimeType;
-                        fileName = fileRecord.metadata.fileName;
-                        uploadTimestamp = Int.toText(fileRecord.metadata.uploadTimestamp);
-                    };
-                };
-
-                return #ok(response);
-            };
-        };
+    // Get all global files (admin only)
+    public shared query (msg) func getAllGlobalFiles() : async Types.Result<[Types.FileMetadataResponse], Text> {
+        FileStorage.getAllGlobalFiles(
+            msg.caller,
+            admins,
+            globalFiles,
+        );
     };
 
-    // getFileMetadataByUUIDAndId function
-    public shared query (msg) func getFileMetadataByUUIDAndId(uuid : Text, fileId : Text) : async Types.Result<Types.FileMetadataResponse, Text> {
-        let fileOpt = uuidToFiles.get(fileId);
-
-        // Check if the file exists and belongs to the given UUID
-        switch (fileOpt) {
-            case null {
-                return #err("File not found.");
-            };
-            case (?fileRecord) {
-                if (fileRecord.uuid != uuid) {
-                    return #err("File does not belong to the given UUID.");
-                };
-
-                let response : Types.FileMetadataResponse = {
-                    uuid = fileRecord.uuid;
-                    metadata = {
-                        mimeType = fileRecord.metadata.mimeType;
-                        fileName = fileRecord.metadata.fileName;
-                        uploadTimestamp = Int.toText(fileRecord.metadata.uploadTimestamp);
-                    };
-                };
-
-                return #ok(response);
-            };
-        };
+    // Delete a global file (admin only)
+    public shared (msg) func deleteGlobalFile(fileId : Text) : async Result.Result<Text, Text> {
+        FileStorage.deleteGlobalFile(
+            fileId,
+            msg.caller,
+            admins,
+            globalFiles,
+            uuidKeyValueMap,
+        );
     };
 
-    // getFileMetadataByUUID function
-    public shared query (msg) func getFileMetadataByUUID(uuid : Text) : async Types.Result<[Types.FileMetadataResponse], Text> {
-        var fileMetadataResponses : [Types.FileMetadataResponse] = [];
+    // Count the references to a global file
+    public shared query (msg) func countFileReferences(fileId : Text) : async Result.Result<Nat, Text> {
+        FileStorage.countFileReferences(
+            fileId,
+            globalFiles,
+            uuidKeyValueMap,
+        );
+    };
 
-        for ((fileId, record) in uuidToFiles.entries()) {
-            if (record.uuid == uuid) {
-                let responseItem : Types.FileMetadataResponse = {
-                    uuid = record.uuid;
-                    metadata = {
-                        mimeType = record.metadata.mimeType;
-                        fileName = record.metadata.fileName;
-                        uploadTimestamp = Int.toText(record.metadata.uploadTimestamp);
-                    };
-                };
-                fileMetadataResponses := Array.append(fileMetadataResponses, [responseItem]);
-            };
+    // Copy all file associations from one UUID to another
+    public shared (msg) func copyFileAssociations(sourceUuid : Text, targetUuid : Text) : async Result.Result<Text, Text> {
+        FileStorage.copyFileAssociations(
+            sourceUuid,
+            targetUuid,
+            uuidToStructure,
+            uuidKeyValueMap,
+        );
+    };
+
+    // Create a duplicate of a file in the global storage
+    public shared (msg) func duplicateGlobalFile(fileId : Text) : async Result.Result<Text, Text> {
+        let (result, newCounter) = FileStorage.duplicateGlobalFile(
+            fileId,
+            globalFiles,
+            fileCounter,
+        );
+
+        // Aggiorna il contatore solo se l'operazione ha avuto successo
+        switch (result) {
+            case (#ok(_)) { fileCounter := newCounter };
+            case (#err(_)) {};
         };
 
-        return #ok(fileMetadataResponses);
+        return result;
     };
 
     // updateValue function
     public shared (msg) func updateValue(req : Types.ValueUpdateRequest) : async Result.Result<Text, Text> {
-
         // Retrieve the value submap for this UUID
         let subMapOpt = uuidKeyValueMap.get(req.uuid);
         let subMap = switch (subMapOpt) {
             case (null) { return #err("UUID not found or not initialized.") };
             case (?m) m;
+        };
+
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot update keys with __file__ prefix. Use associateFileWithUUID instead.");
         };
 
         // Check if the value is locked
@@ -597,17 +386,22 @@ shared (msg) actor class TimestorageBackend() {
         var failedKeys : [Text] = [];
 
         for ((key, newValue) in updates.vals()) {
-            let lockKey = Storage.makeLockKey(uuid, key);
-            let lockOpt = valueLocks.get(lockKey);
-            let isLocked = switch (lockOpt) {
-                case (?l) { l.locked };
-                case null { false };
-            };
-
-            if (isLocked) {
+            // Check if the key starts with __file__ which is reserved for file associations
+            if (Storage.isFileAssociationKey(key)) {
                 failedKeys := Array.append(failedKeys, [key]);
             } else {
-                subMap.put(key, newValue);
+                let lockKey = Storage.makeLockKey(uuid, key);
+                let lockOpt = valueLocks.get(lockKey);
+                let isLocked = switch (lockOpt) {
+                    case (?l) { l.locked };
+                    case null { false };
+                };
+
+                if (isLocked) {
+                    failedKeys := Array.append(failedKeys, [key]);
+                } else {
+                    subMap.put(key, newValue);
+                };
             };
         };
 
@@ -618,13 +412,18 @@ shared (msg) actor class TimestorageBackend() {
         };
     };
 
-    // updateValeAndLock function
+    // updateValueAndLock function
     public shared (msg) func updateValueAndLock(req : Types.ValueUpdateRequest) : async Result.Result<Text, Text> {
         // Retrieve the value subMap for this UUID
         let subMapOpt = uuidKeyValueMap.get(req.uuid);
         let subMap = switch (subMapOpt) {
             case (null) { return #err("UUID not found or not initialized.") };
             case (?m) m;
+        };
+
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot update keys with __file__ prefix. Use associateFileWithUUID instead.");
         };
 
         // Check if the value is already locked
@@ -662,23 +461,28 @@ shared (msg) actor class TimestorageBackend() {
         var failedKeys : [Text] = [];
 
         for ((key, newValue) in updates.vals()) {
-            let lockKey = Storage.makeLockKey(uuid, key);
-            let lockOpt = valueLocks.get(lockKey);
-            let isLocked = switch (lockOpt) {
-                case (?l) { l.locked };
-                case null { false };
-            };
-
-            if (isLocked) {
+            // Check if the key starts with __file__ which is reserved for file associations
+            if (Storage.isFileAssociationKey(key)) {
                 failedKeys := Array.append(failedKeys, [key]);
             } else {
-                subMap.put(key, newValue);
-
-                let newStatus : Types.ValueLockStatus = {
-                    locked = true;
-                    lockedBy = ?msg.caller;
+                let lockKey = Storage.makeLockKey(uuid, key);
+                let lockOpt = valueLocks.get(lockKey);
+                let isLocked = switch (lockOpt) {
+                    case (?l) { l.locked };
+                    case null { false };
                 };
-                valueLocks.put(lockKey, newStatus);
+
+                if (isLocked) {
+                    failedKeys := Array.append(failedKeys, [key]);
+                } else {
+                    subMap.put(key, newValue);
+
+                    let newStatus : Types.ValueLockStatus = {
+                        locked = true;
+                        lockedBy = ?msg.caller;
+                    };
+                    valueLocks.put(lockKey, newStatus);
+                };
             };
         };
 
@@ -705,26 +509,31 @@ shared (msg) actor class TimestorageBackend() {
 
         // Iterate through all keys and lock them
         for ((key, _) in subMap.entries()) {
-            let lockKey = Storage.makeLockKey(req.uuid, key);
-            let current = valueLocks.get(lockKey);
+            // Skip file association keys
+            if (Storage.isFileAssociationKey(key)) {
+                // Skip file association keys
+            } else {
+                let lockKey = Storage.makeLockKey(req.uuid, key);
+                let current = valueLocks.get(lockKey);
 
-            // Skip if already locked
-            switch (current) {
-                case (?status) {
-                    if (not status.locked) {
+                // Skip if already locked
+                switch (current) {
+                    case (?status) {
+                        if (not status.locked) {
+                            let newStatus : Types.ValueLockStatus = {
+                                locked = true;
+                                lockedBy = ?msg.caller;
+                            };
+                            valueLocks.put(lockKey, newStatus);
+                        };
+                    };
+                    case null {
                         let newStatus : Types.ValueLockStatus = {
                             locked = true;
                             lockedBy = ?msg.caller;
                         };
                         valueLocks.put(lockKey, newStatus);
                     };
-                };
-                case null {
-                    let newStatus : Types.ValueLockStatus = {
-                        locked = true;
-                        lockedBy = ?msg.caller;
-                    };
-                    valueLocks.put(lockKey, newStatus);
                 };
             };
         };
@@ -753,12 +562,17 @@ shared (msg) actor class TimestorageBackend() {
 
         // Iterate through all keys and unlock them
         for ((key, _) in subMap.entries()) {
-            let lockKey = Storage.makeLockKey(req.uuid, key);
-            let newStatus : Types.ValueLockStatus = {
-                locked = false;
-                lockedBy = null;
+            // Skip file association keys
+            if (Storage.isFileAssociationKey(key)) {
+                // Skip file association keys
+            } else {
+                let lockKey = Storage.makeLockKey(req.uuid, key);
+                let newStatus : Types.ValueLockStatus = {
+                    locked = false;
+                    lockedBy = null;
+                };
+                valueLocks.put(lockKey, newStatus);
             };
-            valueLocks.put(lockKey, newStatus);
         };
 
         return #ok("All values unlocked successfully.");
@@ -781,14 +595,20 @@ shared (msg) actor class TimestorageBackend() {
 
     // getAllValues function
     public shared query (msg) func getAllValues(uuid : Text) : async Result.Result<[(Text, Text)], Text> {
-
         // Retrieve the value submap for this UUID
         let subMapOpt = uuidKeyValueMap.get(uuid);
         switch (subMapOpt) {
             case null { return #err("UUID not found.") };
             case (?subMap) {
                 let entries = Iter.toArray(subMap.entries());
-                return #ok(entries);
+                // Filter out file association entries
+                let filteredEntries = Array.filter<(Text, Text)>(
+                    entries,
+                    func((k, _)) {
+                        not Storage.isFileAssociationKey(k);
+                    },
+                );
+                return #ok(filteredEntries);
             };
         };
     };
@@ -798,6 +618,11 @@ shared (msg) actor class TimestorageBackend() {
         // Check UUID existence
         if (uuidToStructure.get(req.uuid) == null) {
             return #err("UUID not found.");
+        };
+
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot lock keys with __file__ prefix.");
         };
 
         // Determine lock status
@@ -835,6 +660,11 @@ shared (msg) actor class TimestorageBackend() {
             return #err("UUID not found.");
         };
 
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot unlock keys with __file__ prefix.");
+        };
+
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
         let current = valueLocks.get(lockKey);
 
@@ -860,6 +690,10 @@ shared (msg) actor class TimestorageBackend() {
 
     // getValueLockStatus function
     public shared query (msg) func getValueLockStatus(req : Types.ValueLockStatusRequest) : async Result.Result<Types.ValueLockStatus, Text> {
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot get lock status for keys with __file__ prefix.");
+        };
 
         // Check if the value is locked or not
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
@@ -873,7 +707,7 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // getUUIDInfo function
-    public shared query (msg) func getUUIDInfo(uuid : Text) : async Result.Result<(Text, [Types.FileResponse]), Text> {
+    public shared query (msg) func getUUIDInfo(uuid : Text) : async Result.Result<Text, Text> {
         // Retrieve the schema
         let schemaOpt = uuidToStructure.get(uuid);
         let schemaText = switch (schemaOpt) {
@@ -883,59 +717,65 @@ shared (msg) actor class TimestorageBackend() {
 
         // Retrieve the key/value map
         let subMapOpt = uuidKeyValueMap.get(uuid);
-        let dataJson = switch (subMapOpt) {
-            case null { "{}" };
-            case (?map) {
-                let entries = Iter.toArray(map.entries());
-                Utils.mapEntriesToJson(entries);
+        let subMap = switch (subMapOpt) {
+            case null { return #err("UUID not found or not initialized.") };
+            case (?map) { map };
+        };
+
+        // Prepare regular key/value pairs
+        var regularEntries : [(Text, Text)] = [];
+
+        // Prepare file associations
+        var fileIds : [Text] = [];
+
+        // Iterate through all key-value pairs for this UUID
+        for ((key, value) in subMap.entries()) {
+            if (Storage.isFileAssociationKey(key)) {
+                fileIds := Array.append(fileIds, [value]);
+            } else {
+                regularEntries := Array.append(regularEntries, [(key, value)]);
             };
         };
 
         // Retrieve lock statuses for values
         var lockStatuses : [(Text, Text)] = [];
-        switch (subMapOpt) {
-            case (null) {};
-            case (?map) {
-                for ((key, _) in map.entries()) {
-                    let lockKey = Storage.makeLockKey(uuid, key);
-                    let lockStatusOpt = valueLocks.get(lockKey);
-                    let lockStatus = switch (lockStatusOpt) {
-                        case (null) { "unlocked" };
-                        case (?s) { if (s.locked) "locked" else "unlocked" };
-                    };
-                    lockStatuses := Array.append(lockStatuses, [(key, lockStatus)]);
-                };
+        for (entry in Iter.fromArray(regularEntries)) {
+            let (key, _) = entry;
+            let lockKey = Storage.makeLockKey(uuid, key);
+            let lockStatusOpt = valueLocks.get(lockKey);
+            let lockStatus = switch (lockStatusOpt) {
+                case (null) { "unlocked" };
+                case (?s) { if (s.locked) "locked" else "unlocked" };
             };
+            lockStatuses := Array.append(lockStatuses, [(key, lockStatus)]);
+        };
+
+        // Format regular values as JSON
+        let dataJson = Utils.mapEntriesToJson(regularEntries);
+
+        // Format lock statuses as JSON
+        let lockStatusesJson = Utils.mapEntriesToJson(lockStatuses);
+
+        // Format file IDs as a JSON array
+        let fileIdsJson = if (fileIds.size() == 0) {
+            "[]";
+        } else {
+            "[\"" # Text.join("\", \"", Iter.fromArray(fileIds)) # "\"]";
         };
 
         // First, remove the outer JSON object from schemaText since it's already a complete JSON
         let schemaTextTrimmed = Text.trimStart(schemaText, #text "{");
         let schemaTextFinal = Text.trimEnd(schemaTextTrimmed, #text "}");
 
+        // Construct the combined JSON response
         let combinedJson = "{"
         # schemaTextFinal # "}},"
         # "\"values\":" # dataJson # ","
-        # "\"lockStatus\":" # Utils.mapEntriesToJson(lockStatuses)
+        # "\"lockStatus\":" # lockStatusesJson # ","
+        # "\"fileIds\":" # fileIdsJson
         # "}";
 
-        var fileResponses : [Types.FileResponse] = [];
-        for ((fileId, record) in uuidToFiles.entries()) {
-            if (record.uuid == uuid) {
-                let responseItem : Types.FileResponse = {
-                    uuid = record.uuid;
-                    metadata = {
-                        fileData = ""; // Remove actual file data from the response
-                        mimeType = record.metadata.mimeType;
-                        fileName = record.metadata.fileName;
-                        uploadTimestamp = Int.toText(record.metadata.uploadTimestamp);
-                    };
-                };
-                fileResponses := Array.append(fileResponses, [responseItem]);
-            };
-        };
-
-        // Return the combined JSON and files
-        return #ok(combinedJson, fileResponses);
+        return #ok(combinedJson);
     };
 
     // getAllUUIDs function
@@ -982,71 +822,7 @@ shared (msg) actor class TimestorageBackend() {
                 };
             };
         } else {
-            #err("Unauthorized: Admin or Editor role required.");
+            return #err("Unauthorized: Admin or Editor role required.");
         };
-    };
-
-    // Nuova funzione: ottieni tutti i modelli disponibili
-    public shared query (msg) func getAllModels() : async Result.Result<[Text], Text> {
-        switch (Auth.requireAdminOrEditor(msg.caller, admins, editors)) {
-            case (#err(e)) { return #err(e) };
-            case (#ok(())) {};
-        };
-
-        let models = Iter.toArray(modelToFiles.keys());
-        return #ok(models);
-    };
-
-    // Nuova funzione: crea un nuovo modello
-    public shared (msg) func createModel(modelId : Text) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdminOrEditor(msg.caller, admins, editors)) {
-            case (#err(e)) { return #err(e) };
-            case (#ok(())) {};
-        };
-
-        if (modelToFiles.get(modelId) != null) {
-            return #err("Model ID already exists.");
-        };
-
-        // Inizializza il modello con un array vuoto di file
-        modelToFiles.put(modelId, []);
-
-        return #ok("Model created successfully.");
-    };
-
-    // Nuova funzione: elimina un modello
-    public shared (msg) func deleteModel(modelId : Text) : async Result.Result<Text, Text> {
-        switch (Auth.requireAdmin(msg.caller, admins)) {
-            case (#err(e)) { return #err(e) };
-            case (#ok(())) {};
-        };
-
-        if (modelToFiles.get(modelId) == null) {
-            return #err("Model not found.");
-        };
-
-        // Ottieni tutti i file associati a questo modello
-        let files = switch (modelToFiles.get(modelId)) {
-            case (null) { [] };
-            case (?files) { files };
-        };
-
-        // Rimuovi le associazioni per ciascun file
-        for (fileId in files.vals()) {
-            let existingModels = switch (fileToModels.get(fileId)) {
-                case (null) { [] };
-                case (?models) { models };
-            };
-
-            if (Utils.contains<Text>(existingModels, modelId, Text.equal)) {
-                let updatedModels = Array.filter<Text>(existingModels, func(id) { id != modelId });
-                fileToModels.put(fileId, updatedModels);
-            };
-        };
-
-        // Rimuovi il modello
-        modelToFiles.delete(modelId);
-
-        return #ok("Model deleted successfully.");
     };
 };

@@ -1,12 +1,9 @@
 import TrieMap "mo:base/TrieMap";
 import Text "mo:base/Text";
-import Int "mo:base/Int";
-import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 import HashMap "mo:base/HashMap";
-
 import Auth "./auth";
 import Storage "./storage";
 import Types "./types";
@@ -41,61 +38,6 @@ module Logic {
         return #ok("UUID inserted successfully.");
     };
 
-    // Upload a file associated with a given UUID.
-    // Returns a tuple containing the result and the updated fileCounter.
-    public func uploadFile(
-        uuid : Text,
-        base64FileData : Text,
-        metadata : Types.FileMetadata,
-        uuidToStructure : TrieMap.TrieMap<Text, Text>,
-        uuidToFiles : TrieMap.TrieMap<Text, Types.FileRecord>,
-        fileCounter : Nat,
-        _caller : Principal,
-    ) : (Types.Result<Text, Text>, Nat) {
-        if (uuidToStructure.get(uuid) == null) {
-            return (#err("Error: UUID does not exist."), fileCounter);
-        };
-        if (metadata.fileName.size() == 0 or metadata.mimeType.size() == 0) {
-            return (#err("Invalid metadata: File name and mimeType cannot be empty."), fileCounter);
-        };
-        let newFileCounter = fileCounter + 1;
-        let fileId = "file-" # Nat.toText(newFileCounter);
-        let fileRecord : Types.FileRecord = {
-            uuid = uuid;
-            fileData = base64FileData;
-            metadata = metadata;
-        };
-        uuidToFiles.put(fileId, fileRecord);
-        return (#ok("File uploaded successfully with ID: " # fileId), newFileCounter);
-    };
-
-    // Retrieve a file by UUID and file ID.
-    public func getFileByUUIDAndId(
-        uuid : Text,
-        fileId : Text,
-        uuidToFiles : TrieMap.TrieMap<Text, Types.FileRecord>,
-    ) : Types.Result<Types.FileResponse, Text> {
-        let fileOpt = uuidToFiles.get(fileId);
-        switch (fileOpt) {
-            case null { return #err("File not found.") };
-            case (?fileRecord) {
-                if (fileRecord.uuid != uuid) {
-                    return #err("File does not belong to the given UUID.");
-                };
-                let response : Types.FileResponse = {
-                    uuid = fileRecord.uuid;
-                    metadata = {
-                        fileData = fileRecord.fileData;
-                        mimeType = fileRecord.metadata.mimeType;
-                        fileName = fileRecord.metadata.fileName;
-                        uploadTimestamp = Int.toText(fileRecord.metadata.uploadTimestamp);
-                    };
-                };
-                return #ok(response);
-            };
-        };
-    };
-
     // Update the value for a given key (if it is not locked).
     public func updateValue(
         req : Types.ValueUpdateRequest,
@@ -107,6 +49,12 @@ module Logic {
             case null { return #err("UUID not found or not initialized.") };
             case (?m) m;
         };
+
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot update keys with __file__ prefix. Use associateFileWithUUID instead.");
+        };
+
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
         let lockOpt = valueLocks.get(lockKey);
         switch (lockOpt) {
@@ -135,16 +83,21 @@ module Logic {
         };
         var failedKeys : [Text] = [];
         for ((key, newValue) in updates.vals()) {
-            let lockKey = Storage.makeLockKey(uuid, key);
-            let lockOpt = valueLocks.get(lockKey);
-            let isLocked = switch (lockOpt) {
-                case (?l) { l.locked };
-                case null { false };
-            };
-            if (isLocked) {
+            // Check if the key starts with __file__ which is reserved for file associations
+            if (Storage.isFileAssociationKey(key)) {
                 failedKeys := Array.append(failedKeys, [key]);
             } else {
-                subMap.put(key, newValue);
+                let lockKey = Storage.makeLockKey(uuid, key);
+                let lockOpt = valueLocks.get(lockKey);
+                let isLocked = switch (lockOpt) {
+                    case (?l) { l.locked };
+                    case null { false };
+                };
+                if (isLocked) {
+                    failedKeys := Array.append(failedKeys, [key]);
+                } else {
+                    subMap.put(key, newValue);
+                };
             };
         };
         if (failedKeys.size() > 0) {
@@ -166,6 +119,12 @@ module Logic {
             case null { return #err("UUID not found or not initialized.") };
             case (?m) m;
         };
+
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot update keys with __file__ prefix. Use associateFileWithUUID instead.");
+        };
+
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
         let lockOpt = valueLocks.get(lockKey);
         switch (lockOpt) {
@@ -200,21 +159,26 @@ module Logic {
         };
         var failedKeys : [Text] = [];
         for ((key, newValue) in updates.vals()) {
-            let lockKey = Storage.makeLockKey(uuid, key);
-            let lockOpt = valueLocks.get(lockKey);
-            let isLocked = switch (lockOpt) {
-                case (?l) { l.locked };
-                case null { false };
-            };
-            if (isLocked) {
+            // Check if the key starts with __file__ which is reserved for file associations
+            if (Storage.isFileAssociationKey(key)) {
                 failedKeys := Array.append(failedKeys, [key]);
             } else {
-                subMap.put(key, newValue);
-                let newStatus : Types.ValueLockStatus = {
-                    locked = true;
-                    lockedBy = ?caller;
+                let lockKey = Storage.makeLockKey(uuid, key);
+                let lockOpt = valueLocks.get(lockKey);
+                let isLocked = switch (lockOpt) {
+                    case (?l) { l.locked };
+                    case null { false };
                 };
-                valueLocks.put(lockKey, newStatus);
+                if (isLocked) {
+                    failedKeys := Array.append(failedKeys, [key]);
+                } else {
+                    subMap.put(key, newValue);
+                    let newStatus : Types.ValueLockStatus = {
+                        locked = true;
+                        lockedBy = ?caller;
+                    };
+                    valueLocks.put(lockKey, newStatus);
+                };
             };
         };
         if (failedKeys.size() > 0) {
@@ -241,24 +205,29 @@ module Logic {
             case (?m) m;
         };
         for ((key, _) in subMap.entries()) {
-            let lockKey = Storage.makeLockKey(req.uuid, key);
-            let current = valueLocks.get(lockKey);
-            switch (current) {
-                case (?status) {
-                    if (not status.locked) {
+            // Skip file association keys
+            if (Storage.isFileAssociationKey(key)) {
+                // Skip file association keys
+            } else {
+                let lockKey = Storage.makeLockKey(req.uuid, key);
+                let current = valueLocks.get(lockKey);
+                switch (current) {
+                    case (?status) {
+                        if (not status.locked) {
+                            let newStatus : Types.ValueLockStatus = {
+                                locked = true;
+                                lockedBy = ?caller;
+                            };
+                            valueLocks.put(lockKey, newStatus);
+                        };
+                    };
+                    case null {
                         let newStatus : Types.ValueLockStatus = {
                             locked = true;
                             lockedBy = ?caller;
                         };
                         valueLocks.put(lockKey, newStatus);
                     };
-                };
-                case null {
-                    let newStatus : Types.ValueLockStatus = {
-                        locked = true;
-                        lockedBy = ?caller;
-                    };
-                    valueLocks.put(lockKey, newStatus);
                 };
             };
         };
@@ -283,12 +252,17 @@ module Logic {
             case (?m) m;
         };
         for ((key, _) in subMap.entries()) {
-            let lockKey = Storage.makeLockKey(req.uuid, key);
-            let newStatus : Types.ValueLockStatus = {
-                locked = false;
-                lockedBy = null;
+            // Skip file association keys
+            if (Storage.isFileAssociationKey(key)) {
+                // Skip file association keys
+            } else {
+                let lockKey = Storage.makeLockKey(req.uuid, key);
+                let newStatus : Types.ValueLockStatus = {
+                    locked = false;
+                    lockedBy = null;
+                };
+                valueLocks.put(lockKey, newStatus);
             };
-            valueLocks.put(lockKey, newStatus);
         };
         return #ok("All values unlocked successfully.");
     };
@@ -320,7 +294,14 @@ module Logic {
             case null { return #err("UUID not found.") };
             case (?subMap) {
                 let entries = Iter.toArray(subMap.entries());
-                return #ok(entries);
+                // Filter out file association entries
+                let filteredEntries = Array.filter<(Text, Text)>(
+                    entries,
+                    func((k, _)) {
+                        not Storage.isFileAssociationKey(k);
+                    },
+                );
+                return #ok(filteredEntries);
             };
         };
     };
@@ -335,6 +316,12 @@ module Logic {
         if (uuidToStructure.get(req.uuid) == null) {
             return #err("UUID not found.");
         };
+
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot lock keys with __file__ prefix.");
+        };
+
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
         let current = valueLocks.get(lockKey);
         switch (current) {
@@ -363,6 +350,12 @@ module Logic {
         if (uuidToStructure.get(req.uuid) == null) {
             return #err("UUID not found.");
         };
+
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot unlock keys with __file__ prefix.");
+        };
+
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
         let current = valueLocks.get(lockKey);
         switch (current) {
@@ -386,6 +379,11 @@ module Logic {
         req : Types.ValueLockStatusRequest,
         valueLocks : TrieMap.TrieMap<Text, Types.ValueLockStatus>,
     ) : Types.Result<Types.ValueLockStatus, Text> {
+        // Check if the key starts with __file__ which is reserved for file associations
+        if (Storage.isFileAssociationKey(req.key)) {
+            return #err("Cannot get lock status for keys with __file__ prefix.");
+        };
+
         let lockKey = Storage.makeLockKey(req.uuid, req.key);
         let statusOpt = valueLocks.get(lockKey);
         switch (statusOpt) {
@@ -396,61 +394,82 @@ module Logic {
         };
     };
 
-    // Get full information for a given UUID including schema, key-value pairs, lock statuses, and associated files.
+    // Get full information for a given UUID including schema, key-value pairs, and lock statuses.
     public func getUUIDInfo(
         uuid : Text,
         uuidToStructure : TrieMap.TrieMap<Text, Text>,
         uuidKeyValueMap : TrieMap.TrieMap<Text, TrieMap.TrieMap<Text, Text>>,
         valueLocks : TrieMap.TrieMap<Text, Types.ValueLockStatus>,
-        uuidToFiles : TrieMap.TrieMap<Text, Types.FileRecord>,
-    ) : Types.Result<(Text, [Types.FileResponse]), Text> {
+        _ : TrieMap.TrieMap<Text, Types.FileRecord>,
+    ) : Types.Result<Text, Text> {
+        // Retrieve the schema
         let schemaOpt = uuidToStructure.get(uuid);
         let schemaText = switch (schemaOpt) {
-            case null { return #err("UUID not found.") };
+            case (null) { return #err("UUID not found.") };
             case (?text) { text };
         };
+
+        // Retrieve the key/value map
         let subMapOpt = uuidKeyValueMap.get(uuid);
-        let dataJson = switch (subMapOpt) {
-            case null { "{}" };
-            case (?map) {
-                let entries = Iter.toArray(map.entries());
-                Utils.mapEntriesToJson(entries);
+        let subMap = switch (subMapOpt) {
+            case null { return #err("UUID not found or not initialized.") };
+            case (?map) { map };
+        };
+
+        // Prepare regular key/value pairs
+        var regularEntries : [(Text, Text)] = [];
+
+        // Prepare file associations
+        var fileIds : [Text] = [];
+
+        // Iterate through all key-value pairs for this UUID
+        for ((key, value) in subMap.entries()) {
+            if (Storage.isFileAssociationKey(key)) {
+                fileIds := Array.append(fileIds, [value]);
+            } else {
+                regularEntries := Array.append(regularEntries, [(key, value)]);
             };
         };
+
+        // Retrieve lock statuses for values
         var lockStatuses : [(Text, Text)] = [];
-        switch (subMapOpt) {
-            case null {};
-            case (?map) {
-                for ((key, _) in map.entries()) {
-                    let lockKey = Storage.makeLockKey(uuid, key);
-                    let lockStatusOpt = valueLocks.get(lockKey);
-                    let lockStatus = switch (lockStatusOpt) {
-                        case null { "unlocked" };
-                        case (?s) { if (s.locked) "locked" else "unlocked" };
-                    };
-                    lockStatuses := Array.append(lockStatuses, [(key, lockStatus)]);
-                };
+        for (entry in Iter.fromArray(regularEntries)) {
+            let (key, _) = entry;
+            let lockKey = Storage.makeLockKey(uuid, key);
+            let lockStatusOpt = valueLocks.get(lockKey);
+            let lockStatus = switch (lockStatusOpt) {
+                case (null) { "unlocked" };
+                case (?s) { if (s.locked) "locked" else "unlocked" };
             };
+            lockStatuses := Array.append(lockStatuses, [(key, lockStatus)]);
         };
+
+        // Format regular values as JSON
+        let dataJson = Utils.mapEntriesToJson(regularEntries);
+
+        // Format lock statuses as JSON
+        let lockStatusesJson = Utils.mapEntriesToJson(lockStatuses);
+
+        // Format file IDs as a JSON array
+        let fileIdsJson = if (fileIds.size() == 0) {
+            "[]";
+        } else {
+            "[\"" # Text.join("\", \"", Iter.fromArray(fileIds)) # "\"]";
+        };
+
+        // First, remove the outer JSON object from schemaText since it's already a complete JSON
         let schemaTextTrimmed = Text.trimStart(schemaText, #text "{");
         let schemaTextFinal = Text.trimEnd(schemaTextTrimmed, #text "}");
-        let combinedJson = "{" # schemaTextFinal # "}," # "\"values\":" # dataJson # "," # "\"lockStatus\":" # Utils.mapEntriesToJson(lockStatuses) # "}";
-        var fileResponses : [Types.FileResponse] = [];
-        for ((fileId, record) in uuidToFiles.entries()) {
-            if (record.uuid == uuid) {
-                let responseItem : Types.FileResponse = {
-                    uuid = record.uuid;
-                    metadata = {
-                        fileData = record.fileData;
-                        mimeType = record.metadata.mimeType;
-                        fileName = record.metadata.fileName;
-                        uploadTimestamp = Int.toText(record.metadata.uploadTimestamp);
-                    };
-                };
-                fileResponses := Array.append(fileResponses, [responseItem]);
-            };
-        };
-        return #ok((combinedJson, fileResponses));
+
+        // Construct the combined JSON response
+        let combinedJson = "{"
+        # schemaTextFinal # "}},"
+        # "\"values\":" # dataJson # ","
+        # "\"lockStatus\":" # lockStatusesJson # ","
+        # "\"fileIds\":" # fileIdsJson
+        # "}";
+
+        return #ok(combinedJson);
     };
 
     // Get all UUIDs based on the caller's role (admin/editor) and an optional owner filter.

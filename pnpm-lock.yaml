@@ -236,7 +236,7 @@ importers:
         specifier: ^4.9.5
         version: 4.9.5
       vite:
-        specifier: ^2.0.1
+        specifier: ^2.9.18
         version: 2.9.18
       vite-plugin-checker:
         specifier: ^0.3.4

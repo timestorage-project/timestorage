@@ -11,13 +11,14 @@
       "dependencies": ["timestorage_backend"],
       "source": ["src/timestorage_frontend/dist"],
       "type": "assets",
-      "workspace": "timestorage_frontend"
+      "workspace": "timestorage_frontend",
+      "build": ["pnpm --filter timestorage_frontend build"]
     },
     "timestorage_admin": {
       "dependencies": ["timestorage_backend", "timestorage_frontend"],
       "source": ["src/timestorage_admin/dist"],
       "type": "assets",
-      "workspace": "timestorage_admin"
+      "build": ["pnpm --filter timestorage_admin build"]
     }
   },
   "networks": {

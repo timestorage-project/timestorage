@@ -1,0 +1,3 @@
+packages:
+  - 'src/timestorage_frontend'
+  - 'src/timestorage_admin'

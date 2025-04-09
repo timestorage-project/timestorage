@@ -14,7 +14,7 @@ const DarkModeToggle: FC = () => {
         type='checkbox'
         id='dark-mode-toggle'
         checked={theme === 'dark'}
-        onChange={({ target: { checked } }) => {
+        onChange={({ target: { checked } }: { target: { checked: boolean } }) => {
           const themeToSet = checked ? 'dark' : 'light'
           setTheme(themeToSet)
         }}
@@ -52,7 +52,7 @@ const Ball = styled('div', {
   width: 16px;
   transform: translateX(0px);
   transition: transform 0.2s linear;
-  ${({ isChecked }) => (isChecked ? 'transform: translateX(17px);' : '')}
+  ${({ isChecked }: { isChecked: boolean }) => (isChecked ? 'transform: translateX(17px);' : '')}
 `
 
 const Label = styled('label')`

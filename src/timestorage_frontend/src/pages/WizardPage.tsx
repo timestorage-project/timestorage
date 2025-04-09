@@ -317,7 +317,7 @@ const WizardPage: FC = () => {
             rows={4}
             variant='outlined'
             value={currentAnswer || ''}
-            onChange={e => handleAnswer(e.target.value)}
+            onChange={(e: { target: { value: string | string[] } }) => handleAnswer(e.target.value)}
             sx={{ mt: 3 }}
           />
         )

@@ -1,35 +1,78 @@
 import { idlFactory, TimestorageBackend } from '@/timestorage_backend/timestorage_backend.did'
 import { Actor, HttpAgent } from '@dfinity/agent'
+import { idlFactory as sessionManagerIdlFactory } from '@/timestorage_session_manager/timestorage_session_manager.did'
+import { _SERVICE as SessionManagerService } from '@/timestorage_session_manager/timestorage_session_manager.did'
+import { authService } from '@/store/auth.store'
 
-let agent: HttpAgent
-let timestorageActor: TimestorageBackend
-
+// Backend canister ID from environment variables
 const backendCanisterId = (process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string) || 'r26jp-jiaaa-aaaah-qp5gq-cai'
 
-const initializeAgent = async () => {
+// Session manager canister ID from environment variables
+const sessionManagerCanisterId =
+  (process.env.CANISTER_ID_TIMESTORAGE_SESSION_MANAGER as string) || 'bkyz2-fmaaa-aaaaa-qaaaq-cai'
+
+let backendActor: TimestorageBackend
+let sessionManagerActor: SessionManagerService
+
+// Initialize agent and actors
+const initializeAgents = async () => {
   const isLocalEnv = process.env.DFX_NETWORK !== 'ic'
   const host = isLocalEnv ? 'http://localhost:4943' : 'https://ic0.app'
-  if (!agent) {
-    agent = new HttpAgent({ host })
 
-    if (isLocalEnv) {
-      await agent.fetchRootKey()
-    }
-  }
-  console.log(backendCanisterId)
+  // Get the identity from auth store
+  const identity = authService.getIdentity()
 
-  if (!timestorageActor) {
-    timestorageActor = Actor.createActor<TimestorageBackend>(idlFactory, {
-      agent,
-      canisterId: backendCanisterId as string
+  // Create HTTP agent with the identity
+  const agent = new HttpAgent({
+    host,
+    identity
+  })
+
+  if (isLocalEnv) {
+    await agent.fetchRootKey().catch(err => {
+      console.error('Failed to fetch root key:', err)
     })
   }
 
-  return timestorageActor
+  // Create backend actor
+  backendActor = Actor.createActor<TimestorageBackend>(idlFactory, {
+    agent,
+    canisterId: backendCanisterId
+  })
+
+  // Create session manager actor
+  sessionManagerActor = Actor.createActor<SessionManagerService>(sessionManagerIdlFactory, {
+    agent,
+    canisterId: sessionManagerCanisterId
+  })
+
+  return { backendActor, sessionManagerActor }
 }
 
+// Ensure the user is authenticated before making canister calls
+const ensureAuthenticated = () => {
+  if (!authService.isAuthenticated()) {
+    throw new Error('User is not authenticated')
+  }
+}
+
+// Initialize actors and get the backend actor
+export const getBackendActor = async (): Promise<TimestorageBackend> => {
+  const { backendActor: actor } = await initializeAgents()
+  return actor
+}
+
+// Initialize actors and get the session manager actor
+export const getSessionManagerActor = async (): Promise<SessionManagerService> => {
+  const { sessionManagerActor: actor } = await initializeAgents()
+  return actor
+}
+
+// Backend canister methods
+
 export const getUUIDInfo = async (uuid: string) => {
-  const actor = await initializeAgent()
+  ensureAuthenticated()
+  const actor = await getBackendActor()
   const result = await actor.getUUIDInfo(uuid)
 
   if ('err' in result) {
@@ -40,7 +83,8 @@ export const getUUIDInfo = async (uuid: string) => {
 }
 
 export const updateValue = async (uuid: string, key: string, value: string, lock: boolean = false) => {
-  const actor = await initializeAgent()
+  ensureAuthenticated()
+  const actor = await getBackendActor()
   const result = await actor.updateValue({ uuid, key, newValue: value })
 
   if ('err' in result) {
@@ -75,7 +119,8 @@ export const uploadFile = async (
     uploadTimestamp: bigint
   }
 ) => {
-  const actor = await initializeAgent()
+  ensureAuthenticated()
+  const actor = await getBackendActor()
   const result = await actor.uploadFile(uuid, fileData, metadata)
 
   if ('err' in result) {
@@ -86,7 +131,8 @@ export const uploadFile = async (
 }
 
 export const getFileMetadataByUUIDAndId = async (uuid: string, fileId: string) => {
-  const actor = await initializeAgent()
+  ensureAuthenticated()
+  const actor = await getBackendActor()
   const result = await actor.getFileMetadataByUUIDAndId(uuid, fileId)
 
   if ('err' in result) {
@@ -103,7 +149,8 @@ export const getFileMetadataByUUIDAndId = async (uuid: string, fileId: string) =
 }
 
 export const getFileMetadataByUUID = async (uuid: string) => {
-  const actor = await initializeAgent()
+  ensureAuthenticated()
+  const actor = await getBackendActor()
   const result = await actor.getFileMetadataByUUID(uuid)
 
   if ('err' in result) {
@@ -120,7 +167,8 @@ export const getFileMetadataByUUID = async (uuid: string) => {
 }
 
 export const getFileByUUIDAndId = async (uuid: string, fileId: string) => {
-  const actor = await initializeAgent()
+  ensureAuthenticated()
+  const actor = await getBackendActor()
   const result = await actor.getFileByUUIDAndId(uuid, fileId)
 
   if ('err' in result) {

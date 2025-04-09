@@ -1,10 +1,16 @@
-import { FC, useContext, useMemo } from 'react'
+import { useContext, useMemo, ReactNode } from 'react'
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles'
 
 import { ChosenTheme } from './ChosenTheme'
 
-export const ThemeProvider: FC = ({ children }) => {
+// Define an interface for your provider props
+interface ThemeProviderProps {
+  children: ReactNode
+}
+
+// Replace FC with explicit props type
+export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const { theme } = useContext(ChosenTheme)
   const muiTheme = useMemo(() => createThemeHelper(theme), [theme])
 

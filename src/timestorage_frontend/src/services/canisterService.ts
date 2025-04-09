@@ -71,7 +71,7 @@ export const getSessionManagerActor = async (): Promise<SessionManagerService> =
 // Backend canister methods
 
 export const getUUIDInfo = async (uuid: string) => {
-  ensureAuthenticated()
+  // ensureAuthenticated()
   const actor = await getBackendActor()
   const result = await actor.getUUIDInfo(uuid)
 
@@ -131,7 +131,7 @@ export const uploadFile = async (
 }
 
 export const getFileMetadataByUUIDAndId = async (uuid: string, fileId: string) => {
-  ensureAuthenticated()
+  // ensureAuthenticated()
   const actor = await getBackendActor()
   const result = await actor.getFileMetadataByUUIDAndId(uuid, fileId)
 
@@ -149,7 +149,7 @@ export const getFileMetadataByUUIDAndId = async (uuid: string, fileId: string) =
 }
 
 export const getFileMetadataByUUID = async (uuid: string) => {
-  ensureAuthenticated()
+  // ensureAuthenticated()
   const actor = await getBackendActor()
   const result = await actor.getFileMetadataByUUID(uuid)
 
@@ -167,7 +167,7 @@ export const getFileMetadataByUUID = async (uuid: string) => {
 }
 
 export const getFileByUUIDAndId = async (uuid: string, fileId: string) => {
-  ensureAuthenticated()
+  // ensureAuthenticated()
   const actor = await getBackendActor()
   const result = await actor.getFileByUUIDAndId(uuid, fileId)
 

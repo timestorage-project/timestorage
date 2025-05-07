@@ -4,10 +4,20 @@ import Dashboard from './pages/Dashboard'
 import DetailPage from './pages/DetailPage'
 import WizardPage from './pages/WizardPage'
 import { DataProvider } from './context/DataContext'
+import './globals.css'
 import { authService } from './store/auth.store'
 import { isInAuthCallback, handleAuth0Callback } from './services/auth0Service'
 import LoadingView from './components/LoadingView'
-import LoginPage from './pages/LoginPage'
+
+// Theme provider wrapper component
+const ThemeProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <div className='min-h-screen  font-sans antialiased'>
+      {/* This ensures our UI components inherit the theme */}
+      <div className='relative flex min-h-screen flex-col'>{children}</div>
+    </div>
+  )
+}
 
 const App: FC = () => {
   const [isInitializing, setIsInitializing] = useState(true)
@@ -41,19 +51,20 @@ const App: FC = () => {
 
   return (
     <BrowserRouter>
-      <DataProvider>
-        <Routes>
-          <Route path='/login' element={<LoginPage />} />
-          <Route path='/' element={<Navigate to={window.location.pathname.split('/')[1] || ''} replace />} />
-          <Route path='/:projectId' element={<Dashboard />} />
-          <Route path='/:projectId/:sectionId' element={<DetailPage />} />
-          <Route path='/:projectId/wizard/:sectionId' element={<WizardPage />} />
-          <Route path='/:projectId/wizard' element={<WizardPage />} />
-          <Route path='/:projectId/forms' element={<div>Forms Page</div>} />
-          <Route path='/:projectId/gallery' element={<div>Gallery Page</div>} />
-          <Route path='/:projectId/profile' element={<div>Profile Page</div>} />
-        </Routes>
-      </DataProvider>
+      <ThemeProvider>
+        <DataProvider>
+          <Routes>
+            <Route path='/' element={<Navigate to={window.location.pathname.split('/')[1] || ''} replace />} />
+            <Route path='/:projectId' element={<Dashboard />} />
+            <Route path='/:projectId/:sectionId' element={<DetailPage />} />
+            <Route path='/:projectId/wizard/:sectionId' element={<WizardPage />} />
+            <Route path='/:projectId/wizard' element={<WizardPage />} />
+            <Route path='/:projectId/forms' element={<div>Forms Page</div>} />
+            <Route path='/:projectId/gallery' element={<div>Gallery Page</div>} />
+            <Route path='/:projectId/profile' element={<div>Profile Page</div>} />
+          </Routes>
+        </DataProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

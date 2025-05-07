@@ -1,7 +1,9 @@
 import { FC } from 'react'
-import { Box, Typography, Button, styled } from '@mui/material'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import { AlertCircle } from 'lucide-react'
 import { useData } from '../context/DataContext'
+import { Button } from './ui/button'
+import { Typography } from './ui/typography'
+import { Motion } from './ui/motion'
 
 interface ErrorViewProps {
   message: string
@@ -11,50 +13,22 @@ const ErrorView: FC<ErrorViewProps> = ({ message }) => {
   const { reloadData } = useData()
 
   return (
-    <ErrorContainer>
-      <ContentWrapper>
-        <StyledErrorIcon />
-        <ErrorText variant='h6'>{message}</ErrorText>
-        <Button variant='contained' color='primary' onClick={reloadData} startIcon={<ErrorOutlineIcon />}>
-          Try Again
-        </Button>
-      </ContentWrapper>
-    </ErrorContainer>
+    <div className='fixed inset-0 flex items-center justify-center /90 z-50'>
+      <div className='flex items-center justify-center'>
+        <Motion variant='scale' duration={0.4}>
+          <div className='flex flex-col items-center gap-4 p-6 rounded-lg bg-card shadow-lg border'>
+            <AlertCircle className='h-12 w-12 text-destructive' />
+            <Typography variant='h5' className='text-center'>
+              {message}
+            </Typography>
+            <Button variant='default' onClick={reloadData} className='mt-2'>
+              Try Again
+            </Button>
+          </div>
+        </Motion>
+      </div>
+    </div>
   )
 }
-
-const ErrorContainer = styled(Box)`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(255, 255, 255, 0.9);
-  z-index: 1000;
-`
-
-const ContentWrapper = styled(Box)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 24px;
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-`
-
-const StyledErrorIcon = styled(ErrorOutlineIcon)`
-  color: #d32f2f;
-  font-size: 48px;
-`
-
-const ErrorText = styled(Typography)`
-  color: #d32f2f;
-  text-align: center;
-`
 
 export default ErrorView

@@ -1,38 +1,28 @@
-import { FC, useState, useEffect } from 'react'
-import {
-  Box,
-  Container,
-  Typography,
-  styled,
-  IconButton,
-  Button,
-  TextField,
-  FormControlLabel,
-  Checkbox,
-  Radio,
-  RadioGroup,
-  LinearProgress,
-  Fade,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl
-} from '@mui/material'
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
-import PhotoCamera from '@mui/icons-material/PhotoCamera'
-import DeleteIcon from '@mui/icons-material/Delete'
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
-import BottomNavigation from '@/components/BottomNavigation'
-import Header from '../components/Header'
-import { useData, WizardQuestion } from '@/context/DataContext'
-import ErrorView from '@/components/ErrorView'
-import LoadingView from '@/components/LoadingView'
+// Shadcn/UI components
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Progress } from '../components/ui/progress'
+import { Label } from '../components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
+import { Container } from '../components/ui/container'
+import { Typography } from '../components/ui/typography'
 
+// Icons
+import { ArrowRight, ArrowLeft, Camera, Trash, ImagePlus } from 'lucide-react'
+
+// Custom components
+import { Header } from '../components/ui/header'
+import BottomNavigation from '../components/BottomNavigation'
+import { useData } from '../context/DataContext'
+import { WizardQuestion } from '../context/DataContext'
+import ErrorView from '../components/ErrorView'
+import LoadingView from '../components/LoadingView'
+import { fileToBase64, getFileMetadata } from '../utils/fileUtils'
 import * as canisterService from '../services/canisterService'
-import { fileToBase64, getFileMetadata } from '@/utils/fileUtils'
 
 interface WizardState {
   currentQuestionIndex: number
@@ -40,7 +30,7 @@ interface WizardState {
   isCompleted: boolean
 }
 
-const WizardPage: FC = () => {
+const WizardPage = () => {
   const navigate = useNavigate()
   const { projectId, getWizardQuestions, data } = useData()
   const { sectionId } = useParams<{ sectionId: string }>()
@@ -229,43 +219,40 @@ const WizardPage: FC = () => {
 
   if (!selectedWizard) {
     return (
-      <Root>
+      <div className='min-h-screen '>
         <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
-        <Container maxWidth='sm' sx={{ mt: 8, textAlign: 'center' }}>
-          <Typography variant='h5' gutterBottom>
-            Select a Wizard
-          </Typography>
 
-          {availableWizards.length === 0 ? (
-            <Typography>No wizards available</Typography>
-          ) : (
-            <Box sx={{ mt: 4 }}>
-              {availableWizards.map(wizard => (
-                <Button
-                  key={wizard.id}
-                  variant='contained'
-                  fullWidth
-                  sx={{ mb: 2 }}
-                  onClick={() => setSelectedWizard(wizard.id)}
-                >
-                  {wizard.title}
-                </Button>
-              ))}
-            </Box>
-          )}
-        </Container>
+        {loading && <LoadingView message='Loading wizard...' />}
+
+        {error && <ErrorView message={error} />}
+
+        {!loading && !error && !selectedWizard && availableWizards.length > 0 && (
+          <Container maxWidth='sm' className='py-4'>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <Typography variant='h5' className='mb-3'>
+                Select an installation wizard
+              </Typography>
+              <div className='space-y-2'>
+                {availableWizards.map(wizard => (
+                  <Button
+                    key={wizard.id}
+                    variant='outline'
+                    className='w-full mb-1'
+                    onClick={() => setSelectedWizard(wizard.id)}
+                  >
+                    {wizard.title}
+                  </Button>
+                ))}
+              </div>
+            </motion.div>
+          </Container>
+        )}
         <BottomNavigation />
-      </Root>
+      </div>
     )
   }
 
-  if (questions.length === 0) {
-    return <ErrorView message='No questions available' />
-  }
-
   const currentQuestion = questions[state.currentQuestionIndex]
-  const progress = ((state.currentQuestionIndex + 1) / questions.length) * 100
-
   const handleNext = () => {
     if (state.currentQuestionIndex === questions.length - 1) {
       handleWizardCompletion()
@@ -294,267 +281,217 @@ const WizardPage: FC = () => {
     }))
   }
 
-  const handleRemovePhoto = (indexToRemove: number) => {
+  const handleRemovePhoto = (questionId: string) => {
     setState(prev => ({
       ...prev,
       answers: {
         ...prev.answers,
-        [currentQuestion.id]: (prev.answers[currentQuestion.id] as string[]).filter(
-          (_, index) => index !== indexToRemove
-        )
+        [questionId]: Array.isArray(prev.answers[questionId]) ? [] : ''
       }
     }))
   }
-  const renderQuestion = () => {
-    const currentAnswer = state.answers[currentQuestion.id]
 
+  const renderQuestion = () => {
     switch (currentQuestion.type) {
       case 'text':
         return (
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            variant='outlined'
-            value={currentAnswer || ''}
-            onChange={(e: { target: { value: string | string[] } }) => handleAnswer(e.target.value)}
-            sx={{ mt: 3 }}
-          />
+          <div className='mb-4'>
+            <Label htmlFor={`question-${currentQuestion.id}`} className='mb-2'>
+              {currentQuestion.question || 'Your answer'}
+            </Label>
+            <Input
+              id={`question-${currentQuestion.id}`}
+              className='w-full'
+              placeholder='Enter your answer'
+              value={state.answers[currentQuestion.id] || ''}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAnswer(e.target.value)}
+            />
+          </div>
         )
 
       case 'select':
         return (
-          <RadioGroup value={currentAnswer || ''} onChange={e => handleAnswer(e.target.value)} sx={{ mt: 3 }}>
-            {currentQuestion.options?.map(option => (
-              <FormControlLabel key={option} value={option} control={<Radio />} label={option} sx={{ mb: 1 }} />
-            ))}
-          </RadioGroup>
-        )
-
-      case 'multiselect':
-        return (
-          <Box sx={{ mt: 3 }}>
-            {currentQuestion.options?.map(option => (
-              <FormControlLabel
-                key={option}
-                control={
-                  <Checkbox
-                    checked={((currentAnswer as string[]) || []).includes(option)}
-                    onChange={e => {
-                      const current = (currentAnswer as string[]) || []
-                      const newValue = e.target.checked ? [...current, option] : current.filter(item => item !== option)
-                      handleAnswer(newValue)
-                    }}
-                  />
-                }
-                label={option}
-                sx={{ display: 'block', mb: 1 }}
-              />
-            ))}
-          </Box>
+          <div className='mb-4'>
+            <Label htmlFor={`dropdown-${currentQuestion.id}`} className='mb-2'>
+              {currentQuestion.question || 'Select an option'}
+            </Label>
+            <Select
+              value={
+                typeof state.answers[currentQuestion.id] === 'string'
+                  ? (state.answers[currentQuestion.id] as string)
+                  : ''
+              }
+              onValueChange={(value: string) => handleAnswer(value)}
+            >
+              <SelectTrigger id={`dropdown-${currentQuestion.id}`}>
+                <SelectValue placeholder='Select an option' />
+              </SelectTrigger>
+              <SelectContent>
+                {currentQuestion.options?.map(option => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )
 
       case 'photo':
         return (
-          <Box sx={{ mt: 3 }}>
+          <div className='mb-4'>
             <input
-              accept='image/*'
-              style={{ display: 'none' }}
-              id='photo-input'
               type='file'
-              capture='environment'
+              accept='image/*'
+              id='photo-upload'
+              className='hidden'
               onChange={e => handlePhotoCapture(e, false)}
             />
-            {currentAnswer ? (
-              <Box sx={{ position: 'relative', width: 'fit-content' }}>
-                <img
-                  src={currentAnswer as string}
-                  alt='Taken'
-                  style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px' }}
-                />
-                <IconButton
-                  sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' }
-                  }}
-                  onClick={() => handleAnswer('')}
+            <div className='flex flex-wrap gap-2 mb-3'>
+              <label htmlFor='photo-upload'>
+                <Button
+                  variant='default'
+                  className='cursor-pointer flex items-center gap-2'
+                  disabled={!!state.answers[currentQuestion.id]}
                 >
-                  <DeleteIcon sx={{ color: 'white' }} />
-                </IconButton>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <label htmlFor='photo-input'>
-                  <Button variant='contained' component='span' startIcon={<PhotoCamera />}>
-                    Take Photo
-                  </Button>
-                </label>
-                <label htmlFor='photo-input'>
-                  <Button variant='outlined' component='span' startIcon={<AddPhotoAlternateIcon />}>
-                    Upload Photo
-                  </Button>
-                </label>
-              </Box>
+                  <Camera className='h-4 w-4' />
+                  Take Photo
+                </Button>
+              </label>
+
+              {state.answers[currentQuestion.id] && (
+                <Button
+                  variant='destructive'
+                  className='flex items-center gap-2'
+                  onClick={() => handleRemovePhoto(currentQuestion.id)}
+                >
+                  <Trash className='h-4 w-4' />
+                  Remove
+                </Button>
+              )}
+            </div>
+
+            {state.answers[currentQuestion.id] && (
+              <div className='mt-2 p-2 bg-muted rounded'>
+                <Typography variant='body2' className='text-muted-foreground'>
+                  Photo ID: {state.answers[currentQuestion.id]}
+                </Typography>
+              </div>
             )}
-          </Box>
+          </div>
         )
 
       case 'multiphoto':
         return (
-          <Box sx={{ mt: 3 }}>
+          <div className='mb-4'>
             <input
-              accept='image/*'
-              style={{ display: 'none' }}
-              id='multi-photo-input'
               type='file'
+              accept='image/*'
               multiple
-              capture='environment'
-              onChange={e => handlePhotoCapture(e, true)}
+              id='multi-photo-upload'
+              className='hidden'
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoCapture(e, true)}
             />
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <label htmlFor='multi-photo-input'>
-                <Button variant='contained' component='span' startIcon={<PhotoCamera />}>
-                  Take Photos
+            <label htmlFor='multi-photo-upload'>
+              <Button variant='default' className='cursor-pointer flex items-center gap-2'>
+                <ImagePlus className='h-4 w-4' />
+                Add Photos
+              </Button>
+            </label>
+
+            {Array.isArray(state.answers[currentQuestion.id]) && state.answers[currentQuestion.id].length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className='mt-3 p-3 bg-muted rounded'
+              >
+                <Typography variant='body2' className='text-muted-foreground'>
+                  {(state.answers[currentQuestion.id] as string[]).length} photo(s) uploaded
+                </Typography>
+                <div className='mt-2 space-y-1'>
+                  {(state.answers[currentQuestion.id] as string[]).map((photoId: string, index: number) => (
+                    <Typography key={photoId} variant='caption' className='block'>
+                      Photo {index + 1}: {photoId}
+                    </Typography>
+                  ))}
+                </div>
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  className='mt-3 flex items-center gap-2'
+                  onClick={() => handleRemovePhoto(currentQuestion.id)}
+                >
+                  <Trash className='h-4 w-4' />
+                  Clear All
                 </Button>
-              </label>
-              <label htmlFor='multi-photo-input'>
-                <Button variant='outlined' component='span' startIcon={<AddPhotoAlternateIcon />}>
-                  Upload Photos
-                </Button>
-              </label>
-            </Box>
-            <ImageGrid>
-              {((currentAnswer as string[]) || []).map((photo, index) => (
-                <Box key={index} sx={{ position: 'relative' }}>
-                  <img
-                    src={photo}
-                    alt={`${index + 1}`}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
-                  />
-                  <IconButton
-                    sx={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      backgroundColor: 'rgba(0,0,0,0.5)',
-                      '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' },
-                      padding: '4px'
-                    }}
-                    onClick={() => handleRemovePhoto(index)}
-                  >
-                    <DeleteIcon sx={{ color: 'white', fontSize: '1.2rem' }} />
-                  </IconButton>
-                </Box>
-              ))}
-            </ImageGrid>
-          </Box>
+              </motion.div>
+            )}
+          </div>
         )
       default:
         return null
     }
   }
 
-  const renderWizardSelector = () => {
-    if (availableWizards.length <= 1) return null
-
-    return (
-      <FormControl sx={{ minWidth: 200, mb: 3 }}>
-        <InputLabel id='wizard-selector-label'>Select Wizard</InputLabel>
-        <Select
-          labelId='wizard-selector-label'
-          value={selectedWizard}
-          label='Select Wizard'
-          onChange={e => setSelectedWizard(e.target.value)}
-        >
-          {availableWizards.map(wizard => (
-            <MenuItem key={wizard.id} value={wizard.id}>
-              {wizard.title}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-    )
-  }
-
   const wizardTitle = data?.[selectedWizard]?.title || 'Wizard'
 
   return (
-    <Root>
-      <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
+    <div className='min-h-screen '>
+      <Header title={wizardTitle} />
 
-      <LinearProgress
-        variant='determinate'
-        value={progress}
-        sx={{ position: 'fixed', top: '64px', left: 0, right: 0 }}
-      />
+      {loading && <LoadingView message='Loading wizard...' />}
 
-      <Container maxWidth='sm' sx={{ mt: 4, mb: 10 }}>
-        {renderWizardSelector()}
+      {error && <ErrorView message={error} />}
 
-        <Typography variant='h5' sx={{ mb: 3 }}>
-          {wizardTitle}
-        </Typography>
-
-        <QuestionContainer>
-          <Fade key={currentQuestion.id} in timeout={400}>
-            <Box>
-              <Typography variant='h4' sx={{ mb: 2 }}>
-                {currentQuestion.question}
+      {!loading && !error && selectedWizard && questions.length > 0 && currentQuestion && (
+        <Container maxWidth='sm' className='pb-10 pt-2'>
+          <AnimatePresence mode='wait'>
+            <motion.div
+              key={state.currentQuestionIndex}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className='w-full'
+            >
+              <Progress value={((state.currentQuestionIndex + 1) / questions.length) * 100} className='mb-3' />
+              <Typography variant='body2' className='mb-2 text-muted-foreground'>
+                Question {state.currentQuestionIndex + 1} of {questions.length}
               </Typography>
-              {renderQuestion()}
 
-              <NavigationButtons>
-                <Button
-                  variant='outlined'
-                  startIcon={<ArrowBackIcon />}
-                  onClick={handlePrevious}
-                  disabled={state.currentQuestionIndex === 0}
-                >
-                  Previous
-                </Button>
-                <Button variant='contained' endIcon={<ArrowForwardIcon />} onClick={handleNext}>
-                  {state.currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next'}
-                </Button>
-              </NavigationButtons>
-            </Box>
-          </Fade>
-        </QuestionContainer>
-      </Container>
+              <div className='mb-6'>
+                <Typography variant='h6' className='mb-3'>
+                  {currentQuestion.question || 'Answer the question'}
+                </Typography>
+                {renderQuestion()}
 
-      <BottomNavigation />
-    </Root>
+                <div className='flex justify-between mt-6'>
+                  <Button
+                    variant='outline'
+                    disabled={state.currentQuestionIndex === 0}
+                    onClick={handlePrevious}
+                    className='flex items-center gap-1'
+                  >
+                    <ArrowLeft className='h-4 w-4' />
+                    Back
+                  </Button>
+
+                  <Button
+                    variant={state.currentQuestionIndex === questions.length - 1 ? 'default' : 'outline'}
+                    onClick={state.currentQuestionIndex === questions.length - 1 ? handleWizardCompletion : handleNext}
+                    className='flex items-center gap-1'
+                  >
+                    {state.currentQuestionIndex === questions.length - 1 ? 'Complete' : 'Next'}
+                    {state.currentQuestionIndex !== questions.length - 1 && <ArrowRight className='h-4 w-4' />}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </Container>
+      )}
+    </div>
   )
 }
-
-const Root = styled('div')`
-  min-height: 100vh;
-  background-color: #f9fafb;
-`
-
-const QuestionContainer = styled(Box)`
-  min-height: calc(100vh - 220px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-`
-
-const NavigationButtons = styled(Box)`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 2rem;
-`
-
-const ImageGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
-
-  & img {
-    aspect-ratio: 1;
-  }
-`
 
 export default WizardPage

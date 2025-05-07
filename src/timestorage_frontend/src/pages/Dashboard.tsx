@@ -1,17 +1,14 @@
 import { FC } from 'react'
-import { Box, Container, Grid, Typography, styled, Paper } from '@mui/material'
-import InfoIcon from '@mui/icons-material/Info'
-import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import DownloadIcon from '@mui/icons-material/Download'
-import BuildIcon from '@mui/icons-material/Build'
-import ConstructionIcon from '@mui/icons-material/Construction'
-import DescriptionIcon from '@mui/icons-material/Description'
-import VerifiedIcon from '@mui/icons-material/Verified'
-
-import { useNavigate } from 'react-router-dom/dist'
-import BottomNavigation from '@/components/BottomNavigation'
+import { Info, PlayCircle, Download, Wrench, Construction, FileText, CheckCircle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
-import Header from '../components/Header'
+import { Container } from '@/components/ui/container'
+import { Grid } from '@/components/ui/grid'
+import { Card, CardContent } from '@/components/ui/card'
+import { Typography } from '@/components/ui/typography'
+import { Motion, motion } from '@/components/ui/motion'
+import BottomNavigation from '@/components/BottomNavigation'
+import Header from '@/components/Header'
 import ErrorView from '@/components/ErrorView'
 import LoadingView from '@/components/LoadingView'
 
@@ -28,125 +25,111 @@ const Dashboard: FC = () => {
   }
 
   if (!data) {
-    return <div>No data available</div>
+    return (
+      <div className='flex h-screen items-center justify-center'>
+        <Typography variant='h4'>No data found</Typography>
+      </div>
+    )
   }
 
   const getIconComponent = (iconName: string, isWizard?: boolean) => {
-    if (isWizard) return <PlayArrowIcon />
+    if (isWizard) return <PlayCircle className='h-6 w-6 text-primary' />
+
     switch (iconName) {
       case 'info':
-        return <InfoIcon />
+        return <Info className='h-6 w-6 text-primary' />
       case 'download':
-        return <DownloadIcon />
+        return <Download className='h-6 w-6 text-primary' />
       case 'build':
-        return <BuildIcon />
+        return <Wrench className='h-6 w-6 text-primary' />
       case 'construction':
-        return <ConstructionIcon />
+        return <Construction className='h-6 w-6 text-primary' />
       case 'description':
-        return <DescriptionIcon />
+        return <FileText className='h-6 w-6 text-primary' />
       case 'verified':
-        return <VerifiedIcon />
+        return <CheckCircle className='h-6 w-6 text-primary' />
       default:
-        return <InfoIcon />
+        return <PlayCircle className='h-6 w-6 text-primary' />
     }
   }
+
   const regularItems = Object.entries(data).filter(([_, item]) => !item.isWizard)
   const wizardItems = Object.entries(data).filter(([_, item]) => item.isWizard)
 
   return (
-    <Root>
+    <div className='min-h-screen '>
       <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
 
-      <Container maxWidth='sm' sx={{ mt: 4, mb: 10 }}>
-        <Typography variant='h5' sx={{ mb: 3 }}>
-          Dashboard Overview
-        </Typography>
+      <Container maxWidth='sm' className='mt-8 mb-24 px-4'>
+        <Motion variant='slideDown'>
+          <Typography variant='h3' className='mb-6'>
+            Dashboard Overview
+          </Typography>
+        </Motion>
 
-        <Grid container spacing={2}>
-          {regularItems.map(([key, item]) => (
+        <Grid container className='gap-4'>
+          {regularItems.map(([key, item], index) => (
             <Grid item xs={6} key={key}>
-              <StyledCard onClick={() => navigate(`/${projectId}/${key}`)}>
-                <Box sx={{ color: '#95bcf9', mb: 1 }}>{getIconComponent(item.icon)}</Box>
-                <Typography variant='h6'>{item.title}</Typography>
-                <Typography variant='body2' color='text.secondary'>
-                  {item.description}
-                </Typography>
-              </StyledCard>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
+              >
+                <Card
+                  className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 bg-card/80'
+                  onClick={() => navigate(`/${projectId}/${key}`)}
+                >
+                  <CardContent className='p-4'>
+                    <div className='mb-2 text-primary'>{getIconComponent(item.icon)}</div>
+                    <Typography variant='h6' className='mb-1'>
+                      {item.title}
+                    </Typography>
+                    <Typography variant='body2' color='muted'>
+                      {item.description}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </Grid>
           ))}
         </Grid>
 
         {wizardItems.length > 0 && (
-          <>
-            <Typography variant='h5' sx={{ mt: 4, mb: 2 }}>
+          <Motion variant='slideDown' duration={0.5} delay={0.1}>
+            <Typography variant='h3' className='mt-10 mb-4'>
               Installation Wizards
             </Typography>
 
-            <Grid container spacing={2}>
-              {wizardItems.map(([key, item]) => (
+            <Grid container spacing={4}>
+              {wizardItems.map(([key, item], index) => (
                 <Grid item xs={12} key={key}>
-                  <WizardCard onClick={() => navigate(`/${projectId}/wizard/${key}`)}>
-                    <Box sx={{ mb: 1 }}>{getIconComponent(item.icon, true)}</Box>
-                    <Typography variant='h6'>{item.title}</Typography>
-                    <Typography variant='body2'>{item.description}</Typography>
-                  </WizardCard>
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + index * 0.1, duration: 0.3 }}
+                  >
+                    <Card
+                      className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 bg-primary/5'
+                      onClick={() => navigate(`/${projectId}/wizard/${key}`)}
+                    >
+                      <CardContent className='p-4'>
+                        <div className='p-4'>{getIconComponent(item.icon, true)}</div>
+                        <Typography variant='h6' className='mb-1'>
+                          {item.title}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 </Grid>
               ))}
             </Grid>
-          </>
+          </Motion>
         )}
       </Container>
 
       <BottomNavigation />
-    </Root>
+    </div>
   )
 }
-
-const Root = styled('div')`
-  min-height: 100vh;
-  background-color: #f9fafb;
-`
-
-const StyledCard = styled(Paper)`
-  padding: 1rem;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 12px;
-  background-color: #f6f7f8;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  flex-direction: column;
-  height: 160px;
-  justify-content: flex-start;
-
-  &:hover {
-    background-color: #dde9fd;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-`
-
-const WizardCard = styled(Paper)`
-  padding: 1.5rem;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 12px;
-  background-color: #eef4fe;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  flex-direction: column;
-  height: 160px;
-  justify-content: flex-start;
-
-  &:hover {
-    background-color: #dde9fd;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-
-  & .MuiSvgIcon-root {
-    font-size: 2rem;
-  }
-`
 
 export default Dashboard

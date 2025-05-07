@@ -11,7 +11,7 @@ const BottomNavigation: FC = () => {
   return (
     <BottomNav>
       <div
-        className='flex items-center justify-center gap-2 p-2 text-primary cursor-pointer'
+        className='flex items-center justify-center gap-2 p-2 bg-background text-primary cursor-pointer'
         onClick={() => navigate(`/${projectId}`)}
       >
         <Home className='h-5 w-5' />

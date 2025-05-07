@@ -14,7 +14,10 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(
     // Using AnimatePresence for safer animation handling with TypeScript
     return (
       <div
-        className={cn('sticky top-0 z-40 flex h-16 items-center justify-between border-b  px-4 shadow-sm', className)}
+        className={cn(
+          'sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-background px-4 shadow-sm',
+          className
+        )}
         ref={ref}
         {...props}
       >

@@ -1,8 +1,10 @@
 import { FC, useEffect, useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import DetailPage from './pages/DetailPage'
 import WizardPage from './pages/WizardPage'
+import MockDashboard from './components/MockDashboard'
+import MockDashboardRedirect from './pages/MockDashboardRedirect'
 import { DataProvider } from './context/DataContext'
 import './globals.css'
 import { authService } from './store/auth.store'
@@ -54,7 +56,8 @@ const App: FC = () => {
       <ThemeProvider>
         <DataProvider>
           <Routes>
-            <Route path='/' element={<Navigate to={window.location.pathname.split('/')[1] || ''} replace />} />
+            <Route path='/' element={<MockDashboardRedirect />} />
+            <Route path='/mock-dashboard' element={<MockDashboard />} />
             <Route path='/:projectId' element={<Dashboard />} />
             <Route path='/:projectId/:sectionId' element={<DetailPage />} />
             <Route path='/:projectId/wizard/:sectionId' element={<WizardPage />} />

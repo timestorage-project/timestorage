@@ -76,7 +76,7 @@ const Dashboard: FC = () => {
                 transition={{ delay: index * 0.1, duration: 0.3 }}
               >
                 <Card
-                  className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 bg-card/80'
+                  className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 glass-effect'
                   onClick={() => navigate(`/${projectId}/${key}`)}
                 >
                   <CardContent className='p-4'>
@@ -109,7 +109,7 @@ const Dashboard: FC = () => {
                     transition={{ delay: 0.4 + index * 0.1, duration: 0.3 }}
                   >
                     <Card
-                      className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 bg-primary/5'
+                      className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 wizard-card-style'
                       onClick={() => navigate(`/${projectId}/wizard/${key}`)}
                     >
                       <CardContent className='p-4'>

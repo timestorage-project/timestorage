@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'r
 import { useLocation } from 'react-router-dom'
 import * as canisterService from '../services/canisterService'
 import { en } from '@/lang/en'
+import mockEquipmentData from '../mocks/mock-equipment.json'
 import { it } from '@/lang/it'
 
 /**
@@ -214,45 +215,69 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const location = useLocation()
-  const [projectId, setProjectId] = useState<string>('uuid-dummy')
-  const [dataLoaded, setDataLoaded] = useState(false)
+  const [projectId, setProjectId] = useState<string>('')
   const [locale] = useState<'en' | 'it'>('it') // Default to Italian
 
   const translations = locale === 'en' ? en : it
 
   useEffect(() => {
     const loadData = async () => {
-      // If we already loaded data once, just update the projectId from the path:
-      if (dataLoaded) {
-        const pathParts = location.pathname.split('/')
-        const newProjectId = pathParts[1] || ''
-        setProjectId(newProjectId)
+      setIsLoading(true)
+      const currentPath = location.pathname
+
+      if (currentPath === '/mock-sandbox') {
+        try {
+          // Assuming mockEquipmentData has { data: ..., values: ... } structure
+          // The mapApiResponseToDataStructure expects an object with 'data' and optionally 'values' keys.
+          const mappedMockData = mapApiResponseToDataStructure({
+            data: mockEquipmentData.data as { [key: string]: unknown }, // Cast to satisfy mapApiResponseToDataStructure
+            values: mockEquipmentData.values as Record<string, string> // Cast to satisfy mapApiResponseToDataStructure
+          })
+          setData(mappedMockData)
+          setProjectId('mock-sandbox') // Set a specific ID for the mock dashboard
+          setError(null)
+        } catch (err) {
+          console.error('Error loading or processing mock data:', err)
+          setError(err instanceof Error ? err.message : 'Failed to load mock data')
+          setData(null)
+        } finally {
+          setIsLoading(false)
+        }
+        return // Exit early after handling mock data
+      }
+
+      // Handle non-mock routes
+      const pathParts = currentPath.split('/')
+      const newProjectIdFromPath = pathParts[1] || '' // projectId is typically the first part after '/'
+
+      if (!newProjectIdFromPath) {
+        // This handles cases where projectId might be missing for routes that expect one.
+        // Based on App.tsx, Dashboard component should always get a projectId or be on /mock-sandbox.
+        setError('No project ID found in URL for data loading.')
+        setData(null)
+        setProjectId('') // Clear current projectId
+        setIsLoading(false)
         return
       }
 
-      try {
-        setIsLoading(true)
-        const pathParts = location.pathname.split('/')
-        const newProjectId = pathParts[1] || ''
-        if (!newProjectId) {
-          setError('No project ID provided')
-          return
-        }
-        setProjectId(newProjectId)
+      // If we are here, it's a non-mock route with a newProjectIdFromPath.
+      // Update projectId state. This is important for the context value.
+      setProjectId(newProjectIdFromPath)
 
-        const result = await fetchData(newProjectId, translations)
+      try {
+        const result = await fetchData(newProjectIdFromPath, translations)
         setData(result)
-        setDataLoaded(true)
         setError(null)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+        setError(err instanceof Error ? err.message : 'An error occurred while fetching data')
+        setData(null)
       } finally {
         setIsLoading(false)
       }
     }
 
     loadData()
-  }, [location.pathname, dataLoaded, translations])
+  }, [location.pathname, translations]) // Dependencies: re-run if path or translations change
 
   /**
    * Allows us to refetch data on demand (e.g., after a form submission).

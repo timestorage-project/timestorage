@@ -59,6 +59,7 @@ const App: FC = () => {
             <Route path='/' element={<MockDashboardRedirect />} />
             <Route path='/mock-dashboard' element={<MockDashboard />} />
             <Route path='/:projectId' element={<Dashboard />} />
+            <Route path='/mock-sandbox' element={<Dashboard />} />
             <Route path='/:projectId/:sectionId' element={<DetailPage />} />
             <Route path='/:projectId/wizard/:sectionId' element={<WizardPage />} />
             <Route path='/:projectId/wizard' element={<WizardPage />} />

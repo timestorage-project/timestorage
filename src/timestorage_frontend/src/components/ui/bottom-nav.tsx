@@ -14,6 +14,7 @@ const BottomNav = React.forwardRef<HTMLDivElement, BottomNavProps>(({ className,
         className
       )}
       ref={ref}
+      style={{ backgroundColor: 'white' }} // Diagnostic: force white background
       {...props}
     >
       <motion.div

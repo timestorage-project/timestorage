@@ -19,6 +19,7 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(
           className
         )}
         ref={ref}
+        style={{ backgroundColor: 'white' }} // Diagnostic: force white background
         {...props}
       >
         <div className='flex items-center'>{leftSection}</div>

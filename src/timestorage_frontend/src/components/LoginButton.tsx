@@ -1,15 +1,14 @@
 import { FC, useState } from 'react'
-import { Button, CircularProgress } from '@mui/material'
+import { Button as ShadcnButton } from '@/components/ui/button'
+import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { loginWithAuth0, logoutWithAuth0 } from '@/services/auth0Service'
 
 interface LoginButtonProps {
-  variant?: 'text' | 'outlined' | 'contained'
-  color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning'
   fullWidth?: boolean
 }
 
-const LoginButton: FC<LoginButtonProps> = ({ variant = 'contained', color = 'primary', fullWidth = false }) => {
+const LoginButton: FC<LoginButtonProps> = ({ fullWidth = true }) => {
   const [loading, setLoading] = useState(false)
   const isAuthenticated = useAuthStore((state: { isAuthenticated: boolean }) => state.isAuthenticated)
 
@@ -34,16 +33,15 @@ const LoginButton: FC<LoginButtonProps> = ({ variant = 'contained', color = 'pri
   }
 
   return (
-    <Button
-      variant={variant}
-      color={color}
-      fullWidth={fullWidth}
+    <ShadcnButton
+      className={fullWidth ? 'w-full' : ''} // Apply w-full class conditionally
       onClick={isAuthenticated ? handleLogout : handleLogin}
       disabled={loading}
-      startIcon={loading ? <CircularProgress size={20} color='inherit' /> : null}
+      type='button' // Good practice for buttons not submitting forms
     >
+      {loading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
       {isAuthenticated ? 'Logout' : 'Login with Auth0'}
-    </Button>
+    </ShadcnButton>
   )
 }
 

@@ -1,15 +1,10 @@
 import { FC } from 'react'
-import { AppBar, Toolbar } from '@mui/material'
-
-import DarkModeToggle from './DarkModeToggle'
 
 const Header: FC = () => {
   return (
-    <AppBar position='fixed'>
-      <Toolbar variant='dense'>
-        <DarkModeToggle />
-      </Toolbar>
-    </AppBar>
+    <header className='fixed top-0 left-0 w-full z-50 bg-background shadow-md'>
+      <div className='container mx-auto flex h-12 items-center px-4'>{/* Content for the toolbar would go here */}</div>
+    </header>
   )
 }
 

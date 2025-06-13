@@ -9,7 +9,7 @@ import { Typography } from '../components/ui/typography'
 import { Spinner } from '../components/ui/spinner'
 
 // Icons
-import { FileText, Upload, FileIcon as LucideFileIcon } from 'lucide-react' // Renamed to avoid conflict
+import { Upload } from 'lucide-react' // Renamed to avoid conflict
 
 // Custom components
 import BottomNavigation from '../components/BottomNavigation'
@@ -268,24 +268,12 @@ const DetailPage = () => {
             onClick={() => downloadFileContent(fileId)}
             disabled={loadingFiles.includes(fileId)}
           >
-            <span role='img' aria-label='Image'>
-              🖼️
-            </span>
             {loadingFiles.includes(fileId) ? 'Loading Preview...' : `View ${metadata.fileName}`}
           </Button>
         )
       }
 
       // For PDF or other non-image files
-      const isPdf = metadata.mimeType.includes('pdf') || item.fileType === 'PDF'
-      const iconToDisplay = isPdf ? (
-        <LucideFileIcon className='w-4 h-4' />
-      ) : (
-        // Fallback to a generic icon or service-provided icon
-        <span role='img' aria-label='File'>
-          {canisterService.getFileIcon(metadata.mimeType) || '📄'}
-        </span>
-      )
 
       return (
         <div>
@@ -298,7 +286,6 @@ const DetailPage = () => {
             className='flex items-center gap-2'
             disabled={loadingFiles.includes(fileId)}
           >
-            {iconToDisplay}
             {loadingFiles.includes(fileId) ? 'Downloading...' : 'Download'}
           </Button>
         </div>
@@ -363,9 +350,6 @@ const DetailPage = () => {
             {pageData.children?.map((item: PageDataItem, index: number) => (
               <li key={index} className='p-3 border rounded-md shadow-sm'>
                 <div className='flex items-start gap-3'>
-                  <div className='flex-shrink-0 min-w-[36px] h-9 flex items-center justify-center text-primary bg-primary/10 rounded-full'>
-                    {item.icon ? <span className='text-lg'>{item.icon}</span> : <FileText className='h-5 w-5' />}
-                  </div>
                   <div className='flex-grow min-w-0'>
                     {' '}
                     {/* Added min-w-0 for better truncation handling if needed */}

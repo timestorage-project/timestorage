@@ -26,7 +26,13 @@ const config: UserConfig = {
     sourcemap: !!shouldAnalyze
   },
   define: {
-    'process.env': process.env
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+    // If you have other specific 'process.env' variables your client code needs,
+    // they should be explicitly added here, e.g.:
+    // 'process.env.MY_VARIABLE': JSON.stringify(process.env.MY_VARIABLE)
+  },
+  server: {
+    port: 3000
   },
   plugins: [
     react(),

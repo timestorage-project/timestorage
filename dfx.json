@@ -14,12 +14,6 @@
       "workspace": "timestorage_frontend",
       "build": ["pnpm --filter timestorage_frontend build"]
     },
-    "timestorage_admin": {
-      "dependencies": ["timestorage_backend", "timestorage_frontend"],
-      "source": ["src/timestorage_admin/dist"],
-      "type": "assets",
-      "build": ["pnpm --filter timestorage_admin build"]
-    },
     "timestorage_session_manager": {
       "type": "custom",
       "wasm": "./target/wasm32-unknown-unknown/release/timestorage_session_manager.wasm",

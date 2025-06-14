@@ -5,17 +5,20 @@ import { _SERVICE as SessionManagerService } from '@/timestorage_session_manager
 import { authService } from '@/store/auth.store'
 
 // Backend canister ID from environment variables
-const backendCanisterId = (process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string) || 'be2us-64aaa-aaaaa-qaabq-cai'
+const backendCanisterId = (process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string) || 'u6s2n-gx777-77774-qaaba-cai'
 
 // Session manager canister ID from environment variables
 const sessionManagerCanisterId =
-  (process.env.CANISTER_ID_TIMESTORAGE_SESSION_MANAGER as string) || 'bkyz2-fmaaa-aaaaa-qaaaq-cai'
+  (process.env.CANISTER_ID_TIMESTORAGE_SESSION_MANAGER as string) || 'umunu-kh777-77774-qaaca-cai'
 
-let backendActor: TimestorageBackend
-let sessionManagerActor: SessionManagerService
+let backendActor: TimestorageBackend | null = null
+let sessionManagerActor: SessionManagerService | null = null
 
 // Initialize agent and actors
 const initializeAgents = async () => {
+  if (backendActor && sessionManagerActor) {
+    return { backendActor, sessionManagerActor }
+  }
   const isLocalEnv = process.env.DFX_NETWORK !== 'ic'
   const host = isLocalEnv ? 'http://localhost:4943' : 'https://ic0.app'
 
@@ -58,14 +61,18 @@ const ensureAuthenticated = () => {
 
 // Initialize actors and get the backend actor
 export const getBackendActor = async (): Promise<TimestorageBackend> => {
-  const { backendActor: actor } = await initializeAgents()
-  return actor
+  if (!backendActor) {
+    await initializeAgents()
+  }
+  return backendActor as TimestorageBackend
 }
 
 // Initialize actors and get the session manager actor
 export const getSessionManagerActor = async (): Promise<SessionManagerService> => {
-  const { sessionManagerActor: actor } = await initializeAgents()
-  return actor
+  if (!sessionManagerActor) {
+    await initializeAgents()
+  }
+  return sessionManagerActor as SessionManagerService
 }
 
 // Backend canister methods

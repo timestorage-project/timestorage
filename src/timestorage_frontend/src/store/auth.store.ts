@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { Principal } from '@dfinity/principal'
 import { Actor, HttpAgent, Identity, Signature } from '@dfinity/agent'
-import { DelegationIdentity, DelegationChain, Ed25519KeyIdentity, Delegation } from '@dfinity/identity'
+import { DelegationIdentity, DelegationChain, Ed25519KeyIdentity, Delegation, isDelegationValid } from '@dfinity/identity'
 import { idlFactory as sessionManagerIdlFactory } from '@/timestorage_session_manager/timestorage_session_manager.did'
 import { _SERVICE as SessionManagerService } from '@/timestorage_session_manager/timestorage_session_manager.did'
 
@@ -11,6 +11,7 @@ interface AuthState {
   isAuthenticated: boolean
   currentPrincipalId: string
   userSub: string | null
+  initialized: boolean
   init: () => Promise<void>
   login: (idToken: string) => Promise<Principal | null>
   logout: () => Promise<void>
@@ -19,7 +20,7 @@ interface AuthState {
 
 // Session manager canister ID from environment variables
 const sessionManagerCanisterId =
-  (process.env.CANISTER_ID_TIMESTORAGE_SESSION_MANAGER as string) || 'rrkah-fqaaa-aaaaa-aaaaq-cai'
+  (process.env.CANISTER_ID_TIMESTORAGE_SESSION_MANAGER as string) || 'umunu-kh777-77774-qaaca-cai'
 
 // Create session manager actor
 const createSessionManagerActor = (identity: Identity): SessionManagerService => {
@@ -45,6 +46,8 @@ const createSessionManagerActor = (identity: Identity): SessionManagerService =>
 
 // Local storage key for persisting delegations
 const DELEGATION_STORAGE_KEY = 'timestorage-delegation'
+// Local storage key for persisting session identity
+const SESSION_IDENTITY_STORAGE_KEY = 'timestorage-session-identity'
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   sessionIdentity: null,
@@ -52,12 +55,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   currentPrincipalId: '',
   userSub: null,
+  initialized: false,
 
   init: async () => {
+    const { initialized } = get()
+    if (initialized) {
+      console.warn('Auth store already initialized')
+      return
+    }
     try {
-      // Generate a new session identity if one doesn't exist
-      const sessionIdentity = Ed25519KeyIdentity.generate()
-      set({ sessionIdentity })
+      // Restore or generate session identity
+      let sessionIdentity: Ed25519KeyIdentity | undefined
+      const storedSessionIdentity = localStorage.getItem(SESSION_IDENTITY_STORAGE_KEY)
+      if (storedSessionIdentity) {
+        try {
+          sessionIdentity = Ed25519KeyIdentity.fromJSON(storedSessionIdentity)
+        } catch (e) {
+          console.error('Failed to restore session identity:', e)
+          localStorage.removeItem(SESSION_IDENTITY_STORAGE_KEY)
+        }
+      }
+
+      if (!sessionIdentity) {
+        sessionIdentity = Ed25519KeyIdentity.generate()
+        try {
+          localStorage.setItem(SESSION_IDENTITY_STORAGE_KEY, JSON.stringify(sessionIdentity.toJSON()))
+        } catch (e) {
+          console.error('Failed to persist session identity:', e)
+        }
+      }
+
+      set({ sessionIdentity, initialized: true })
 
       // Try to load existing delegation from localStorage
       const storedDelegation = localStorage.getItem(DELEGATION_STORAGE_KEY)
@@ -65,10 +93,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
           const chain = DelegationChain.fromJSON(JSON.parse(storedDelegation))
           // Check if the delegation is still valid
-          if (
-            chain.delegations.length > 0 &&
-            chain.delegations[0].delegation.expiration > BigInt(Date.now()) * BigInt(1000000)
-          ) {
+
+          if (isDelegationValid(chain)) {
             const delegationIdentity = DelegationIdentity.fromDelegation(sessionIdentity, chain)
 
             // Verify the identity by making a canister call
@@ -85,7 +111,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             console.log('Restored authenticated session with principal:', delegationIdentity.getPrincipal().toText())
             return
           } else {
-            // Clear invalid delegation
             localStorage.removeItem(DELEGATION_STORAGE_KEY)
           }
         } catch (error) {

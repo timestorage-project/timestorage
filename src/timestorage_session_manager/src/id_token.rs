@@ -30,6 +30,7 @@ pub struct JWTClaims {
     pub exp: u64,
     pub sub: String,
     pub nonce: String,
+    pub pk_der_hex: String,
 }
 
 impl JWTClaims {

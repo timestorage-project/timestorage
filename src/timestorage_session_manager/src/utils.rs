@@ -18,6 +18,7 @@ pub fn base64_decode(input: &str) -> IdTokenResult<Vec<u8>> {
     engine.decode(input).map_err(ErrorKind::Base64)
 }
 
+
 pub fn principal_to_blob(principal: Principal) -> Blob<29> {
     principal.as_slice()[..29].try_into().unwrap()
 }

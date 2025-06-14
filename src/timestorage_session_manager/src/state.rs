@@ -64,7 +64,7 @@ pub async fn fetch_and_store_jwks() -> Result<(), String> {
     const MAX_RESPONSE_BYTES: u128 = 10_000;
     // formula from https://internetcomputer.org/docs/current/developer-docs/gas-cost#special-features
     // we don't have any request bytes, so we can skip adding them in the calculation
-    let cycles: u128 = (3_000_000 + (60_000 * 13)) * 13 + ((800 * 13) * MAX_RESPONSE_BYTES);
+    let cycles: u128 = (3_500_000 + (60_000 * 13)) * 13 + ((800 * 13) * MAX_RESPONSE_BYTES);
 
     let (res,) = http_request(
         CanisterHttpRequestArgument {

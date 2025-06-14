@@ -3,13 +3,15 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import DetailPage from './pages/DetailPage'
 import WizardPage from './pages/WizardPage'
+import LoginPage from './pages/LoginPage'
 import MockDashboard from './components/MockDashboard'
 import MockDashboardRedirect from './pages/MockDashboardRedirect'
 import { DataProvider } from './context/DataContext'
 import './globals.css'
 import { authService } from './store/auth.store'
-import { isInAuthCallback, handleAuth0Callback } from './services/auth0Service'
+import { isInAuthCallback } from './services/auth0Service'
 import LoadingView from './components/LoadingView'
+import Auth0CallbackPage from './pages/Auth0CallbackPage'
 
 // Theme provider wrapper component
 const ThemeProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -21,22 +23,27 @@ const ThemeProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
   )
 }
 
+// Single initialization promise to ensure authService.init() runs only once (even in StrictMode)
+let authInitPromise: Promise<void> | null = null
+
 const App: FC = () => {
   const [isInitializing, setIsInitializing] = useState(true)
-  const [isProcessingCallback, setIsProcessingCallback] = useState(false)
-
   // Initialize auth service
   useEffect(() => {
     const initialize = async () => {
+      if (authInitPromise) {
+        await authInitPromise
+        setIsInitializing(false)
+        return
+      }
       try {
-        await authService.init()
+        authInitPromise = authService.init()
+        await authInitPromise
         setIsInitializing(false)
 
         // Check if we're in an Auth0 callback
         if (isInAuthCallback()) {
-          setIsProcessingCallback(true)
-          await handleAuth0Callback()
-          setIsProcessingCallback(false)
+          return
         }
       } catch (error) {
         console.error('Initialization error:', error)
@@ -47,8 +54,8 @@ const App: FC = () => {
     initialize()
   }, [])
 
-  if (isInitializing || isProcessingCallback) {
-    return <LoadingView message={isProcessingCallback ? 'Completing login...' : 'Initializing...'} />
+  if (isInitializing) {
+    return <LoadingView message='Initializing...' />
   }
 
   return (
@@ -66,6 +73,8 @@ const App: FC = () => {
             <Route path='/:projectId/forms' element={<div>Forms Page</div>} />
             <Route path='/:projectId/gallery' element={<div>Gallery Page</div>} />
             <Route path='/:projectId/profile' element={<div>Profile Page</div>} />
+            <Route path='/auth/auth0/callback' element={<Auth0CallbackPage />} />
+            <Route path='/login' element={<LoginPage />} />
           </Routes>
         </DataProvider>
       </ThemeProvider>

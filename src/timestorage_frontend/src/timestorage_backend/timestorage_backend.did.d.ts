@@ -17,10 +17,10 @@ export interface FileMetadataResponse {
 }
 export interface FileResponse {
   metadata: {
-    fileData: string,
-    mimeType: string,
-    fileName: string,
-    uploadTimestamp: string,
+    fileData: string
+    mimeType: string
+    fileName: string
+    uploadTimestamp: string
   }
   uuid: UUID
 }
@@ -66,32 +66,32 @@ export interface TimestorageBackend {
   updateManyValuesAndLock: ActorMethod<
     [string, Array<[string, string]>],
     Result
-  >,
-  updateUUIDStructure: ActorMethod<[string, string], Result>,
-  updateValue: ActorMethod<[ValueUpdateRequest], Result>,
-  updateValueAndLock: ActorMethod<[ValueUpdateRequest], Result>,
-  uploadFile: ActorMethod<[string, string, FileMetadata], Result>,
+  >
+  updateUUIDStructure: ActorMethod<[string, string], Result>
+  updateValue: ActorMethod<[ValueUpdateRequest], Result>
+  updateValueAndLock: ActorMethod<[ValueUpdateRequest], Result>
+  uploadFile: ActorMethod<[string, string, FileMetadata], Result>
 }
 export type UUID = string;
 export interface ValueLockAllRequest { lock: boolean, uuid: string }
 export interface ValueLockRequest {
-  key: string,
-  lock: boolean,
-  uuid: string,
+  key: string
+  lock: boolean
+  uuid: string
 }
 export interface ValueLockStatus {
-  locked: boolean,
-  lockedBy: [] | [Principal],
+  locked: boolean
+  lockedBy: [] | [Principal]
 }
 export interface ValueLockStatusRequest { key: string, uuid: string }
 export interface ValueRequest { key: string, uuid: string }
 export interface ValueUnlockAllRequest { uuid: string }
 export interface ValueUnlockRequest { key: string, uuid: string }
 export interface ValueUpdateRequest {
-  key: string,
-  uuid: string,
-  newValue: string,
+  key: string
+  uuid: string
+  newValue: string
 }
-export interface _SERVICE extends TimestorageBackend { }
-export declare const idlFactory: IDL.InterfaceFactory;
-export declare const init: (args: { IDL: typeof IDL }) => IDL.Type[];
+export interface _SERVICE extends TimestorageBackend {}
+export declare const idlFactory: IDL.InterfaceFactory
+export declare const init: (args: { IDL: typeof IDL }) => IDL.Type[]

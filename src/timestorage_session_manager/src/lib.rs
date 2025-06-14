@@ -5,11 +5,7 @@ mod users;
 mod utils;
 
 use candid::Principal;
-use timestorage_session_manager_types::{
-    Auth0JWKSet, AuthenticatedResponse, GetDelegationResponse, PrepareDelegationResponse,
-    SessionKey, Timestamp, UserSub,
-};
-use ic_cdk::{api::is_controller, *};
+use ic_cdk::{api::is_controller, print, *};
 use ic_cdk_timers::set_timer;
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
@@ -20,6 +16,10 @@ use id_token::IdToken;
 use jsonwebtoken_rustcrypto::Algorithm;
 use serde_bytes::ByteBuf;
 use std::{cell::RefCell, time::Duration};
+use timestorage_session_manager_types::{
+    Auth0JWKSet, AuthenticatedResponse, GetDelegationResponse, PrepareDelegationResponse,
+    SessionKey, Timestamp, UserSub,
+};
 
 use crate::state::{Salt, State, EMPTY_SALT};
 
@@ -61,22 +61,28 @@ fn check_authorization(caller: Principal, jwt: String) -> Result<(IdToken, Sessi
 
     token.claims.validate().map_err(|e| format!("{:?}", e))?;
 
-    let nonce = {
-        let nonce = hex::decode(&token.claims.nonce).map_err(|e| format!("{:?}", e))?;
-        ByteBuf::from(nonce)
+    let pk_der_hex = {
+        let pk_der_hex = hex::decode(&token.claims.pk_der_hex).map_err(|e| format!("{:?}", e))?;
+        ByteBuf::from(pk_der_hex)
     };
-    let token_principal = Principal::self_authenticating(&nonce);
+    let token_principal = Principal::self_authenticating(&pk_der_hex);
+
     if caller != token_principal {
+        ic_cdk::println!(
+            "caller and token principal mismatch, caller: {}, token principal: {}",
+            caller,
+            token_principal
+        );
+
         return Err("caller and token principal mismatch".to_string());
     }
 
-    Ok((token, nonce))
+    Ok((token, pk_der_hex))
 }
 
 #[update]
 async fn prepare_delegation(jwt: String) -> PrepareDelegationResponse {
     let session_principal = caller();
-
     let (token, session_key) = match check_authorization(session_principal, jwt) {
         Ok(res) => res,
         Err(e) => {

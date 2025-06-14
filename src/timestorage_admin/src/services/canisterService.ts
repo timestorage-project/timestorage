@@ -214,6 +214,7 @@ export const getAllUUIDsWithInfo = async (translations: { [key: string]: string 
       });
 
       try {
+        console.debug(processedJson)
         const parsedData = JSON.parse(processedJson);
         return {
           uuid,

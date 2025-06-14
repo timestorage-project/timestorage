@@ -38,7 +38,15 @@ const config: UserConfig = {
         extensions: ['.ts', '.tsx']
       }
     })
-  ]
+  ],
+  optimizeDeps: {
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis'
+      }
+    }
+  }
 }
 
 const getConfig = () => config

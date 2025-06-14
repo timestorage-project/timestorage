@@ -656,7 +656,7 @@ shared (msg) actor class TimestorageBackend() {
     };
 
     // getUUIDInfo function
-    public shared query (msg) func getUUIDInfo(uuid : Text) : async Result.Result<(Text, [Types.FileResponse]), Text> {
+    public shared query (msg) func getUUIDInfo(uuid : Text) : async Result.Result<(Text, Text, [Types.FileResponse]), Text> {
         // Retrieve the schema
         let schemaOpt = uuidToStructure.get(uuid);
         let schemaText = switch (schemaOpt) {
@@ -691,12 +691,8 @@ shared (msg) actor class TimestorageBackend() {
             };
         };
 
-        // First, remove the outer JSON object from schemaText since it's already a complete JSON
-        let schemaTextTrimmed = Text.trimStart(schemaText, #text "{");
-        let schemaTextFinal = Text.trimEnd(schemaTextTrimmed, #text "}");
-
-        let combinedJson = "{"
-        # schemaTextFinal # "}},"
+        // Create the values and lock status JSON
+        let valuesAndLockJson = "{"
         # "\"values\":" # dataJson # ","
         # "\"lockStatus\":" # Utils.mapEntriesToJson(lockStatuses)
         # "}";
@@ -717,8 +713,8 @@ shared (msg) actor class TimestorageBackend() {
             };
         };
 
-        // Return the combined JSON and files
-        return #ok(combinedJson, fileResponses);
+        // Return the schema, values and lock JSON, and files
+        return #ok(schemaText, valuesAndLockJson, fileResponses);
     };
 
     // getAllUUIDs function

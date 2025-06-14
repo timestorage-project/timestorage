@@ -186,15 +186,36 @@ function mapApiResponseToDataStructure(response: {
  */
 async function fetchData(projectId: string, translations: { [key: string]: string }): Promise<DataStructure> {
   try {
-    const [response] = await canisterService.getUUIDInfo(projectId)
-    let copied = response
+    const [schemaText, valuesAndLockJson] = await canisterService.getUUIDInfo(projectId)
+
+    // Parse the JSON strings first
+    const schemaData = JSON.parse(schemaText)
+    const valuesAndLock = JSON.parse(valuesAndLockJson)
+
+    // Combine the data
+    const combinedData = {
+      ...schemaData,
+      values: valuesAndLock.values,
+      lockStatus: valuesAndLock.lockStatus
+    }
+
+    // Convert back to string for translation
+    let combinedJsonString = JSON.stringify(combinedData)
+
+    // Apply translations to the entire combined JSON string
     for (const localeKey in translations) {
       if (translations.hasOwnProperty(localeKey)) {
         const regex = new RegExp(localeKey, 'g')
-        copied = copied.replace(regex, translations[localeKey])
+        combinedJsonString = combinedJsonString.replace(regex, translations[localeKey])
       }
     }
-    return mapApiResponseToDataStructure(JSON.parse(copied))
+
+    console.debug('Combined and translated JSON:', combinedJsonString)
+
+    // Parse the translated JSON string back to an object
+    const translatedData = JSON.parse(combinedJsonString)
+
+    return mapApiResponseToDataStructure(translatedData)
   } catch (err) {
     console.error('Error fetching data from API:', err)
     throw err

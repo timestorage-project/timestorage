@@ -6,8 +6,20 @@ module.exports = {
   rules: {
     '@typescript-eslint/no-explicit-any': 2,
     '@typescript-eslint/consistent-type-assertions': 'off', // Disable the rule causing problems
-    'prettier/prettier': ['error', prettierrc]
+    'prettier/prettier': ['error', prettierrc],
+    semi: ['error', 'never']
   },
+  overrides: [
+    {
+      // Disable problematic rules for declaration files
+      files: ['*.d.ts'],
+      rules: {
+        semi: 'off',
+        'comma-dangle': 'off',
+        'trailing-comma': 'off'
+      }
+    }
+  ],
   parserOptions: {
     // Add these parser options
     ecmaVersion: 2020,

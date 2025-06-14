@@ -33,7 +33,7 @@ export const idlFactory = ({ IDL }) => {
     err: IDL.Text
   })
   const Result_2 = IDL.Variant({
-    ok: IDL.Tuple(IDL.Text, IDL.Vec(FileMetadataResponse)),
+    ok: IDL.Tuple(IDL.Text, IDL.Text, IDL.Vec(FileResponse)),
     err: IDL.Text
   })
   const ValueRequest = IDL.Record({ key: IDL.Text, uuid: IDL.Text })

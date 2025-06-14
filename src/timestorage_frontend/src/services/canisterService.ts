@@ -5,7 +5,7 @@ import { _SERVICE as SessionManagerService } from '@/timestorage_session_manager
 import { authService } from '@/store/auth.store'
 
 // Backend canister ID from environment variables
-const backendCanisterId = (process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string) || 'r26jp-jiaaa-aaaah-qp5gq-cai'
+const backendCanisterId = (process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string) || 'be2us-64aaa-aaaaa-qaabq-cai'
 
 // Session manager canister ID from environment variables
 const sessionManagerCanisterId =

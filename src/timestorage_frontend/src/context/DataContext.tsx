@@ -1,18 +1,13 @@
-// DataContext.tsx
-
 import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import * as canisterService from '../services/canisterService'
 import { en } from '@/lang/en'
 import mockEquipmentData from '../mocks/mock-equipment.json'
 import { it } from '@/lang/it'
-// Import the new classes and interfaces
-import { DataStructure, IDataContextType, IWizardQuestion } from '@/types/structures'
+import { IDataContextType, IWizardQuestion } from '@/types/structures'
+import { DataStructure } from '@/types/DataStructure'
 
 const DataContext = createContext<IDataContextType | undefined>(undefined)
-
-// All mapping functions (`getValueFromPath`, `mapSectionToDataNode`, `mapApiResponseToDataStructure`)
-// have been removed, as their logic is now encapsulated within the DataNode and DataStructure classes.
 
 /**
  * ---------------------------------------------------------

@@ -30,6 +30,8 @@ read -r -d '' JSON_DATA <<'EOF'
    "info": {
     "identification": "Mock",
     "subIdentification": "Mock",
+    "type": "equipment",
+    "category": "it_finestra",
     "issuer": {
         "identification": "Cardinal",
         "email": "info@cardinal.com",

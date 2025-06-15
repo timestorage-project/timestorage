@@ -7,7 +7,7 @@ import { en } from '@/lang/en'
 import mockEquipmentData from '../mocks/mock-equipment.json'
 import { it } from '@/lang/it'
 // Import the new classes and interfaces
-import { IDataContextType, IWizardQuestion, DataStructure } from '@/types/data.types'
+import { DataStructure, IDataContextType, IWizardQuestion } from '@/types/structures'
 
 const DataContext = createContext<IDataContextType | undefined>(undefined)
 
@@ -20,9 +20,9 @@ const DataContext = createContext<IDataContextType | undefined>(undefined)
  * ---------------------------------------------------------
  * This now returns a DataStructure instance directly.
  */
-async function fetchData(projectId: string, translations: { [key: string]: string }): Promise<DataStructure> {
+async function fetchData(uuid: string, translations: { [key: string]: string }): Promise<DataStructure> {
   try {
-    const [schemaText, valuesAndLockJson] = await canisterService.getUUIDInfo(projectId)
+    const [schemaText, valuesAndLockJson] = await canisterService.getUUIDInfo(uuid)
 
     // Parse the JSON strings first
     const schemaData = JSON.parse(schemaText)
@@ -30,6 +30,7 @@ async function fetchData(projectId: string, translations: { [key: string]: strin
 
     // Combine the data
     const combinedData = {
+      uuid,
       ...schemaData,
       values: valuesAndLock.values,
       lockStatus: valuesAndLock.lockStatus
@@ -74,7 +75,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const location = useLocation()
-  const [projectId, setProjectId] = useState<string>('')
+  const [uuid, setUuid] = useState<string>('')
   const [locale] = useState<'en' | 'it'>('it')
 
   const translations = locale === 'en' ? en : it
@@ -89,7 +90,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
           // Use the class method to directly parse the mock JSON.
           const mappedMockData = DataStructure.fromJSON(mockEquipmentData as never)
           setData(mappedMockData)
-          setProjectId('mock-sandbox')
+          setUuid('mock-sandbox')
           setError(null)
         } catch (err) {
           console.error('Error loading or processing mock data:', err)
@@ -102,21 +103,21 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
       }
 
       const pathParts = currentPath.split('/')
-      const newProjectIdFromPath = pathParts[1] || ''
+      const uuid = pathParts[2] || ''
 
-      if (!newProjectIdFromPath) {
+      if (!uuid) {
         setError('No project ID found in URL for data loading.')
         setData(null)
-        setProjectId('')
+        setUuid('')
         setIsLoading(false)
         return
       }
 
-      setProjectId(newProjectIdFromPath)
+      setUuid(uuid)
 
       try {
         // fetchData now returns a DataStructure instance
-        const result = await fetchData(newProjectIdFromPath, translations)
+        const result = await fetchData(uuid, translations)
         setData(result)
         setError(null)
       } catch (err) {
@@ -133,7 +134,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const reloadData = async () => {
     try {
       setIsLoading(true)
-      const result = await fetchData(projectId, translations)
+      const result = await fetchData(uuid, translations)
       setData(result)
       setError(null)
     } catch (err) {
@@ -144,7 +145,6 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   }
 
   const getWizardQuestions = async (sectionId: string): Promise<IWizardQuestion[]> => {
-    // Access the nodes dictionary within the data object
     if (!data?.nodes) return []
     const wizardNode = data.nodes[sectionId]
     if (!wizardNode?.isWizard || !wizardNode?.questions) return []
@@ -154,11 +154,10 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   return (
     <DataContext.Provider
       value={{
-        // We provide `data.nodes` to the context so consumers can still do `data['someId']`
-        data: data?.nodes ?? null,
+        data: data ?? null,
         isLoading,
         error,
-        projectId,
+        uuid,
         getWizardQuestions,
         reloadData
       }}

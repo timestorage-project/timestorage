@@ -23,7 +23,30 @@ interface IRawDataNode {
     questions?: IWizardQuestion[]
 }
 
+export type EVersion = {
+    "0.1": '0.1',
+    "1.0": '1.0'
+}
+
+interface IInfo {
+    identification?: string
+    subIdentification?: string
+
+    issuer?: {
+        identification?: string
+        email?: string
+        name?: string
+        phone?: string
+        website?: string
+        principal?: string
+    }
+    version?: keyof EVersion
+    createdAt?: string
+}
+
 interface IRawApiResponse {
+    uuid: string
+    info: IInfo
     data: { [key: string]: IRawDataNode }
     values?: Record<string, unknown>
 }
@@ -138,11 +161,46 @@ export class DataNode {
  * This class is the main entry point for parsing the complete API response.
  */
 export class DataStructure {
+    uuid: string
+    info: IInfo
     nodes: { [key: string]: DataNode }
 
-    constructor(nodes: { [key: string]: DataNode }) {
+    constructor(uuid: string, nodes: { [key: string]: DataNode }, info: IInfo) {
+        this.uuid = uuid
+        this.info = info
         this.nodes = nodes
     }
+
+
+    getIdentifier(): string {
+        return this.info.identification || this.uuid
+    }
+
+    getIssuer(): string | undefined {
+        return this.info.issuer?.name
+    }
+
+    getIssuerEmail(): string | undefined {
+        return this.info.issuer?.email
+    }
+
+    getIssuerPhone(): string | undefined {
+        return this.info.issuer?.phone
+    }
+
+    getIssuerWebsite(): string | undefined {
+        return this.info.issuer?.website
+    }
+
+    getIssuerPrincipal(): string | undefined {
+        return this.info.issuer?.principal
+    }
+
+    getCreatedAt(): string | undefined {
+        return this.info.createdAt
+    }
+
+
 
     /**
      * Creates a DataStructure instance from a raw API response object.
@@ -150,6 +208,13 @@ export class DataStructure {
      * @returns A new instance of DataStructure containing populated DataNodes.
      */
     static fromJSON(apiResponse: IRawApiResponse): DataStructure {
+
+        const defaultInfo: IInfo = {
+            version: "0.1",
+            createdAt: "" + new Date().getTime()
+
+        }
+
         const nodes: { [key: string]: DataNode } = {}
         const { data = {}, values = {} } = apiResponse
 
@@ -159,7 +224,7 @@ export class DataStructure {
             }
         }
 
-        return new DataStructure(nodes)
+        return new DataStructure(apiResponse.uuid, nodes, apiResponse.info || defaultInfo)
     }
 }
 
@@ -169,11 +234,10 @@ export class DataStructure {
  * plus helper methods. Note that `data` is now `DataStructure | null`.
  */
 export interface IDataContextType {
-    // The data property now holds the dictionary of DataNode objects
-    data: { [key: string]: DataNode } | null
+    uuid: string
+    data: DataStructure | null
     isLoading: boolean
     error: string | null
-    projectId: string
     reloadData: () => Promise<void>
     getWizardQuestions: (sectionId: string) => Promise<IWizardQuestion[]>
 }

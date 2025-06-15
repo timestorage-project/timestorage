@@ -14,7 +14,7 @@ import LoadingView from '@/components/LoadingView'
 
 const Dashboard: FC = () => {
   const navigate = useNavigate()
-  const { data, isLoading, error, projectId } = useData()
+  const { data, isLoading, error, uuid } = useData()
 
   if (isLoading && !data) {
     return <LoadingView message='Loading dashboard...' />
@@ -53,12 +53,12 @@ const Dashboard: FC = () => {
     }
   }
 
-  const regularItems = Object.entries(data).filter(([_, item]) => !item.isWizard)
-  const wizardItems = Object.entries(data).filter(([_, item]) => item.isWizard)
+  const regularItems = Object.entries(data.nodes).filter(([_, item]) => !item.isWizard)
+  const wizardItems = Object.entries(data.nodes).filter(([_, item]) => item.isWizard)
 
   return (
     <div className='min-h-screen '>
-      <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
+      <Header title={`PosaCheck - ${data.getIdentifier()}`} showMenu={true} />
 
       <Container maxWidth='sm' className='mt-8 mb-24 px-4'>
         <Motion variant='slideDown'>
@@ -77,7 +77,7 @@ const Dashboard: FC = () => {
               >
                 <Card
                   className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 glass-effect'
-                  onClick={() => navigate(`/${projectId}/${key}`)}
+                  onClick={() => navigate(`/view/${uuid}/${key}`)}
                 >
                   <CardContent className='p-4'>
                     <div className='mb-2 text-primary'>{getIconComponent(item.icon)}</div>
@@ -110,7 +110,7 @@ const Dashboard: FC = () => {
                   >
                     <Card
                       className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 wizard-card-style'
-                      onClick={() => navigate(`/${projectId}/wizard/${key}`)}
+                      onClick={() => navigate(`/view/${uuid}/wizard/${key}`)}
                     >
                       <CardContent className='p-4'>
                         <div className='p-4'>{getIconComponent(item.icon, true)}</div>

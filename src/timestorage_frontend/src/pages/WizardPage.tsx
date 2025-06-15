@@ -22,7 +22,7 @@ import ErrorView from '../components/ErrorView'
 import LoadingView from '../components/LoadingView'
 import { fileToBase64, getFileMetadata } from '../utils/fileUtils'
 import * as canisterService from '../services/canisterService'
-import { IWizardQuestion } from '@/types/data.types'
+import { IWizardQuestion } from '@/types/structures'
 
 interface WizardState {
   currentQuestionIndex: number
@@ -32,7 +32,7 @@ interface WizardState {
 
 const WizardPage = () => {
   const navigate = useNavigate()
-  const { projectId, getWizardQuestions, data } = useData()
+  const { uuid, getWizardQuestions, data } = useData()
   const { sectionId } = useParams<{ sectionId: string }>()
   const [availableWizards, setAvailableWizards] = useState<{ id: string; title: string }[]>([])
   const [selectedWizard, setSelectedWizard] = useState<string | null>(sectionId || null)
@@ -45,7 +45,7 @@ const WizardPage = () => {
   // Effect to find all available wizard sections when data is loaded
   useEffect(() => {
     if (data) {
-      const wizards = Object.entries(data)
+      const wizards = Object.entries(data.nodes)
         .filter(([_, section]) => section.isWizard)
         .map(([key, section]) => ({ id: key, title: section.title }))
 
@@ -58,7 +58,7 @@ const WizardPage = () => {
     }
   }, [data, selectedWizard])
 
-  const storageKey = `window_installation_wizard_${projectId}_${selectedWizard}`
+  const storageKey = `window_installation_wizard_${uuid}_${selectedWizard}`
 
   const [state, setState] = useState<WizardState>(() => {
     const saved = localStorage.getItem(storageKey)
@@ -80,7 +80,7 @@ const WizardPage = () => {
     try {
       const base64Data = await fileToBase64(file)
       const metadata = getFileMetadata(file)
-      const result = await canisterService.uploadFile(projectId, base64Data, metadata)
+      const result = await canisterService.uploadFile(uuid, base64Data, metadata)
       const fileId = result.match(/ID: (file-\d+)/)?.[1]
       if (!fileId) {
         throw new Error('Failed to extract file ID from response')
@@ -146,7 +146,7 @@ const WizardPage = () => {
       // Filter out null values and submit each answer
       for (const submission of submissions.filter(Boolean)) {
         if (submission) {
-          await canisterService.updateValue(projectId, submission.key, submission.value, true)
+          await canisterService.updateValue(uuid, submission.key, submission.value, true)
         }
       }
 
@@ -198,12 +198,12 @@ const WizardPage = () => {
 
   useEffect(() => {
     if (state.isCompleted) {
-      navigate(`/${projectId}`)
+      navigate(`/${uuid}`)
     }
     if (selectedWizard) {
       localStorage.setItem(storageKey, JSON.stringify(state))
     }
-  }, [state, navigate, storageKey, projectId, selectedWizard])
+  }, [state, navigate, storageKey, uuid, selectedWizard])
 
   if (saving) {
     return <LoadingView message='Saving your answers...' />
@@ -220,7 +220,7 @@ const WizardPage = () => {
   if (!selectedWizard) {
     return (
       <div className='min-h-screen '>
-        <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
+        <Header title={`PosaCheck - ${uuid}`} showMenu={true} />
 
         {loading && <LoadingView message='Loading wizard...' />}
 
@@ -433,7 +433,7 @@ const WizardPage = () => {
     }
   }
 
-  const wizardTitle = data?.[selectedWizard]?.title || 'Wizard'
+  const wizardTitle = data?.nodes?.[selectedWizard]?.title || 'Guida alla posa'
 
   return (
     <div className='min-h-screen '>
@@ -490,6 +490,7 @@ const WizardPage = () => {
           </AnimatePresence>
         </Container>
       )}
+      <BottomNavigation />
     </div>
   )
 }

@@ -64,15 +64,15 @@ const App: FC = () => {
         <DataProvider>
           <Routes>
             <Route path='/' element={<MockDashboardRedirect />} />
-            <Route path='/mock-dashboard' element={<MockDashboard />} />
-            <Route path='/:projectId' element={<Dashboard />} />
-            <Route path='/mock-sandbox' element={<Dashboard />} />
-            <Route path='/:projectId/:sectionId' element={<DetailPage />} />
-            <Route path='/:projectId/wizard/:sectionId' element={<WizardPage />} />
-            <Route path='/:projectId/wizard' element={<WizardPage />} />
-            <Route path='/:projectId/forms' element={<div>Forms Page</div>} />
-            <Route path='/:projectId/gallery' element={<div>Gallery Page</div>} />
-            <Route path='/:projectId/profile' element={<div>Profile Page</div>} />
+            <Route path='/view/mock-dashboard' element={<MockDashboard />} />
+            <Route path='/view/:uuid' element={<Dashboard />} />
+            <Route path='/view/mock-sandbox' element={<Dashboard />} />
+            <Route path='/view/:uuid/:sectionId' element={<DetailPage />} />
+            <Route path='/view/:uuid/wizard/:sectionId' element={<WizardPage />} />
+            <Route path='/view/:uuid/wizard' element={<WizardPage />} />
+            <Route path='/view/:uuid/forms' element={<div>Forms Page</div>} />
+            <Route path='/view/:uuid/gallery' element={<div>Gallery Page</div>} />
+            <Route path='/view/:uuid/profile' element={<div>Profile Page</div>} />
             <Route path='/auth/auth0/callback' element={<Auth0CallbackPage />} />
             <Route path='/login' element={<LoginPage />} />
           </Routes>

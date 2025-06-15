@@ -48,7 +48,7 @@ interface PageDataItem {
 
 const DetailPage = () => {
   const { sectionId } = useParams<{ sectionId: string }>()
-  const { data, isLoading, error, projectId, reloadData } = useData()
+  const { data, isLoading, error, uuid, reloadData } = useData()
   const [fileCache, setFileCache] = useState<FileCache>({})
   const [loadingFiles, setLoadingFiles] = useState<string[]>([]) // Tracks file IDs being loaded (metadata or content)
   const [uploadingKeys, setUploadingKeys] = useState<string[]>([]) // Tracks refIds for uploads
@@ -60,7 +60,7 @@ const DetailPage = () => {
 
       try {
         setLoadingFiles(prev => [...prev, fileId])
-        const metadata = await canisterService.getFileMetadataByUUIDAndId(projectId, fileId)
+        const metadata = await canisterService.getFileMetadataByUUIDAndId(uuid, fileId)
         setFileCache(prev => ({
           ...prev,
           [fileId]: { metadata }
@@ -79,7 +79,7 @@ const DetailPage = () => {
         setLoadingFiles(prev => prev.filter(id => id !== fileId))
       }
     },
-    [fileCache, loadingFiles, projectId]
+    [fileCache, loadingFiles, uuid]
   )
 
   const downloadFileContent = useCallback(
@@ -117,7 +117,7 @@ const DetailPage = () => {
           return
         }
 
-        const fileData = await canisterService.downloadFileContent(projectId, fileId)
+        const fileData = await canisterService.downloadFileContent(uuid, fileId)
         setFileCache(prev => ({
           ...prev,
           [fileId]: {
@@ -142,7 +142,7 @@ const DetailPage = () => {
         setLoadingFiles(prev => prev.filter(id => id !== fileId))
       }
     },
-    [fileCache, loadingFiles, projectId, loadFileMetadata]
+    [fileCache, loadingFiles, loadFileMetadata, uuid]
   )
 
   const handleFileUpload = async (file: File, refId: string): Promise<void> => {
@@ -153,7 +153,7 @@ const DetailPage = () => {
       const partialMetadata = utilGetFileMetadata(file)
 
       // The canisterService.uploadFile likely returns the full metadata including fileId or just fileId
-      const result = await canisterService.uploadFile(projectId, base64Data, partialMetadata) // Removed 'as any' cast
+      const result = await canisterService.uploadFile(uuid, base64Data, partialMetadata) // Removed 'as any' cast
       const fileId = result.match(/ID: (file-\d+)/)?.[1] // Or however fileId is obtained
 
       if (!fileId) {
@@ -162,7 +162,7 @@ const DetailPage = () => {
 
       const key = refId.replace('#/values/', '')
       console.log('Upload complete. Using key path:', key, 'for fileId:', fileId)
-      await canisterService.updateValue(projectId, key, fileId, true)
+      await canisterService.updateValue(uuid, key, fileId, true)
 
       await reloadData() // Reloads the main data which might include the new file reference
       // Optionally, preload metadata for the newly uploaded file
@@ -187,8 +187,8 @@ const DetailPage = () => {
   }
 
   useEffect(() => {
-    if (data && sectionId && data[sectionId]) {
-      const currentSectionData = data[sectionId]
+    if (data && sectionId && data.nodes[sectionId]) {
+      const currentSectionData = data.nodes[sectionId]
       const fileItems =
         currentSectionData.children?.filter(
           (item: PageDataItem) =>
@@ -211,11 +211,11 @@ const DetailPage = () => {
     return <ErrorView message={typeof error === 'string' ? error : 'An unknown error occurred'} />
   }
 
-  if (!data || !sectionId || !data[sectionId]) {
+  if (!data || !sectionId || !data.nodes[sectionId]) {
     return <ErrorView message={sectionId ? `Section "${sectionId}" not found` : 'Section data not available.'} />
   }
 
-  const pageData = data[sectionId]
+  const pageData = data.nodes[sectionId]
 
   const renderValue = (item: PageDataItem) => {
     console.log('Processing item:', item)
@@ -330,7 +330,7 @@ const DetailPage = () => {
 
   return (
     <div className='min-h-screen '>
-      <Header title={pageData.title || (projectId ? `Details - ${projectId}` : 'Details')} />
+      <Header title={pageData.title || (uuid ? `Details - ${uuid}` : 'Details')} />
 
       <Container maxWidth='sm' className='py-4 pb-20'>
         {' '}

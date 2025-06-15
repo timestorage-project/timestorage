@@ -6,13 +6,13 @@ import { BottomNav } from './ui/bottom-nav'
 
 const BottomNavigation: FC = () => {
   const navigate = useNavigate()
-  const { projectId } = useData()
+  const { uuid } = useData()
 
   return (
     <BottomNav>
       <div
         className='flex items-center justify-center gap-2 p-2 bg-background text-primary cursor-pointer'
-        onClick={() => navigate(`/${projectId}`)}
+        onClick={() => navigate(`/view/${uuid}`)}
       >
         <Home className='h-5 w-5' />
         <span className='text-sm font-medium'>Home</span>

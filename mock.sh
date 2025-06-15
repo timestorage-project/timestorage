@@ -27,74 +27,20 @@
 # The 'EOF' is quoted to prevent shell expansion inside the here-document.
 read -r -d '' JSON_DATA <<'EOF'
 {
-    "schema": {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": "https://posacheck.com/equipmentv1.json",
-        "title": "Data & Wizard Structure Schema",
-        "type": "object",
-        "description": "A schema that validates sections of type data or wizard.",
-        "patternProperties": {
-            "^.+(?<!\\schema)(?<!\\data)(?<!\\values)(?<!\\lockStatus))$": {
-                "$ref": "#/$defs/Section"
-            }
-        },
-        "additionalProperties": false,
-        "$defs": {
-            "Section": {
-                "type": "object",
-                "required": ["id", "title", "description", "type"],
-                "properties": {
-                    "id": {"type": "string", "description": "Unique identifier of this section."},
-                    "title": {"type": "string", "description": "i18n key for the section title."},
-                    "description": {"type": "string", "description": "i18n key for the section description."},
-                    "type": {"type": "string", "enum": ["data", "wizard"], "description": "Defines whether this section is a data section or a wizard section."},
-                    "icon": {"type": "string", "description": "Optional icon for visual representation."},
-                    "children": {"type": "array", "description": "List of data items if this section is type data.", "items": {"$ref": "#/$defs/DataItem"}},
-                    "questions": {"type": "array", "description": "List of wizard questions if this section is type wizard.", "items": {"$ref": "#/$defs/WizardQuestion"}}
-                },
-                "allOf": [
-                    {"if": {"properties": {"type": {"const": "data"}}}, "then": {"required": ["children"], "properties": {"questions": {"maxItems": 0}}}},
-                    {"if": {"properties": {"type": {"const": "wizard"}}}, "then": {"required": ["questions"], "properties": {"children": {"maxItems": 0}}}}
-                ]
-            },
-            "DataItem": {
-                "type": "object",
-                "required": ["label", "value"],
-                "properties": {
-                    "icon": {"type": "string", "description": "Optional icon (emoji or string) to display next to the data."},
-                    "label": {"type": "string", "description": "i18n key describing what this field represents."},
-                    "value": {"type": "string", "description": "Reference or actual string to store the data."},
-                    "fileType": {"type": "string", "description": "Type of file (PDF, image, etc.) that this field represents."}
-                },
-                "additionalProperties": false
-            },
-            "WizardQuestion": {
-                "type": "object",
-                "required": ["id", "type", "question"],
-                "properties": {
-                    "id": {"type": "string", "description": "Unique identifier for this question."},
-                    "type": {"type": "string", "enum": ["text", "select", "multiselect", "photo", "multiphoto"], "description": "Question type."},
-                    "question": {"type": "string", "description": "i18n key for the question text."},
-                    "options": {"type": "array", "description": "List of choices (only required for select or multiselect).", "items": {"type": "string"}},
-                    "refId": {"type": "string", "description": "Pointer to the data field where this answer should be stored."},
-                    "conditions": {"type": "array", "description": "Optional array describing conditional logic for this question.", "items": {"$ref": "#/$defs/Condition"}}
-                },
-                "allOf": [{"if": {"properties": {"type": {"enum": ["select", "multiselect"]}}}, "then": {"required": ["options"]}}],
-                "additionalProperties": false
-            },
-            "Condition": {
-                "type": "object",
-                "required": ["questionId", "operator", "value", "action"],
-                "properties": {
-                    "questionId": {"type": "string", "description": "ID of another question on which this question depends."},
-                    "operator": {"type": "string", "enum": ["equals", "notEquals", "in", "notIn", "greaterThan", "lessThan"], "description": "Operator to evaluate."},
-                    "value": {"type": ["string", "number", "boolean", "array"], "description": "Value to compare against the answer of questionId."},
-                    "action": {"type": "string", "enum": ["show", "hide", "enable", "disable", "require", "optional"], "description": "Action to perform if condition is met."}
-                },
-                "additionalProperties": false
-            }
-        }
+   "info": {
+    "identification": "Mock",
+    "subIdentification": "Mock",
+    "issuer": {
+        "identification": "Cardinal",
+        "email": "info@cardinal.com",
+        "name": "Cardinal",
+        "phone": "+39 123456789",
+        "website": "https://cardinal.solar",
+        "principal": "Mock"
     },
+    "version": "1.0",
+    "createdAt": "2025-06-15T16:00:00.000Z"
+   },
     "data": {
         "productInfo": {
             "id": "product-info", "title": "Informazioni sul Prodotto", "description": "Dettagli sul prodotto.", "type": "data", "icon": "info",
@@ -177,7 +123,7 @@ echo "Inserting mock asset data into the canister..."
 
 # Call the canister method. The entire Candid argument is wrapped in double quotes
 # to allow for the expansion of the $ESCAPED_JSON variable.
-dfx canister call timestorage_backend insertUUIDStructure "( \"equipment-v1-mock\", \"$ESCAPED_JSON\" )"
+dfx canister call timestorage_backend insertUUIDStructure "( \"equipment-v3-mock\", \"$ESCAPED_JSON\" )"
 
 echo "Script finished successfully."
 

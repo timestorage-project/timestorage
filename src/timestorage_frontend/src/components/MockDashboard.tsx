@@ -11,7 +11,7 @@ import Header from '@/components/Header'
 
 const MockDashboard: FC = () => {
   const navigate = useNavigate()
-  const projectId = 'timestorage-demo'
+  const uuid = 'timestorage-demo'
 
   // Mock storage data
   const storageStats = {
@@ -70,7 +70,7 @@ const MockDashboard: FC = () => {
 
   return (
     <div className='min-h-screen bg-background'>
-      <Header title={`TimeStorage - ${projectId}`} showMenu={true} />
+      <Header title={`TimeStorage - ${uuid}`} showMenu={true} />
 
       <Container maxWidth='sm' className='mt-8 mb-24 px-4'>
         {/* Storage Overview */}
@@ -132,7 +132,7 @@ const MockDashboard: FC = () => {
                 >
                   <Card
                     className='h-36 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 bg-card/80'
-                    onClick={() => navigate(`/${projectId}/${action.id}`)}
+                    onClick={() => navigate(`/view/${uuid}/${action.id}`)}
                   >
                     <CardContent className='p-4'>
                       <div className='mb-2 text-primary'>{getIconComponent(action.icon)}</div>
@@ -204,7 +204,7 @@ const MockDashboard: FC = () => {
                 >
                   <Card
                     className='cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 bg-card/80'
-                    onClick={() => navigate(`/${projectId}/category/${category.id}`)}
+                    onClick={() => navigate(`/view/${uuid}/category/${category.id}`)}
                   >
                     <CardContent className='p-4'>
                       <div className='mb-2 text-primary'>{getIconComponent(category.icon)}</div>

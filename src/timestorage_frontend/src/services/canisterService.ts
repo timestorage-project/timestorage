@@ -1,4 +1,4 @@
-import { idlFactory, TimestorageBackend } from '@/timestorage_backend/timestorage_backend.did'
+import { FileResponse, idlFactory, TimestorageBackend } from '@/timestorage_backend/timestorage_backend.did'
 import { Actor, HttpAgent } from '@dfinity/agent'
 import { idlFactory as sessionManagerIdlFactory } from '@/timestorage_session_manager/timestorage_session_manager.did'
 import { _SERVICE as SessionManagerService } from '@/timestorage_session_manager/timestorage_session_manager.did'
@@ -77,7 +77,7 @@ export const getSessionManagerActor = async (): Promise<SessionManagerService> =
 
 // Backend canister methods
 
-export const getUUIDInfo = async (uuid: string) => {
+export const getUUIDInfo = async (uuid: string): Promise<[string, string, FileResponse[]]> => {
   // ensureAuthenticated()
   const actor = await getBackendActor()
   const result = await actor.getUUIDInfo(uuid)

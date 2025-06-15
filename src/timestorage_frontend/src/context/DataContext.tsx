@@ -4,62 +4,9 @@ import * as canisterService from '../services/canisterService'
 import { en } from '@/lang/en'
 import mockEquipmentData from '../mocks/mock-equipment.json'
 import { it } from '@/lang/it'
+import { IDataContextType, IWizardQuestion, IDataStructure, IDataNode } from '@/types/data.types'
 
-/**
- * DataNode represents either a "data" section or a "wizard" section,
- * with children for data, or questions for a wizard.
- */
-interface DataNode {
-  id: string
-  title: string
-  icon: string
-  description: string
-  /** Only used if this is a "data" section: */
-  children?: {
-    icon: string
-    label: string
-    value: string
-    fileType?: string
-    path?: string
-  }[]
-  /** Used if this is a "wizard" section: */
-  questions?: WizardQuestion[]
-  showImages?: boolean
-  isWizard?: boolean
-}
-
-/**
- * You mentioned your UI uses these four sections, so we'll keep them.
- * Each key corresponds to a section in your data.
- */
-interface DataStructure {
-  [key: string]: DataNode
-}
-
-/** WizardQuestion is used only in wizard sections */
-export interface WizardQuestion {
-  id: string
-  type: 'text' | 'select' | 'multiselect' | 'photo' | 'multiphoto'
-  question: string
-  options?: string[]
-  // You can include refId or other fields from your schema if you need them:
-  refId?: string
-}
-
-/**
- * Our DataContextType holds the data structure, loading/error states,
- * plus helper methods to reload data or get wizard questions.
- */
-interface DataContextType {
-  data: DataStructure | null
-  isLoading: boolean
-  error: string | null
-  projectId: string
-  reloadData: () => Promise<void>
-  getWizardQuestions: (sectionId: string) => Promise<WizardQuestion[]>
-}
-
-const DataContext = createContext<DataContextType | undefined>(undefined)
+const DataContext = createContext<IDataContextType | undefined>(undefined)
 
 /**
  * Helper function to retrieve value from the values object
@@ -109,7 +56,7 @@ function getValueFromPath(values: Record<string, string>, path: string): string 
 /**
  * Utility to convert a "section" from the API into DataNode
  */
-function mapSectionToDataNode(section: unknown, values: Record<string, string> = {}): DataNode {
+function mapSectionToDataNode(section: unknown, values: Record<string, string> = {}): IDataNode {
   const { id, title, icon, description, type, children = [], questions = [] } = section as never
 
   const isWizard = type === 'wizard'
@@ -161,13 +108,13 @@ function mapSectionToDataNode(section: unknown, values: Record<string, string> =
  * }
  */
 function mapApiResponseToDataStructure(response: {
-  data: { [key: string]: unknown }
+  data: { [key: string]: IDataNode }
   values?: Record<string, string>
-}): DataStructure {
+}): IDataStructure {
   const { data, values = {} } = response
   console.log('Data received', response)
 
-  const result: DataStructure = {}
+  const result: IDataStructure = {}
 
   for (const key in data) {
     if (data.hasOwnProperty(key)) {
@@ -184,7 +131,7 @@ function mapApiResponseToDataStructure(response: {
  * ---------------------------------------------------------
  * This must return the new JSON that includes { schema, data }.
  */
-async function fetchData(projectId: string, translations: { [key: string]: string }): Promise<DataStructure> {
+async function fetchData(projectId: string, translations: { [key: string]: string }): Promise<IDataStructure> {
   try {
     const [schemaText, valuesAndLockJson] = await canisterService.getUUIDInfo(projectId)
 
@@ -232,7 +179,7 @@ interface DataProviderProps {
 }
 
 export const DataProvider: FC<DataProviderProps> = ({ children }) => {
-  const [data, setData] = useState<DataStructure | null>(null)
+  const [data, setData] = useState<IDataStructure | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const location = useLocation()
@@ -251,7 +198,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
           // Assuming mockEquipmentData has { data: ..., values: ... } structure
           // The mapApiResponseToDataStructure expects an object with 'data' and optionally 'values' keys.
           const mappedMockData = mapApiResponseToDataStructure({
-            data: mockEquipmentData.data as { [key: string]: unknown }, // Cast to satisfy mapApiResponseToDataStructure
+            data: mockEquipmentData.data as { [key: string]: IDataNode }, // Cast to satisfy mapApiResponseToDataStructure
             values: mockEquipmentData.values as Record<string, string> // Cast to satisfy mapApiResponseToDataStructure
           })
           setData(mappedMockData)
@@ -320,7 +267,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
    * Dynamically returns wizard questions from the "startInstallation" node
    * (or any node that might be a wizard, if you prefer to generalize).
    */
-  const getWizardQuestions = async (sectionId: string): Promise<WizardQuestion[]> => {
+  const getWizardQuestions = async (sectionId: string): Promise<IWizardQuestion[]> => {
     if (!data) return []
     const wizardNode = data[sectionId]
     if (!wizardNode?.isWizard || !wizardNode?.questions) return []

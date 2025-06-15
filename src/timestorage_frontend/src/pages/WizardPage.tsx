@@ -18,11 +18,11 @@ import { ArrowRight, ArrowLeft, Camera, Trash, ImagePlus } from 'lucide-react'
 import { Header } from '../components/ui/header'
 import BottomNavigation from '../components/BottomNavigation'
 import { useData } from '../context/DataContext'
-import { WizardQuestion } from '../context/DataContext'
 import ErrorView from '../components/ErrorView'
 import LoadingView from '../components/LoadingView'
 import { fileToBase64, getFileMetadata } from '../utils/fileUtils'
 import * as canisterService from '../services/canisterService'
+import { IWizardQuestion } from '@/types/data.types'
 
 interface WizardState {
   currentQuestionIndex: number
@@ -36,7 +36,7 @@ const WizardPage = () => {
   const { sectionId } = useParams<{ sectionId: string }>()
   const [availableWizards, setAvailableWizards] = useState<{ id: string; title: string }[]>([])
   const [selectedWizard, setSelectedWizard] = useState<string | null>(sectionId || null)
-  const [questions, setQuestions] = useState<WizardQuestion[]>([])
+  const [questions, setQuestions] = useState<IWizardQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

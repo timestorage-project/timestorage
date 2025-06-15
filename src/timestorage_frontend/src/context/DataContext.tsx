@@ -1,137 +1,26 @@
+// DataContext.tsx
+
 import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import * as canisterService from '../services/canisterService'
 import { en } from '@/lang/en'
 import mockEquipmentData from '../mocks/mock-equipment.json'
 import { it } from '@/lang/it'
-import { IDataContextType, IWizardQuestion, IDataStructure, IDataNode } from '@/types/data.types'
+// Import the new classes and interfaces
+import { IDataContextType, IWizardQuestion, DataStructure } from '@/types/data.types'
 
 const DataContext = createContext<IDataContextType | undefined>(undefined)
 
-/**
- * Helper function to retrieve value from the values object
- */
-function getValueFromPath(values: Record<string, string>, path: string): string {
-  console.log('Looking up path:', path, 'in values:', values)
-
-  // Remove the #/values/ prefix if present
-  const cleanPath = path.replace('#/values/', '')
-
-  // Try with forward slash converted to dot notation
-  const dotPath = cleanPath.replace(/\//g, '.')
-
-  // Try with camelCase converted to snake_case
-  const snakePath = dotPath.replace(/([A-Z])/g, '_$1').toLowerCase()
-
-  console.log('Cleaned paths to try:', { dotPath, snakePath })
-
-  // Try all possible formats
-  if (values[cleanPath] !== undefined) {
-    console.log('Found with cleanPath:', cleanPath)
-    return values[cleanPath]
-  }
-
-  if (values[dotPath] !== undefined) {
-    console.log('Found with dotPath:', dotPath)
-    return values[dotPath]
-  }
-
-  if (values[snakePath] !== undefined) {
-    console.log('Found with snakePath:', snakePath)
-    return values[snakePath]
-  }
-
-  // One more attempt - try lowercase version
-  const lowerDotPath = dotPath.toLowerCase()
-  if (values[lowerDotPath] !== undefined) {
-    console.log('Found with lowerDotPath:', lowerDotPath)
-    return values[lowerDotPath]
-  }
-
-  console.log('Value not found for path:', path)
-  // Return default value if not found
-  return '-'
-}
-
-/**
- * Utility to convert a "section" from the API into DataNode
- */
-function mapSectionToDataNode(section: unknown, values: Record<string, string> = {}): IDataNode {
-  const { id, title, icon, description, type, children = [], questions = [] } = section as never
-
-  const isWizard = type === 'wizard'
-
-  return {
-    id,
-    title,
-    icon,
-    description,
-    children: isWizard
-      ? []
-      : children.map((child: { icon: string; value: string; label: string; fileType?: string }) => {
-          const originalPath = child.value.startsWith('#/values/') ? child.value : undefined
-
-          return {
-            icon: child.icon,
-            label: child.label,
-            value: originalPath ? getValueFromPath(values, originalPath) : child.value,
-            fileType: child.fileType,
-            path: originalPath // Store the original path
-          }
-        }),
-    questions: isWizard
-      ? questions.map((q: { id: string; type: string; question: string; options: string[]; refId: string }) => ({
-          id: q.id,
-          type: q.type as never,
-          question: q.question,
-          options: q.options || [],
-          refId: q.refId
-        }))
-      : [],
-    isWizard
-  }
-}
+// All mapping functions (`getValueFromPath`, `mapSectionToDataNode`, `mapApiResponseToDataStructure`)
+// have been removed, as their logic is now encapsulated within the DataNode and DataStructure classes.
 
 /**
  * ---------------------------------------------------------
- * 2) Convert the combined API response into DataStructure
+ * 1) Fetch function that calls your canister or backend
  * ---------------------------------------------------------
- * The API response is assumed to be an object like:
- * {
- *   schema: { ... },
- *   data: {
- *     productInfo: { id, title, type, icon, children: [...], etc },
- *     installationProcess: { ... },
- *     maintenanceLog: { ... },
- *     startInstallation: { ... }
- *   }
- * }
+ * This now returns a DataStructure instance directly.
  */
-function mapApiResponseToDataStructure(response: {
-  data: { [key: string]: IDataNode }
-  values?: Record<string, string>
-}): IDataStructure {
-  const { data, values = {} } = response
-  console.log('Data received', response)
-
-  const result: IDataStructure = {}
-
-  for (const key in data) {
-    if (data.hasOwnProperty(key)) {
-      result[key] = mapSectionToDataNode(data[key], values)
-    }
-  }
-
-  return result
-}
-
-/**
- * ---------------------------------------------------------
- * 3) Fetch function that calls your canister or backend
- * ---------------------------------------------------------
- * This must return the new JSON that includes { schema, data }.
- */
-async function fetchData(projectId: string, translations: { [key: string]: string }): Promise<IDataStructure> {
+async function fetchData(projectId: string, translations: { [key: string]: string }): Promise<DataStructure> {
   try {
     const [schemaText, valuesAndLockJson] = await canisterService.getUUIDInfo(projectId)
 
@@ -162,7 +51,8 @@ async function fetchData(projectId: string, translations: { [key: string]: strin
     // Parse the translated JSON string back to an object
     const translatedData = JSON.parse(combinedJsonString)
 
-    return mapApiResponseToDataStructure(translatedData)
+    // Use the new class-based method to parse the entire structure
+    return DataStructure.fromJSON(translatedData)
   } catch (err) {
     console.error('Error fetching data from API:', err)
     throw err
@@ -171,7 +61,7 @@ async function fetchData(projectId: string, translations: { [key: string]: strin
 
 /**
  * ---------------------------------------------------------
- * 4) DataProvider & useData Hook
+ * 2) DataProvider & useData Hook
  * ---------------------------------------------------------
  */
 interface DataProviderProps {
@@ -179,12 +69,13 @@ interface DataProviderProps {
 }
 
 export const DataProvider: FC<DataProviderProps> = ({ children }) => {
-  const [data, setData] = useState<IDataStructure | null>(null)
+  // The state now holds our new DataStructure class instance.
+  const [data, setData] = useState<DataStructure | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const location = useLocation()
   const [projectId, setProjectId] = useState<string>('')
-  const [locale] = useState<'en' | 'it'>('it') // Default to Italian
+  const [locale] = useState<'en' | 'it'>('it')
 
   const translations = locale === 'en' ? en : it
 
@@ -195,14 +86,10 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
 
       if (currentPath === '/mock-sandbox') {
         try {
-          // Assuming mockEquipmentData has { data: ..., values: ... } structure
-          // The mapApiResponseToDataStructure expects an object with 'data' and optionally 'values' keys.
-          const mappedMockData = mapApiResponseToDataStructure({
-            data: mockEquipmentData.data as { [key: string]: IDataNode }, // Cast to satisfy mapApiResponseToDataStructure
-            values: mockEquipmentData.values as Record<string, string> // Cast to satisfy mapApiResponseToDataStructure
-          })
+          // Use the class method to directly parse the mock JSON.
+          const mappedMockData = DataStructure.fromJSON(mockEquipmentData as never)
           setData(mappedMockData)
-          setProjectId('mock-sandbox') // Set a specific ID for the mock dashboard
+          setProjectId('mock-sandbox')
           setError(null)
         } catch (err) {
           console.error('Error loading or processing mock data:', err)
@@ -211,28 +98,24 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
         } finally {
           setIsLoading(false)
         }
-        return // Exit early after handling mock data
+        return
       }
 
-      // Handle non-mock routes
       const pathParts = currentPath.split('/')
-      const newProjectIdFromPath = pathParts[1] || '' // projectId is typically the first part after '/'
+      const newProjectIdFromPath = pathParts[1] || ''
 
       if (!newProjectIdFromPath) {
-        // This handles cases where projectId might be missing for routes that expect one.
-        // Based on App.tsx, Dashboard component should always get a projectId or be on /mock-sandbox.
         setError('No project ID found in URL for data loading.')
         setData(null)
-        setProjectId('') // Clear current projectId
+        setProjectId('')
         setIsLoading(false)
         return
       }
 
-      // If we are here, it's a non-mock route with a newProjectIdFromPath.
-      // Update projectId state. This is important for the context value.
       setProjectId(newProjectIdFromPath)
 
       try {
+        // fetchData now returns a DataStructure instance
         const result = await fetchData(newProjectIdFromPath, translations)
         setData(result)
         setError(null)
@@ -245,11 +128,8 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     }
 
     loadData()
-  }, [location.pathname, translations]) // Dependencies: re-run if path or translations change
+  }, [location.pathname, translations])
 
-  /**
-   * Allows us to refetch data on demand (e.g., after a form submission).
-   */
   const reloadData = async () => {
     try {
       setIsLoading(true)
@@ -263,13 +143,10 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     }
   }
 
-  /**
-   * Dynamically returns wizard questions from the "startInstallation" node
-   * (or any node that might be a wizard, if you prefer to generalize).
-   */
   const getWizardQuestions = async (sectionId: string): Promise<IWizardQuestion[]> => {
-    if (!data) return []
-    const wizardNode = data[sectionId]
+    // Access the nodes dictionary within the data object
+    if (!data?.nodes) return []
+    const wizardNode = data.nodes[sectionId]
     if (!wizardNode?.isWizard || !wizardNode?.questions) return []
     return wizardNode.questions
   }
@@ -277,7 +154,8 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   return (
     <DataContext.Provider
       value={{
-        data,
+        // We provide `data.nodes` to the context so consumers can still do `data['someId']`
+        data: data?.nodes ?? null,
         isLoading,
         error,
         projectId,

@@ -7,7 +7,7 @@ const MockDashboardRedirect: FC = () => {
 
   useEffect(() => {
     // Redirect to the mock dashboard
-    navigate('/mock-dashboard')
+    navigate('/view/mock-dashboard')
   }, [navigate])
 
   return <LoadingView message='Redirecting to mock dashboard...' />

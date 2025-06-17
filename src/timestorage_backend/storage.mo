@@ -3,6 +3,10 @@ import Text "mo:base/Text";
 import Types "./types";
 
 module Storage {
+   // =================================================================
+    // UUIDs STORAGE MAPS
+    // =================================================================
+
     public type FileRecord = Types.FileRecord;
     public type ValueLockStatus = Types.ValueLockStatus;
 
@@ -34,5 +38,44 @@ module Storage {
     // Generates the key for the value lock map
     public func makeLockKey(uuid : Text, key : Text) : Text {
         return uuid # "|" # key;
+    };
+
+    // =================================================================
+    // PROJECT & LINKEDIN STRUCTURE STORAGE MAPS
+    // =================================================================
+
+    // projectUuid -> ProjectCore
+    public func newProjectMap() : TrieMap.TrieMap<Types.UUID, Types.ProjectCore> {
+      TrieMap.TrieMap<Types.UUID, Types.ProjectCore>(Text.equal, Text.hash);
+    };
+
+    // projectUuid -> [fileId] (for top-level project documents)
+    public func newProjectDocumentsMap() : TrieMap.TrieMap<Types.UUID, [Types.FileId]> {
+      TrieMap.TrieMap<Types.UUID, [Types.FileId]>(Text.equal, Text.hash);
+    };
+
+    // projectUuid -> [placementUuid]
+    public func newProjectPlacementsMap() : TrieMap.TrieMap<Types.UUID, [Types.UUID]> {
+      TrieMap.TrieMap<Types.UUID, [Types.UUID]>(Text.equal, Text.hash);
+    };
+
+    // Composite key "projectUuid|placementUuid" -> [fileId]
+    public func newPlacementDocumentsMap() : TrieMap.TrieMap<Text, [Types.FileId]> {
+      TrieMap.TrieMap<Text, [Types.FileId]>(Text.equal, Text.hash);
+    };
+
+    // itemUuid -> projectUuid (Enforces 1-to-many relationship)
+    public func newUuidToProjectMap() : TrieMap.TrieMap<Types.UUID, Types.UUID> {
+      TrieMap.TrieMap<Types.UUID, Types.UUID>(Text.equal, Text.hash);
+    };
+    
+    // projectUuid -> [itemUuid] (For efficient reverse lookup)
+    public func newProjectToUuidsMap() : TrieMap.TrieMap<Types.UUID, [Types.UUID]> {
+      TrieMap.TrieMap<Types.UUID, [Types.UUID]>(Text.equal, Text.hash);
+    };
+
+    // uuid -> [linked_uuid] (For many-to-many linking)
+    public func newUuidLinksMap() : TrieMap.TrieMap<Types.UUID, [Types.UUID]> {
+      TrieMap.TrieMap<Types.UUID, [Types.UUID]>(Text.equal, Text.hash);
     };
 };

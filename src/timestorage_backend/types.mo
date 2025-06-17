@@ -2,26 +2,84 @@ import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 
 module Types {
-  // Type aliases
+  // =================================================================
+  // BASE & EXISTING TYPES
+  // =================================================================
   public type UUID = Text;
   public type FileId = Text;
   public type Timestamp = Int;
 
-  // Stable storage
-  public type StableStorage = {
-    uuidToStructure : [(Text, Text)];
-    uuidKeyValue : [(Text, [(Text, Text)])];
-    uuidToFiles : [(Text, FileRecord)];
-    admins : [(Principal, Bool)];
-    valueLocks : [(Text, ValueLockStatus)];
-    fileCounter : Nat;
+  public type FileMetadata = {
+    fileName : Text;
+    mimeType : Text;
+    uploadTimestamp : Timestamp;
   };
 
-  // Request types
-  public type MintRequest = {
-    uuids : [Text];
-    structures : Text;
+  public type FileRecord = {
+    uuid : UUID;
+    fileData : Text;
+    metadata : FileMetadata;
   };
+
+  public type ValueLockStatus = {
+    locked : Bool;
+    lockedBy : ?Principal;
+  };
+
+  // =================================================================
+  // PROJECT & LINKEDIN STRUCTURE TYPES
+  // =================================================================
+
+  public type ProjectStatus = {
+    #draft;
+    #pending;
+    #approved;
+    #rejected;
+    #completed;
+    #cancelled;
+  };
+
+  public type IssuerInfo = {
+    identification : ?Text;
+    email : ?Text;
+    name : ?Text;
+    phone : ?Text;
+    website : ?Text;
+    principal : ?Text;
+  };
+
+  public type LocationInfo = {
+    address : ?Text;
+    address2 : ?Text;
+    unit : ?Text;
+    floor : ?Text;
+    room : ?Text;
+    city : ?Text;
+    state : ?Text;
+    zip : ?Text;
+    country : ?Text;
+  };
+
+  public type ProjectInfo = {
+    identification : ?Text;
+    subIdentification : ?Text;
+    typeText : ?Text;
+    category : ?Text;
+    issuer : ?IssuerInfo;
+    location : ?LocationInfo;
+    version : ?Text;
+    createdAt : ?Text;
+  };
+
+  public type ProjectCore = {
+    owner : Principal;
+    status : ProjectStatus;
+    info : ProjectInfo;
+  };
+
+  // =================================================================
+  // API REQUEST & RESPONSE TYPES
+  // =================================================================
 
   public type ValueUpdateRequest = {
     uuid : Text;
@@ -40,9 +98,8 @@ module Types {
     lock : Bool;
   };
 
-  public type ValueLockStatusRequest = {
+  public type ValueUnlockAllRequest = {
     uuid : Text;
-    key : Text;
   };
 
   public type ValueUnlockRequest = {
@@ -50,69 +107,87 @@ module Types {
     key : Text;
   };
 
-  public type ValueUnlockAllRequest = {
-    uuid : Text;
-  };
-
   public type ValueRequest = {
     uuid : Text;
     key : Text;
   };
 
-  // File types
-  public type FileMetadata = {
-    fileName : Text;
+  public type ValueLockStatusRequest = {
+    uuid : Text;
+    key : Text;
+  };
+
+  // *** START OF FIXES FOR THIS ERROR ***
+
+  // 1. Extracted metadata for the original FileResponse type
+  public type FileResponseMetadata = {
+    fileData : Text;
     mimeType : Text;
-    uploadTimestamp : Timestamp;
+    fileName : Text;
+    uploadTimestamp : Text;
   };
 
-  public type FileRecord = {
-    uuid : UUID;
-    fileData : Text;
-    metadata : FileMetadata;
+  // 2. Extracted metadata for the original FileMetadataResponse type
+  public type FileMetadataOnly = {
+    mimeType : Text;
+    fileName : Text;
+    uploadTimestamp : Text;
   };
 
-  public type FileUploadRequest = {
-    uuid : UUID;
-    fileData : Text;
-    metadata : FileMetadata;
-  };
-
-  // Response types
+  // 3. Updated the original types to use the new named types
   public type FileResponse = {
     uuid : UUID;
-    metadata : {
-      fileData : Text;
-      mimeType : Text;
-      fileName : Text;
-      uploadTimestamp : Text;
-    };
+    metadata : FileResponseMetadata; // Correct
   };
 
-  // Response types for file metadata only
   public type FileMetadataResponse = {
     uuid : UUID;
-    metadata : {
-      mimeType : Text;
-      fileName : Text;
-      uploadTimestamp : Text;
-    };
+    metadata : FileMetadataOnly; // Correct
   };
 
-  public type UUIDInfoResponse = {
-    schema : Text;
-    values : [(Text, Text)];
-    lockStatuses : [(Text, Text)];
-    files : [FileResponse];
+  // *** END OF FIXES FOR THIS ERROR ***
+
+  // (This part was fixed previously and remains correct)
+  public type RemoteDocumentMetadata = {
+    fileData : Text;
+    mimeType : Text;
+    fileName : Text;
+    uploadTimestamp : Text;
   };
 
-  // State types
-  public type ValueLockStatus = {
-    locked : Bool;
-    lockedBy : ?Principal;
+  public type RemoteDocumentResponse = {
+    fileId : FileId;
+    uuid : UUID;
+    metadata : RemoteDocumentMetadata;
   };
 
-  // Result types
+  public type LinkedStructureIdentifier = {
+    identification : Text;
+    subIdentification : ?Text;
+    typeText : ?Text;
+    category : ?Text;
+  };
+
+  public type ProjectPlacementResponse = {
+    uuid : UUID;
+    info : ?LinkedStructureIdentifier;
+    documents : [RemoteDocumentResponse];
+  };
+
+  public type ProjectLinkedStructureResponse = {
+    uuid : UUID;
+    info : ?LinkedStructureIdentifier;
+  };
+
+  public type ProjectAPIResponse = {
+    uuid : UUID;
+    status : ProjectStatus;
+    info : ProjectInfo;
+    documents : [RemoteDocumentResponse];
+    placements : [ProjectPlacementResponse];
+    linkedStructures : [ProjectLinkedStructureResponse];
+  };
+
   public type Result<T, E> = Result.Result<T, E>;
   public type Response<T> = Result<T, Text>;
 };

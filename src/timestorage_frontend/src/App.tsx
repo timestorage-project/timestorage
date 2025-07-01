@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import DetailPage from './pages/DetailPage'
 import WizardPage from './pages/WizardPage'
 import LoginPage from './pages/LoginPage'
+import ProjectDashboard from './pages/ProjectDashboard'
 import MockDashboard from './components/MockDashboard'
 import MockDashboardRedirect from './pages/MockDashboardRedirect'
 import { DataProvider } from './context/DataContext'
@@ -65,6 +66,8 @@ const App: FC = () => {
           <Routes>
             <Route path='/' element={<MockDashboardRedirect />} />
             <Route path='/view/mock-dashboard' element={<MockDashboard />} />
+            <Route path='/project/:projectId' element={<ProjectDashboard />} />
+            <Route path='/project/from-equipment/:uuid' element={<ProjectDashboard />} />
             <Route path='/view/:uuid' element={<Dashboard />} />
             <Route path='/view/mock-sandbox' element={<Dashboard />} />
             <Route path='/view/:uuid/:sectionId' element={<DetailPage />} />

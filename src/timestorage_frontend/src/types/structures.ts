@@ -1,4 +1,4 @@
-import { DataStructure } from "./DataStructure"
+
 
 export interface IRemoteDocument {
     metadata: {
@@ -152,18 +152,4 @@ export interface IRawDataStructureApiResponse {
     projectUuid?: string
 }
 
-
-
-
-/**
- * Our DataContextType holds the data structure, loading/error states,
- * plus helper methods. Note that `data` is now `DataStructure | null`.
- */
-export interface IDataContextType {
-    uuid: string
-    data: DataStructure | null
-    isLoading: boolean
-    error: string | null
-    reloadData: () => Promise<void>
-    getWizardQuestions: (sectionId: string) => Promise<IWizardQuestion[]>
-}
+export type FetchingStatus = 'none' | 'project' | 'data' | 'completed'

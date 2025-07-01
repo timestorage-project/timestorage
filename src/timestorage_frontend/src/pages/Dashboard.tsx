@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Info, PlayCircle, Download, Wrench, Construction, FileText, CheckCircle } from 'lucide-react'
+import { Info, PlayCircle, Download, Wrench, Construction, FileText, CheckCircle, Building2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
 import { Container } from '@/components/ui/container'
@@ -14,7 +14,7 @@ import LoadingView from '@/components/LoadingView'
 
 const Dashboard: FC = () => {
   const navigate = useNavigate()
-  const { data, isLoading, error, uuid } = useData()
+  const { data, isLoading, error, uuid, project } = useData()
 
   if (isLoading && !data) {
     return <LoadingView message='Loading dashboard...' />
@@ -68,12 +68,40 @@ const Dashboard: FC = () => {
         </Motion>
 
         <Grid container className='gap-4'>
+          {/* Project Dashboard Card - only show if project data exists */}
+          {project && (
+            <Grid item xs={6}>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0, duration: 0.3 }}
+              >
+                <Card
+                  className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 glass-effect border-2 border-primary/20'
+                  onClick={() => navigate(`/project/from-equipment/${uuid}`)}
+                >
+                  <CardContent className='p-4'>
+                    <div className='mb-2 text-primary'>
+                      <Building2 className='h-6 w-6 text-primary' />
+                    </div>
+                    <Typography variant='h6' className='mb-1'>
+                      Project Dashboard
+                    </Typography>
+                    <Typography variant='body2' color='muted'>
+                      View all equipment in this project
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </Grid>
+          )}
+          
           {regularItems.map(([key, item], index) => (
             <Grid item xs={6} key={key}>
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.3 }}
+                transition={{ delay: (project ? index + 1 : index) * 0.1, duration: 0.3 }}
               >
                 <Card
                   className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 glass-effect'

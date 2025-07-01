@@ -4,8 +4,23 @@ import * as canisterService from '../services/canisterService'
 import { en } from '@/lang/en'
 import mockEquipmentData from '../mocks/mock-equipment.json'
 import { it } from '@/lang/it'
-import { IDataContextType, IWizardQuestion } from '@/types/structures'
+import { FetchingStatus, IWizardQuestion } from '@/types/structures'
 import { DataStructure } from '@/types/DataStructure'
+
+// Use the transformed project type from canisterService
+type TransformedProjectAPIResponse = Awaited<ReturnType<typeof canisterService.getProject>>
+
+// Updated DataContextType to use transformed types
+interface IDataContextType {
+  uuid: string
+  data: DataStructure | null
+  project: TransformedProjectAPIResponse | null
+  fetchingStatus: FetchingStatus
+  isLoading: boolean
+  error: string | null
+  reloadData: () => Promise<void>
+  getWizardQuestions: (sectionId: string) => Promise<IWizardQuestion[]>
+}
 
 const DataContext = createContext<IDataContextType | undefined>(undefined)
 
@@ -67,6 +82,8 @@ interface DataProviderProps {
 export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   // The state now holds our new DataStructure class instance.
   const [data, setData] = useState<DataStructure | null>(null)
+  const [project, setProject] = useState<TransformedProjectAPIResponse | null>(null)
+  const [fetchingStatus, setFetchingStatus] = useState<FetchingStatus>('none')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const location = useLocation()
@@ -78,6 +95,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true)
+      setError(null)
       const currentPath = location.pathname
 
       if (currentPath === '/mock-sandbox') {
@@ -86,7 +104,6 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
           const mappedMockData = DataStructure.fromJSON(mockEquipmentData as never)
           setData(mappedMockData)
           setUuid('mock-sandbox')
-          setError(null)
         } catch (err) {
           console.error('Error loading or processing mock data:', err)
           setError(err instanceof Error ? err.message : 'Failed to load mock data')
@@ -111,15 +128,24 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
       setUuid(uuid)
 
       try {
-        // fetchData now returns a DataStructure instance
-        const result = await fetchData(uuid, translations)
-        setData(result)
-        setError(null)
+        setFetchingStatus('project')
+        const projectResult = await canisterService.getProjectByUuid(uuid).catch(err => {
+          console.error('Failed to fetch project, proceeding without it.', err)
+          return null
+        })
+        if (projectResult) {
+          setProject(projectResult)
+        }
+
+        setFetchingStatus('data')
+        const dataResult = await fetchData(uuid, translations)
+        setData(dataResult)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred while fetching data')
-        setData(null)
+        setData(null) // Ensure data is null on error
       } finally {
         setIsLoading(false)
+        setFetchingStatus('completed')
       }
     }
 
@@ -150,6 +176,8 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     <DataContext.Provider
       value={{
         data: data ?? null,
+        project,
+        fetchingStatus,
         isLoading,
         error,
         uuid,

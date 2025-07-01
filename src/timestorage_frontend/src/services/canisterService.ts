@@ -1,4 +1,4 @@
-import { FileResponse, idlFactory, TimestorageBackend } from '@/timestorage_backend/timestorage_backend.did'
+import { FileResponse, idlFactory, TimestorageBackend, LinkedStructureIdentifier, ProjectInfo, ProjectAPIResponse, ProjectLinkedStructureResponse, ProjectPlacementResponse, ProjectStatus, RemoteDocumentResponse } from '@/timestorage_backend/timestorage_backend.did'
 import { Actor, HttpAgent } from '@dfinity/agent'
 import { idlFactory as sessionManagerIdlFactory } from '@/timestorage_session_manager/timestorage_session_manager.did'
 import { _SERVICE as SessionManagerService } from '@/timestorage_session_manager/timestorage_session_manager.did'
@@ -75,6 +75,134 @@ export const getSessionManagerActor = async (): Promise<SessionManagerService> =
   return sessionManagerActor as SessionManagerService
 }
 
+// Type transformers to convert optional arrays to cleaner types
+type TransformedLinkedStructureIdentifier = {
+  model?: string
+  floorNumber?: string
+  subIdentification?: string
+  roomDescription?: string
+  productType?: string
+  notes?: string
+  identification?: string
+  category?: string
+  brand?: string
+  typeText?: string
+  sequenceNumber?: string
+  dimensions?: string
+  positionNumber?: string
+}
+
+type TransformedProjectInfo = {
+  identification?: string
+  subIdentification?: string
+  typeText?: string
+  category?: string
+  version?: string
+  createdAt?: string
+  issuer?: {
+    identification?: string
+    email?: string
+    name?: string
+    phone?: string
+    website?: string
+    principal?: string
+  }
+  location?: {
+    zip?: string
+    floor?: string
+    country?: string
+    city?: string
+    room?: string
+    unit?: string
+    state?: string
+    address?: string
+    address2?: string
+  }
+}
+
+type TransformedProjectAPIResponse = {
+  uuid: string
+  status: ProjectStatus
+  documents: RemoteDocumentResponse[]
+  info: TransformedProjectInfo
+  placements: Array<{
+    uuid: string
+    documents: RemoteDocumentResponse[]
+    info?: TransformedLinkedStructureIdentifier
+  }>
+  linkedStructures: Array<{
+    uuid: string
+    info?: TransformedLinkedStructureIdentifier
+  }>
+}
+
+// Utility function to extract optional values
+const extractOptional = <T>(opt: [] | [T]): T | undefined => 
+  opt.length > 0 ? opt[0] : undefined
+
+// Transform LinkedStructureIdentifier from optional arrays to optional values
+const transformLinkedStructureIdentifier = (raw: LinkedStructureIdentifier): TransformedLinkedStructureIdentifier => ({
+  model: extractOptional(raw.model),
+  floorNumber: extractOptional(raw.floorNumber),
+  subIdentification: extractOptional(raw.subIdentification),
+  roomDescription: extractOptional(raw.roomDescription),
+  productType: extractOptional(raw.productType),
+  notes: extractOptional(raw.notes),
+  identification: extractOptional(raw.identification),
+  category: extractOptional(raw.category),
+  brand: extractOptional(raw.brand),
+  typeText: extractOptional(raw.typeText),
+  sequenceNumber: extractOptional(raw.sequenceNumber),
+  dimensions: extractOptional(raw.dimensions),
+  positionNumber: extractOptional(raw.positionNumber),
+})
+
+// Transform ProjectInfo from optional arrays to optional values
+const transformProjectInfo = (raw: ProjectInfo): TransformedProjectInfo => ({
+  identification: extractOptional(raw.identification),
+  subIdentification: extractOptional(raw.subIdentification),
+  typeText: extractOptional(raw.typeText),
+  category: extractOptional(raw.category),
+  version: extractOptional(raw.version),
+  createdAt: extractOptional(raw.createdAt),
+  issuer: raw.issuer.length > 0 ? {
+    identification: extractOptional(raw.issuer[0]!.identification),
+    email: extractOptional(raw.issuer[0]!.email),
+    name: extractOptional(raw.issuer[0]!.name),
+    phone: extractOptional(raw.issuer[0]!.phone),
+    website: extractOptional(raw.issuer[0]!.website),
+    principal: extractOptional(raw.issuer[0]!.principal),
+  } : undefined,
+  location: raw.location.length > 0 ? {
+    zip: extractOptional(raw.location[0]!.zip),
+    floor: extractOptional(raw.location[0]!.floor),
+    country: extractOptional(raw.location[0]!.country),
+    city: extractOptional(raw.location[0]!.city),
+    room: extractOptional(raw.location[0]!.room),
+    unit: extractOptional(raw.location[0]!.unit),
+    state: extractOptional(raw.location[0]!.state),
+    address: extractOptional(raw.location[0]!.address),
+    address2: extractOptional(raw.location[0]!.address2),
+  } : undefined,
+})
+
+// Transform full project response
+const transformProjectAPIResponse = (raw: ProjectAPIResponse): TransformedProjectAPIResponse => ({
+  uuid: raw.uuid,
+  status: raw.status,
+  documents: raw.documents,
+  info: transformProjectInfo(raw.info),
+  placements: raw.placements.map((placement: ProjectPlacementResponse) => ({
+    uuid: placement.uuid,
+    documents: placement.documents,
+    info: placement.info.length > 0 ? transformLinkedStructureIdentifier(placement.info[0]!) : undefined
+  })),
+  linkedStructures: raw.linkedStructures.map((structure: ProjectLinkedStructureResponse) => ({
+    uuid: structure.uuid,
+    info: structure.info.length > 0 ? transformLinkedStructureIdentifier(structure.info[0]!) : undefined
+  }))
+})
+
 // Backend canister methods
 
 export const getUUIDInfo = async (uuid: string): Promise<[string, string, FileResponse[]]> => {
@@ -87,6 +215,28 @@ export const getUUIDInfo = async (uuid: string): Promise<[string, string, FileRe
   }
 
   return result.ok
+}
+
+export const getProjectByUuid = async (uuid: string): Promise<TransformedProjectAPIResponse> => {
+  const actor = await getBackendActor()
+  const result = await actor.getProjectByUuid(uuid)
+
+  if ('err' in result) {
+    throw new Error(result.err)
+  }
+
+  return transformProjectAPIResponse(result.ok)
+}
+
+export const getProject = async (projectUuid: string): Promise<TransformedProjectAPIResponse> => {
+  const actor = await getBackendActor()
+  const result = await actor.getProject(projectUuid)
+
+  if ('err' in result) {
+    throw new Error(result.err)
+  }
+
+  return transformProjectAPIResponse(result.ok)
 }
 
 export const updateValue = async (uuid: string, key: string, value: string, lock: boolean = false) => {

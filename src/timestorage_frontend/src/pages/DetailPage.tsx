@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
+import { saveAs } from 'file-saver'
 import { useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -107,12 +108,10 @@ const DetailPage = () => {
         if (cachedFile?.data) {
           // If data was already cached
           if (!isImage) {
-            const linkElement = document.createElement('a')
-            linkElement.href = cachedFile.data
-            linkElement.download = currentMetadata.fileName
-            document.body.appendChild(linkElement)
-            linkElement.click()
-            document.body.removeChild(linkElement)
+            // Convert data URL to blob and save using file-saver
+            const response = await fetch(cachedFile.data)
+            const blob = await response.blob()
+            saveAs(blob, currentMetadata.fileName)
           }
           return
         }
@@ -127,14 +126,10 @@ const DetailPage = () => {
         }))
 
         if (!isImage) {
-          setTimeout(() => {
-            const linkElement = document.createElement('a')
-            linkElement.href = fileData.dataUrl
-            linkElement.download = currentMetadata.fileName
-            document.body.appendChild(linkElement)
-            linkElement.click()
-            document.body.removeChild(linkElement)
-          }, 100)
+          // Convert data URL to blob and save using file-saver
+          const response = await fetch(fileData.dataUrl)
+          const blob = await response.blob()
+          saveAs(blob, currentMetadata.fileName)
         }
       } catch (err) {
         console.error(`Error downloading file ${fileId}:`, err)

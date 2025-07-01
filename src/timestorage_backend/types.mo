@@ -162,10 +162,19 @@ module Types {
   };
 
   public type LinkedStructureIdentifier = {
-    identification : Text;
+    identification : ?Text;
     subIdentification : ?Text;
     typeText : ?Text;
     category : ?Text;
+    positionNumber : ?Text;
+    sequenceNumber : ?Text;
+    floorNumber : ?Text;
+    roomDescription : ?Text;
+    productType : ?Text;
+    brand : ?Text;
+    model : ?Text;
+    dimensions : ?Text;
+    notes : ?Text;
   };
 
   public type ProjectPlacementResponse = {

@@ -141,10 +141,19 @@ shared (msg) actor class TimestorageBackend() {
             case (null) { return null };
             case (?kvMap) {
                 return ?{
-                    identification = Option.get(kvMap.get("info.identification"), uuid);
+                    identification = kvMap.get("info.identification");
                     subIdentification = kvMap.get("info.subIdentification");
                     typeText = kvMap.get("info.type");
                     category = kvMap.get("info.category");
+                    positionNumber = kvMap.get("info.positionNumber");
+                    sequenceNumber = kvMap.get("info.sequenceNumber");
+                    floorNumber = kvMap.get("info.floorNumber");
+                    roomDescription = kvMap.get("info.roomDescription");
+                    productType = kvMap.get("info.productType");
+                    brand = kvMap.get("info.brand");
+                    model = kvMap.get("info.model");
+                    dimensions = kvMap.get("info.dimensions");
+                    notes = kvMap.get("info.notes");
                 };
             };
         };
@@ -940,7 +949,7 @@ shared (msg) actor class TimestorageBackend() {
     
     public shared (msg) func assignUuidToProject(projectUuid: Types.UUID, itemUuid: Types.UUID): async Types.Response<Text> {
         // Auth: must be owner of project
-        let project = switch(projects.get(projectUuid)) {
+        let _ = switch(projects.get(projectUuid)) {
             case (null) { return #err("Project not found"); };
             case (?p) { if (p.owner != msg.caller) { return #err("Unauthorized"); }; p };
         };
@@ -999,7 +1008,7 @@ shared (msg) actor class TimestorageBackend() {
 
     public shared (msg) func addPlacementToProject(projectUuid: Types.UUID, placementUuid: Types.UUID): async Types.Response<Text> {
         // Auth: must be owner of project
-        let project = switch(projects.get(projectUuid)) {
+        let _ = switch(projects.get(projectUuid)) {
             case (null) { return #err("Project not found"); };
             case (?p) { if (p.owner != msg.caller) { return #err("Unauthorized"); }; p };
         };
@@ -1074,7 +1083,8 @@ shared (msg) actor class TimestorageBackend() {
     // THE "BUNDLER" API - QUERY METHOD
     // =================================================================
     
-    public shared query (msg) func getProject(projectUuid: Types.UUID) : async Types.Response<Types.ProjectAPIResponse> {
+    // Private helper to assemble project data
+    func _getProject_(projectUuid: Types.UUID) : Types.Response<Types.ProjectAPIResponse> {
         // 1. Get Core Project Data
         let projectCore = switch(projects.get(projectUuid)) {
             case (null) { return #err("Project not found."); };
@@ -1122,6 +1132,19 @@ shared (msg) actor class TimestorageBackend() {
         };
 
         return #ok(response);
+    };
+
+    public shared query (msg) func getProjectByUuid(uuid: Types.UUID) : async Types.Response<Types.ProjectAPIResponse> {
+        let projectUuid = switch(uuidToProject.get(uuid)) {
+            case (null) { return #err("Project not found for this UUID."); };
+            case (?p) { p };
+        };
+
+        return _getProject_(projectUuid);
+    };
+
+    public shared query (msg) func getProject(projectUuid: Types.UUID) : async Types.Response<Types.ProjectAPIResponse> {
+        return _getProject_(projectUuid);
     };
 
     

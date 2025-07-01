@@ -61,11 +61,13 @@ export const loginWithAuth0 = async (): Promise<void> => {
 
     // Login with Auth0 and use nonce for state binding
     await client.loginWithRedirect({
+      appState: {
+        returnTo: window.location.pathname + window.location.search
+      },
       authorizationParams: {
         redirect_uri: AUTH0_REDIRECT_URI,
         publicKeyDer: hex
-      },
-
+      }
     })
   } catch (error) {
     throw error

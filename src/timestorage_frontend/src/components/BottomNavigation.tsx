@@ -26,7 +26,7 @@ const BottomNavigation: FC = () => {
   const isProjectActive = location.pathname.startsWith('/project/')
 
   return (
-    <div className='dock dock-md bg-base-200 border-t border-base-300 p-2'>
+    <div className='dock dock-md bg-base-200 border-t border-base-300 p-3'>
       {/* Home Button */}
       <button className={isHomeActive ? 'dock-active' : ''} onClick={() => navigate(`/view/${equipmentUuid}`)}>
         <Home className='size-[1.2em]' />

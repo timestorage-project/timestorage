@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom'
 import { Motion } from '@/components/ui/motion'
 import { Container } from '@/components/ui/container'
 import BottomNavigation from '@/components/BottomNavigation'
-import { Header } from '@/components/ui/header'
 import { useData } from '@/context/DataContext'
 import ErrorView from '@/components/ErrorView'
 import LoadingView from '@/components/LoadingView'
@@ -11,6 +10,7 @@ import * as canisterService from '@/services/canisterService'
 import { fileToBase64, getFileMetadata as utilGetFileMetadata } from '@/utils/fileUtils'
 import { FileViewer, FileUploader, DetailItem, ImageGallery } from '@/components/detail-page'
 import type { FileCache, FileCacheItem, PageDataItem } from '@/components/detail-page/types'
+import Header from '@/components/Header'
 
 // Types are now imported from @/components/detail-page/types
 

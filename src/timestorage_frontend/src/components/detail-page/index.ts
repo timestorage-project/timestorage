@@ -1,5 +1,5 @@
-export { default as FileViewer } from './FileViewer';
-export { default as FileUploader } from './FileUploader';
-export { default as DetailItem } from './DetailItem';
-export { default as ImageGallery } from './ImageGallery';
-export * from './types';
+export { default as FileViewer } from './FileViewer'
+export { default as FileUploader } from './FileUploader'
+export { default as DetailItem } from './DetailItem'
+export { default as ImageGallery } from './ImageGallery'
+export * from './types'

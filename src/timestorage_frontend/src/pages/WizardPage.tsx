@@ -15,7 +15,6 @@ import { Typography } from '../components/ui/typography'
 import { ArrowRight, ArrowLeft, Camera, Trash, ImagePlus } from 'lucide-react'
 
 // Custom components
-import { Header } from '../components/ui/header'
 import BottomNavigation from '../components/BottomNavigation'
 import { useData } from '../context/DataContext'
 import ErrorView from '../components/ErrorView'
@@ -23,6 +22,7 @@ import LoadingView from '../components/LoadingView'
 import { fileToBase64, getFileMetadata } from '../utils/fileUtils'
 import * as canisterService from '../services/canisterService'
 import { IWizardQuestion } from '@/types/structures'
+import Header from '@/components/Header'
 
 interface WizardState {
   currentQuestionIndex: number
@@ -229,7 +229,7 @@ const WizardPage = () => {
 
         {!loading && !error && !selectedWizard && availableWizards.length > 0 && (
           <Container maxWidth='sm' className='py-4'>
-            <Motion variant="fadeIn">
+            <Motion variant='fadeIn'>
               <Typography variant='h5' className='mb-3'>
                 Select an installation wizard
               </Typography>
@@ -261,7 +261,7 @@ const WizardPage = () => {
     }
     setState(prev => ({
       ...prev,
-      currentQuestionIndex: Math.min(prev.currentQuestionIndex + 1, questions.length - 1),
+      currentQuestionIndex: Math.min(prev.currentQuestionIndex + 1, questions.length - 1)
     }))
   }
 
@@ -399,10 +399,7 @@ const WizardPage = () => {
             </label>
 
             {Array.isArray(state.answers[currentQuestion.id]) && state.answers[currentQuestion.id].length > 0 && (
-              <Motion
-                variant="fadeIn"
-                className='mt-3 p-3 bg-base-200 rounded-lg'
-              >
+              <Motion variant='fadeIn' className='mt-3 p-3 bg-base-200 rounded-lg'>
                 <Typography variant='body2' className='text-muted-foreground'>
                   {(state.answers[currentQuestion.id] as string[]).length} photo(s) uploaded
                 </Typography>

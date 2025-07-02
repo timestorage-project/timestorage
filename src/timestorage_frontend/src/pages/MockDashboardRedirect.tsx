@@ -1,16 +1,19 @@
-import { FC, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LoadingView from '@/components/LoadingView'
+import { useTranslation } from '@/hooks/useTranslation'
 
-const MockDashboardRedirect: FC = () => {
+const MockDashboardRedirect = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   useEffect(() => {
-    // Redirect to the mock dashboard
+    // Immediately navigate to the mock dashboard
     navigate('/view/mock-dashboard')
   }, [navigate])
 
-  return <LoadingView message='Redirecting to mock dashboard...' />
+  // Render a loading view while the navigation occurs
+  return <LoadingView message={t('LOADING_REDIRECTING')} />
 }
 
 export default MockDashboardRedirect

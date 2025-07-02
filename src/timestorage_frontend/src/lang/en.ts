@@ -134,4 +134,13 @@ export const en = {
   LANGUAGE: 'Language',
   ENGLISH: 'English',
   ITALIAN: 'Italian',
+
+  // Loading Messages
+  LOADING_INITIALIZING: 'Initializing...',
+  LOADING_REDIRECTING: 'Redirecting to mock dashboard...',
+  LOADING_DASHBOARD: 'Loading dashboard...',
+  LOADING_PROJECT_DASHBOARD: 'Loading project dashboard...',
+  LOADING_COMPLETING_LOGIN: 'Completing login...',
+  LOADING_PAGE: 'Loading page...',
+  LOADING_PROJECT_DATA: 'Loading project data...',
 }

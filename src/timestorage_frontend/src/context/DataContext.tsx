@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import * as canisterService from '../services/canisterService'
 import { en } from '@/lang/en'
 import mockEquipmentData from '../mocks/mock-equipment.json'
@@ -87,6 +87,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const location = useLocation()
+  const navigate = useNavigate()
   const [uuid, setUuid] = useState<string>('')
   const [locale] = useState<'en' | 'it'>('it')
 
@@ -138,8 +139,12 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
         }
 
         setFetchingStatus('data')
-        const dataResult = await fetchData(uuid, translations)
-        setData(dataResult)
+        const dataResult = await fetchData(uuid, translations).catch(() => null)
+        if (dataResult) {
+          setData(dataResult)
+        } else if (projectResult) {
+          navigate(`/linking/${uuid}`)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred while fetching data')
         setData(null) // Ensure data is null on error
@@ -150,7 +155,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     }
 
     loadData()
-  }, [location.pathname, translations])
+  }, [location.pathname, translations, navigate])
 
   const reloadData = async () => {
     try {

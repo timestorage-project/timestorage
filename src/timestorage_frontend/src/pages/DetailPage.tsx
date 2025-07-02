@@ -11,11 +11,14 @@ import { FileViewer, FileUploader, DetailItem, ImageGallery } from '@/components
 import type { FileCache, FileCacheItem, PageDataItem } from '@/components/detail-page/types'
 import Header from '@/components/Header'
 
+import { useTranslation } from '@/hooks/useTranslation'
+
 // Types are now imported from @/components/detail-page/types
 
 const DetailPage = () => {
   const { sectionId } = useParams<{ sectionId: string }>()
   const { data, isLoading, error, uuid, reloadData } = useData()
+  const { t } = useTranslation()
   // Define the file cache state with proper typing
   const [fileCache, setFileCache] = useState<FileCache>({})
   const [loadingFiles, setLoadingFiles] = useState<string[]>([]) // Tracks file IDs being loaded (metadata or content)
@@ -200,7 +203,7 @@ const DetailPage = () => {
   }, [data, sectionId, loadFileMetadata]) // projectId is not directly used here but loadFileMetadata depends on it.
 
   if (isLoading && !data) {
-    return <LoadingView message='Loading page...' />
+    return <LoadingView message={t('LOADING_PAGE')} />
   }
 
   if (error) {

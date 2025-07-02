@@ -10,6 +10,8 @@ import LoadingView from '@/components/LoadingView'
 import BottomNavigation from '@/components/BottomNavigation'
 import * as canisterService from '@/services/canisterService'
 
+import { useTranslation } from '@/hooks/useTranslation'
+
 // Use the transformed project type from canisterService
 type TransformedProjectAPIResponse = Awaited<ReturnType<typeof canisterService.getProject>>
 
@@ -27,6 +29,7 @@ const ProjectDashboard: FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [equipmentCards, setEquipmentCards] = useState<EquipmentCard[]>([])
+  const { t } = useTranslation()
 
   useEffect(() => {
     const loadProjectData = async () => {
@@ -100,7 +103,7 @@ const ProjectDashboard: FC = () => {
   }
 
   if (isLoading) {
-    return <LoadingView message='Loading project dashboard...' />
+    return <LoadingView message={t('LOADING_PROJECT_DASHBOARD')} />
   }
 
   if (error) {

@@ -7,6 +7,8 @@ import LoginPage from './pages/LoginPage'
 import ProjectDashboard from './pages/ProjectDashboard'
 import MockDashboard from './components/MockDashboard'
 import MockDashboardRedirect from './pages/MockDashboardRedirect'
+import LinkingPage from './pages/LinkingPage'
+import { useTranslation } from './hooks/useTranslation'
 import { DataProvider } from './context/DataContext'
 import './globals.css'
 import { authService } from './store/auth.store'
@@ -55,8 +57,10 @@ const App: FC = () => {
     initialize()
   }, [])
 
+  const { t } = useTranslation()
+
   if (isInitializing) {
-    return <LoadingView message='Initializing...' />
+    return <LoadingView message={t('LOADING_INITIALIZING')} />
   }
 
   return (
@@ -78,6 +82,7 @@ const App: FC = () => {
             <Route path='/view/:uuid/profile' element={<div>Profile Page</div>} />
             <Route path='/auth/auth0/callback' element={<Auth0CallbackPage />} />
             <Route path='/login' element={<LoginPage />} />
+            <Route path='/linking/:uuid' element={<LinkingPage />} />
           </Routes>
         </DataProvider>
       </ThemeProvider>

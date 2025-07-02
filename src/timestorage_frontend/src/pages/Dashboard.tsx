@@ -9,12 +9,15 @@ import Header from '@/components/Header'
 import ErrorView from '@/components/ErrorView'
 import LoadingView from '@/components/LoadingView'
 
+import { useTranslation } from '@/hooks/useTranslation'
+
 const Dashboard: FC = () => {
   const navigate = useNavigate()
   const { data, isLoading, error, uuid, project } = useData()
+  const { t } = useTranslation()
 
   if (isLoading && !data) {
-    return <LoadingView message='Loading dashboard...' />
+    return <LoadingView message={t('LOADING_DASHBOARD')} />
   }
 
   if (error) {

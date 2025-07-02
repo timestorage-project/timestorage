@@ -44,18 +44,21 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
  * A customizable input component built with DaisyUI
  */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({
-    className,
-    type = 'text',
-    variant = 'bordered',
-    size = 'md',
-    fullWidth = false,
-    focusRing = true,
-    bordered = true,
-    disabled = false,
-    loading = false,
-    ...props
-  }, ref) => {
+  (
+    {
+      className = 'input',
+      type = 'text',
+      variant = 'bordered',
+      size = 'md',
+      fullWidth = false,
+      focusRing = true,
+      bordered = true,
+      disabled = false,
+      loading = false,
+      ...props
+    },
+    ref
+  ) => {
     const baseClasses = 'input'
     const variantClass = variant !== 'bordered' ? `input-${variant}` : ''
     const sizeClass = size !== 'md' ? `input-${size}` : ''
@@ -86,8 +89,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {loading && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2">
-            <span className="loading loading-spinner loading-xs"></span>
+          <span className='absolute right-3 top-1/2 -translate-y-1/2'>
+            <span className='loading loading-spinner loading-xs'></span>
           </span>
         )}
       </div>

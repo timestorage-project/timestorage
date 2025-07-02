@@ -2,15 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Motion } from '../components/ui/motion'
 
-// Shadcn/UI components
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Progress } from '../components/ui/progress'
-import { Label } from '../components/ui/label'
-import { Select } from '../components/ui/select'
-import { Container } from '../components/ui/container'
-import { Typography } from '../components/ui/typography'
-
 // Icons
 import { ArrowRight, ArrowLeft, Camera, Trash, ImagePlus } from 'lucide-react'
 
@@ -25,9 +16,13 @@ import { IWizardQuestion } from '@/types/structures'
 import Header from '@/components/Header'
 
 interface WizardState {
-  currentQuestionIndex: number
-  answers: Record<string, string | string[]>
-  isCompleted: boolean
+  currentQuestionIndex: number;
+  answers: Record<string, string | string[]>;
+  isCompleted: boolean;
+}
+
+interface StagedFiles {
+  [questionId: string]: File | File[];
 }
 
 const WizardPage = () => {
@@ -39,9 +34,12 @@ const WizardPage = () => {
   const [questions, setQuestions] = useState<IWizardQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [stagedFiles, setStagedFiles] = useState<StagedFiles>({})
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string | string[]>>({})
+
+  const [isUploading, setIsUploading] = useState(false)
 
   const [saving, setSaving] = useState(false)
-  const [animationDirection, setAnimationDirection] = useState(1)
 
   // Effect to find all available wizard sections when data is loaded
   useEffect(() => {
@@ -68,7 +66,7 @@ const WizardPage = () => {
       : {
           currentQuestionIndex: 0,
           answers: {},
-          isCompleted: false
+          isCompleted: false,
         }
   })
 
@@ -98,24 +96,48 @@ const WizardPage = () => {
     const files = event.target.files
     if (!files) return
 
-    try {
-      const fileIds = await Promise.all(
-        Array.from(files).map(async file => {
-          return await handleFileUpload(file)
-        })
-      )
+    const newFiles = Array.from(files)
+    setStagedFiles((prev) => ({
+      ...prev,
+      [currentQuestion.id]: multiple ? newFiles : newFiles[0],
+    }))
 
-      setState(prev => ({
-        ...prev,
-        answers: {
-          ...prev.answers,
-          [currentQuestion.id]: multiple ? fileIds : fileIds[0]
+    const urls = newFiles.map((file) => URL.createObjectURL(file))
+    setPreviewUrls((prev) => ({
+      ...prev,
+      [currentQuestion.id]: multiple ? urls : urls[0],
+    }))
+  }
+
+  const handleNextClick = async () => {
+    if (stagedFiles[currentQuestion.id]) {
+      const filesToUpload = stagedFiles[currentQuestion.id]
+      try {
+        setIsUploading(true)
+        if (Array.isArray(filesToUpload)) {
+          const fileIds = await Promise.all(filesToUpload.map((file) => handleFileUpload(file)))
+          handleAnswer(fileIds)
+        } else {
+          const fileId = await handleFileUpload(filesToUpload)
+          handleAnswer(fileId)
         }
-      }))
-    } catch (error) {
-      console.error('Error processing photos:', error)
-      setError(error instanceof Error ? error.message : 'Failed to upload photos')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to upload file')
+        setIsUploading(false)
+        return
+      } finally {
+        setIsUploading(false)
+      }
     }
+
+    if (state.currentQuestionIndex === questions.length - 1) {
+      handleWizardCompletion()
+      return
+    }
+    setState((prev) => ({
+      ...prev,
+      currentQuestionIndex: Math.min(prev.currentQuestionIndex + 1, questions.length - 1),
+    }))
   }
 
   const handleWizardCompletion = async () => {
@@ -126,7 +148,7 @@ const WizardPage = () => {
       // Process each answer and submit it
       const submissions = Object.entries(state.answers).map(([questionId, answer]) => {
         // Find the corresponding question to get the refId
-        const question = questions.find(q => q.id === questionId)
+        const question = questions.find((q) => q.id === questionId)
         if (!question?.refId) return null
 
         // Process the key
@@ -152,7 +174,7 @@ const WizardPage = () => {
       }
 
       // Set completion state and navigate
-      setState(prev => ({ ...prev, isCompleted: true }))
+      setState((prev) => ({ ...prev, isCompleted: true }))
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to submit answers')
     } finally {
@@ -191,8 +213,8 @@ const WizardPage = () => {
           : {
               currentQuestionIndex: 0,
               answers: {},
-              isCompleted: false
-            }
+              isCompleted: false,
+            },
       )
     }
   }, [selectedWizard, storageKey])
@@ -207,281 +229,354 @@ const WizardPage = () => {
   }, [state, navigate, storageKey, uuid, selectedWizard])
 
   if (saving) {
-    return <LoadingView message='Saving your answers...' />
+    return <LoadingView message="Saving your answers..." />
   }
 
   if (loading && questions.length === 0) {
-    return <LoadingView message='Loading installation wizard...' />
+    return <LoadingView message="Loading installation wizard..." />
   }
 
   if (error) {
     return <ErrorView message={error} />
   }
 
-  if (!selectedWizard) {
-    return (
-      <div className='min-h-screen '>
-        <Header title={`PosaCheck - ${uuid}`} showMenu={true} />
-
-        {loading && <LoadingView message='Loading wizard...' />}
-
-        {error && <ErrorView message={error} />}
-
-        {!loading && !error && !selectedWizard && availableWizards.length > 0 && (
-          <Container maxWidth='sm' className='py-4'>
-            <Motion variant='fadeIn'>
-              <Typography variant='h5' className='mb-3'>
-                Select an installation wizard
-              </Typography>
-              <div className='space-y-2'>
-                {availableWizards.map(wizard => (
-                  <Button
-                    key={wizard.id}
-                    variant='outline'
-                    className='w-full mb-1'
-                    onClick={() => setSelectedWizard(wizard.id)}
-                  >
-                    {wizard.title}
-                  </Button>
-                ))}
-              </div>
-            </Motion>
-          </Container>
-        )}
-        <BottomNavigation />
-      </div>
-    )
-  }
-
   const currentQuestion = questions[state.currentQuestionIndex]
-  const handleNext = () => {
-    if (state.currentQuestionIndex === questions.length - 1) {
-      handleWizardCompletion()
-      return
-    }
-    setState(prev => ({
-      ...prev,
-      currentQuestionIndex: Math.min(prev.currentQuestionIndex + 1, questions.length - 1)
-    }))
-  }
 
   const handlePrevious = () => {
-    setAnimationDirection(-1)
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      currentQuestionIndex: Math.max(0, prev.currentQuestionIndex - 1)
+      currentQuestionIndex: Math.max(0, prev.currentQuestionIndex - 1),
     }))
   }
 
   const handleAnswer = (value: string | string[]) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       answers: {
         ...prev.answers,
-        [currentQuestion.id]: value
-      }
-    }))
-  }
-
-  const handleRemovePhoto = (questionId: string) => {
-    setState(prev => ({
-      ...prev,
-      answers: {
-        ...prev.answers,
-        [questionId]: Array.isArray(prev.answers[questionId]) ? [] : ''
-      }
+        [currentQuestion.id]: value,
+      },
     }))
   }
 
   const renderQuestion = () => {
-    switch (currentQuestion.type) {
-      case 'text':
-        return (
-          <div className='mb-4'>
-            <Label htmlFor={`question-${currentQuestion.id}`} className='mb-2'>
-              {currentQuestion.question || 'Your answer'}
-            </Label>
-            <Input
-              id={`question-${currentQuestion.id}`}
-              className='w-full'
-              placeholder='Enter your answer'
-              value={state.answers[currentQuestion.id] || ''}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAnswer(e.target.value)}
-            />
-          </div>
-        )
+    if (!currentQuestion) return null
 
-      case 'select':
-        return (
-          <div className='mb-4'>
-            <Label htmlFor={`dropdown-${currentQuestion.id}`} className='mb-2'>
-              {currentQuestion.question || 'Select an option'}
-            </Label>
-            <Select
-              value={
-                typeof state.answers[currentQuestion.id] === 'string'
-                  ? (state.answers[currentQuestion.id] as string)
-                  : ''
-              }
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleAnswer(e.target.value)}
-              placeholder='Select an option'
-              id={`dropdown-${currentQuestion.id}`}
-            >
-              {currentQuestion.options?.map(option => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )
+    return (
+      <div className="card bg-base-100 shadow-xl w-full max-w-lg">
+        <div className="card-body">
+          <h2 className="card-title text-2xl font-bold mb-4">{currentQuestion.question || 'Answer the question'}</h2>
+          {(() => {
+            switch (currentQuestion.type) {
+              case 'text':
+                return (
+                  <div className="form-control w-full">
+                    <label className="label mb-2">
+                      <span className="label-text">{currentQuestion.question || 'Your answer'}</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Enter your answer"
+                      className="input input-bordered w-full input-persistent-border"
+                      value={state.answers[currentQuestion.id] || ''}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAnswer(e.target.value)}
+                    />
+                  </div>
+                )
 
-      case 'photo':
-        return (
-          <div className='mb-4'>
-            <input
-              type='file'
-              accept='image/*'
-              id='photo-upload'
-              className='hidden'
-              onChange={e => handlePhotoCapture(e, false)}
-            />
-            <div className='flex flex-wrap gap-2 mb-3'>
-              <label htmlFor='photo-upload'>
-                <Button
-                  variant='primary'
-                  className='cursor-pointer flex items-center gap-2'
-                  disabled={!!state.answers[currentQuestion.id]}
-                >
-                  <Camera className='h-4 w-4' />
-                  Take Photo
-                </Button>
-              </label>
+              case 'select':
+                return (
+                  <div className="form-control w-full">
+                    <label className="label mb-2">
+                      <span className="label-text">{currentQuestion.question || 'Select an option'}</span>
+                    </label>
+                    <select
+                      className="select select-bordered select-lg w-full select-persistent-border"
+                      value={
+                        typeof state.answers[currentQuestion.id] === 'string'
+                          ? (state.answers[currentQuestion.id] as string)
+                          : ''
+                      }
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleAnswer(e.target.value)}
+                    >
+                      <option disabled value="">
+                        Select an option
+                      </option>
+                      {currentQuestion.options?.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )
 
-              {state.answers[currentQuestion.id] && (
-                <Button
-                  variant='secondary'
-                  className='flex items-center gap-2'
-                  onClick={() => handleRemovePhoto(currentQuestion.id)}
-                >
-                  <Trash className='h-4 w-4' />
-                  Remove
-                </Button>
-              )}
-            </div>
+              case 'multiselect':
+                return (
+                  <div className="form-control w-full">
+                    <label className="label mb-2">
+                      <span className="label-text">{currentQuestion.question || 'Select options'}</span>
+                    </label>
+                    <div className="flex flex-col space-y-2">
+                      {currentQuestion.options?.map((option) => (
+                        <label key={option} className="label cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-primary"
+                            checked={
+                              Array.isArray(state.answers[currentQuestion.id]) &&
+                              (state.answers[currentQuestion.id] as string[]).includes(option)
+                            }
+                            onChange={(e) => {
+                              const currentAnswers = (state.answers[currentQuestion.id] as string[]) || []
+                              if (e.target.checked) {
+                                handleAnswer([...currentAnswers, option])
+                              } else {
+                                handleAnswer(currentAnswers.filter((ans) => ans !== option))
+                              }
+                            }}
+                          />
+                          <span className="label-text">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )
 
-            {state.answers[currentQuestion.id] && (
-              <div className='mt-2 p-2 bg-muted rounded'>
-                <Typography variant='body2' className='text-muted-foreground'>
-                  Photo ID: {state.answers[currentQuestion.id]}
-                </Typography>
-              </div>
-            )}
-          </div>
-        )
+              case 'photo':
+                return (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="photo-upload"
+                      className="hidden"
+                      onChange={(e) => handlePhotoCapture(e, false)}
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      id="camera-upload"
+                      className="hidden"
+                      onChange={(e) => handlePhotoCapture(e, false)}
+                    />
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => document.getElementById('camera-upload')?.click()}
+                      >
+                        <Camera className="h-4 w-4" />
+                        Take Photo
+                      </button>
+                      <label htmlFor="photo-upload">
+                        <button
+                          className="btn btn-info"
+                          onClick={() => document.getElementById('photo-upload')?.click()}
+                        >
+                          <ImagePlus className="h-4 w-4" />
+                          Choose Photo
+                        </button>
+                      </label>
+                    </div>
 
-      case 'multiphoto':
-        return (
-          <div className='mb-4'>
-            <input
-              type='file'
-              accept='image/*'
-              multiple
-              id='multi-photo-upload'
-              className='hidden'
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoCapture(e, true)}
-            />
-            <label htmlFor='multi-photo-upload'>
-              <Button variant='primary' className='cursor-pointer flex items-center gap-2'>
-                <ImagePlus className='h-4 w-4' />
-                Add Photos
-              </Button>
-            </label>
+                    {previewUrls[currentQuestion.id] && (
+                      <div className="mt-2 p-2 bg-muted rounded">
+                        <img
+                          src={previewUrls[currentQuestion.id] as string}
+                          alt="Preview"
+                          className="max-w-full h-auto rounded"
+                        />
+                        <button
+                          className="btn btn-xs btn-error mt-2"
+                          onClick={() => {
+                            const newStagedFiles = { ...stagedFiles }
+                            delete newStagedFiles[currentQuestion.id]
+                            setStagedFiles(newStagedFiles)
 
-            {Array.isArray(state.answers[currentQuestion.id]) && state.answers[currentQuestion.id].length > 0 && (
-              <Motion variant='fadeIn' className='mt-3 p-3 bg-base-200 rounded-lg'>
-                <Typography variant='body2' className='text-muted-foreground'>
-                  {(state.answers[currentQuestion.id] as string[]).length} photo(s) uploaded
-                </Typography>
-                <div className='mt-2 space-y-1'>
-                  {(state.answers[currentQuestion.id] as string[]).map((photoId: string, index: number) => (
-                    <Typography key={photoId} variant='caption' className='block'>
-                      Photo {index + 1}: {photoId}
-                    </Typography>
-                  ))}
-                </div>
-                <Button
-                  variant='outline'
-                  onClick={handlePrevious}
-                  className='flex items-center gap-1'
-                  disabled={state.currentQuestionIndex === 0}
-                >
-                  <Trash className='h-4 w-4' />
-                  Clear All
-                </Button>
-              </Motion>
-            )}
-          </div>
-        )
-      default:
-        return null
-    }
+                            const newPreviewUrls = { ...previewUrls }
+                            delete newPreviewUrls[currentQuestion.id]
+                            setPreviewUrls(newPreviewUrls)
+                          }}
+                        >
+                          <Trash className="h-3 w-3" />
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+
+              case 'multiphoto':
+                return (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      id="multi-photo-upload"
+                      className="hidden"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoCapture(e, true)}
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      capture="environment"
+                      id="multi-camera-upload"
+                      className="hidden"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoCapture(e, true)}
+                    />
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => document.getElementById('multi-camera-upload')?.click()}
+                      >
+                        <Camera className="h-4 w-4" />
+                        Take Photos
+                      </button>
+                      <label htmlFor="multi-photo-upload">
+                        <button
+                          className="btn btn-info"
+                          onClick={() => document.getElementById('multi-photo-upload')?.click()}
+                        >
+                          <ImagePlus className="h-4 w-4" />
+                          Choose Photos
+                        </button>
+                      </label>
+                    </div>
+
+                    {Array.isArray(previewUrls[currentQuestion.id]) &&
+                      (previewUrls[currentQuestion.id] as string[]).length > 0 && (
+                        <div className="mt-3 p-3 bg-base-200 rounded-lg">
+                          <p className="text-sm text-muted-foreground">
+                            {(previewUrls[currentQuestion.id] as string[]).length} photo(s) staged for upload
+                          </p>
+                          <div className="mt-2 flex overflow-x-auto gap-2">
+                            {(previewUrls[currentQuestion.id] as string[]).map((url: string, index: number) => (
+                              <div key={url} className="relative flex-shrink-0">
+                                <img src={url} alt={`Preview ${index + 1}`} className="w-32 h-32 object-cover rounded" />
+                                <button
+                                  className="btn btn-xs btn-error absolute top-1 right-1"
+                                  onClick={() => {
+                                    const newStagedFiles = [...(stagedFiles[currentQuestion.id] as File[])]
+                                    newStagedFiles.splice(index, 1)
+                                    setStagedFiles((prev) => ({
+                                      ...prev,
+                                      [currentQuestion.id]: newStagedFiles,
+                                    }))
+
+                                    const newPreviewUrls = [...(previewUrls[currentQuestion.id] as string[])]
+                                    newPreviewUrls.splice(index, 1)
+                                    setPreviewUrls((prev) => ({
+                                      ...prev,
+                                      [currentQuestion.id]: newPreviewUrls,
+                                    }))
+                                  }}
+                                >
+                                  <Trash className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            className="btn btn-outline mt-2"
+                            onClick={() => {
+                              const newStagedFiles = { ...stagedFiles }
+                              delete newStagedFiles[currentQuestion.id]
+                              setStagedFiles(newStagedFiles)
+
+                              const newPreviewUrls = { ...previewUrls }
+                              delete newPreviewUrls[currentQuestion.id]
+                              setPreviewUrls(newPreviewUrls)
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                            Clear All
+                          </button>
+                        </div>
+                      )}
+                  </div>
+                )
+              default:
+                return null
+            }
+          })()}
+        </div>
+      </div>
+    )
   }
 
-  const wizardTitle = data?.nodes?.[selectedWizard]?.title || 'Guida alla posa'
+  const wizardTitle = (selectedWizard && data?.nodes?.[selectedWizard]?.title) || 'Guida alla posa'
 
   return (
-    <div className='min-h-screen '>
+    <div className="min-h-screen bg-base-200">
       <Header title={wizardTitle} />
 
-      {loading && <LoadingView message='Loading wizard...' />}
+      <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center pb-24">
+        {!loading && !error && selectedWizard && questions.length > 0 && (
+          <>
+            <div className="w-full max-w-4xl flex justify-center mb-8">
+              <progress
+                className="progress progress-primary w-56"
+                value={(state.currentQuestionIndex / (questions.length - 1)) * 100}
+                max="100"
+              ></progress>
+            </div>
 
-      {error && <ErrorView message={error} />}
-
-      {!loading && !error && selectedWizard && questions.length > 0 && currentQuestion && (
-        <Container maxWidth='sm' className='pb-10 pt-2'>
-          <div className='w-full'>
             <Motion
               key={state.currentQuestionIndex}
-              variant={animationDirection > 0 ? 'slideInRight' : 'slideInLeft'}
-              className='w-full'
+              variant="fadeIn"
+              className="w-full flex items-center justify-center"
             >
-              <Progress value={((state.currentQuestionIndex + 1) / questions.length) * 100} className='mb-3' />
-              <Typography variant='body2' className='mb-2 text-muted-foreground'>
-                Question {state.currentQuestionIndex + 1} of {questions.length}
-              </Typography>
-
-              <div className='mb-6'>
-                <Typography variant='h6' className='mb-3'>
-                  {currentQuestion.question || 'Answer the question'}
-                </Typography>
-                {renderQuestion()}
-
-                <div className='flex justify-between mt-6'>
-                  <Button
-                    variant='outline'
-                    disabled={state.currentQuestionIndex === 0}
-                    onClick={handlePrevious}
-                    className='flex items-center gap-1'
-                  >
-                    <ArrowLeft className='h-4 w-4' />
-                    Back
-                  </Button>
-
-                  <Button
-                    variant={state.currentQuestionIndex === questions.length - 1 ? 'primary' : 'outline'}
-                    onClick={state.currentQuestionIndex === questions.length - 1 ? handleWizardCompletion : handleNext}
-                    className='flex items-center gap-1'
-                  >
-                    {state.currentQuestionIndex === questions.length - 1 ? 'Complete' : 'Next'}
-                    {state.currentQuestionIndex !== questions.length - 1 && <ArrowRight className='h-4 w-4' />}
-                  </Button>
-                </div>
-              </div>
+              {renderQuestion()}
             </Motion>
+
+            <div className="flex justify-between mt-6 w-full max-w-lg">
+              <button
+                className="btn btn-neutral"
+                disabled={state.currentQuestionIndex === 0}
+                onClick={handlePrevious}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+
+              <button
+                className={`btn ${
+                  state.currentQuestionIndex === questions.length - 1 ? 'btn-success' : 'btn-primary'
+                }`}
+                onClick={handleNextClick}
+                disabled={isUploading}
+              >
+                {isUploading && <span className="loading loading-spinner"></span>}
+                {state.currentQuestionIndex === questions.length - 1 ? 'Complete' : 'Next'}
+                {state.currentQuestionIndex !== questions.length - 1 && <ArrowRight className="h-4 w-4" />}
+              </button>
+            </div>
+          </>
+        )}
+
+        {!selectedWizard && availableWizards.length > 0 && (
+          <div className="card bg-base-100 shadow-xl w-full max-w-lg">
+            <div className="card-body">
+              <h2 className="card-title text-2xl font-bold mb-4">Select an installation wizard</h2>
+              <div className="space-y-2">
+                {availableWizards.map((wizard) => (
+                  <button
+                    key={wizard.id}
+                    className="btn btn-outline w-full"
+                    onClick={() => setSelectedWizard(wizard.id)}
+                  >
+                    {wizard.title}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </Container>
-      )}
+        )}
+      </div>
+
       <BottomNavigation />
     </div>
   )

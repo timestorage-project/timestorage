@@ -1,7 +1,7 @@
-import React, { ChangeEvent } from 'react';
-import { Upload } from 'lucide-react';
-import { Button } from '../ui/button';
-import { FileUploaderProps } from './types';
+import React, { ChangeEvent } from 'react'
+import { Upload } from 'lucide-react'
+import { Button } from '../ui/button'
+import { FileUploaderProps } from './types'
 
 const FileUploader: React.FC<FileUploaderProps> = ({
   label,
@@ -12,17 +12,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   inputRef,
 }) => {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+    const files = event.target.files
+    if (!files || files.length === 0) return
     
-    const file = files[0];
+    const file = files[0]
     if (fileType === 'PDF' && !file.type.includes('pdf')) {
-      alert('Please upload a PDF file');
-      return;
+      alert('Please upload a PDF file')
+      return
     }
     
-    onUpload(file, refId);
-  };
+    onUpload(file, refId)
+  }
 
   return (
     <div>
@@ -44,7 +44,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         {isUploading ? 'Uploading...' : `Upload ${fileType || 'File'}`}
       </Button>
     </div>
-  );
-};
+  )
+}
 
-export default FileUploader;
+export default FileUploader

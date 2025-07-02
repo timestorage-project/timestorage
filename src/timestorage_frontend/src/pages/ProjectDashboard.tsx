@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Building2, Package, ArrowRight } from 'lucide-react'
+import { Building2, Package } from 'lucide-react'
 // Using DaisyUI classes directly instead of custom components
 import { Typography } from '@/components/ui/typography'
 import { Motion } from '@/components/ui/motion'
@@ -122,53 +122,31 @@ const ProjectDashboard: FC = () => {
   return (
     <div className='min-h-screen bg-base-200 pb-20'>
       <Header title='Project Dashboard' />
-      <div className='container mx-auto px-4 py-6 max-w-7xl'>
-        <Motion variant="fadeIn" duration={500}>
+      <div className='container mx-auto px-4 py-6'>
+        <Motion variant='fadeIn' duration={500}>
           {/* Project Header */}
           <div className='mb-8'>
-            <h1 className='text-3xl font-bold mb-2'>
-              {projectTitle}
-            </h1>
-            {projectSubtitle && (
-              <h3 className='text-xl text-neutral-content/80'>
-                {projectSubtitle}
-              </h3>
-            )}
-            <div className='mt-4 flex flex-wrap items-center gap-4 text-sm text-neutral-content/70'>
-              <span>Project ID: {project.uuid}</span>
-              {projectInfo.category && <span>Category: {projectInfo.category}</span>}
-            </div>
+            <h1 className='text-3xl font-bold mb-2'>{projectTitle}</h1>
+            {projectSubtitle && <h3 className='text-xl'>{projectSubtitle}</h3>}
           </div>
 
-          {/* Equipment Cards */}
           <div className='mb-6'>
-            <h2 className='text-2xl font-semibold mb-4'>
-              Equipment ({equipmentCards.length})
-            </h2>
+            <h2 className='text-2xl font-semibold mb-4'>Elementi ({equipmentCards.length})</h2>
 
             {equipmentCards.length === 0 ? (
               <div className='card bg-base-100 shadow-sm'>
                 <div className='card-body flex items-center justify-center py-12'>
                   <div className='text-center'>
-                    <Package className='mx-auto h-12 w-12 text-neutral-content/70 mb-4' />
-                    <h4 className='text-xl text-neutral-content/80'>
-                      No equipment found
-                    </h4>
-                    <p className='text-sm text-neutral-content/70 mt-2'>
-                      This project doesn't have any equipment assigned yet.
-                    </p>
+                    <Package className='mx-auto h-12 w-12 mb-4' />
+                    <h4 className='text-xl'>No equipment found</h4>
+                    <p className='text-sm mt-2'>This project doesn't have any equipment assigned yet.</p>
                   </div>
                 </div>
               </div>
             ) : (
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
                 {equipmentCards.map((equipment, index) => (
-                  <Motion
-                    key={equipment.uuid}
-                    variant="slideUp"
-                    duration={300}
-                    delay={index * 100}
-                  >
+                  <Motion key={equipment.uuid} variant='slideUp' duration={300} delay={index * 100}>
                     <div
                       className='card bg-base-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer'
                       onClick={() => handleEquipmentClick(equipment.uuid)}
@@ -182,27 +160,19 @@ const ProjectDashboard: FC = () => {
                               ) : (
                                 <Package className='h-5 w-5 text-primary' />
                               )}
-                              <span className='text-sm text-neutral-content/70 capitalize'>
+                              <span className='text-sm capitalize'>
                                 {equipment.type === 'placement' ? 'Placement' : 'Linked Structure'}
                               </span>
                             </div>
 
-                            <h4 className='text-lg font-semibold mb-2'>
-                              {equipment.identification}
-                            </h4>
+                            <h4 className='text-lg font-semibold mb-2'>{equipment.identification}</h4>
 
                             {equipment.subIdentification && (
-                              <p className='text-sm text-neutral-content/70 mb-3'>
-                                {equipment.subIdentification}
-                              </p>
+                              <p className='text-sm mb-3'>{equipment.subIdentification}</p>
                             )}
 
-                            <p className='text-xs text-neutral-content/60'>
-                              UUID: {equipment.uuid}
-                            </p>
+                            <p className='text-xs'>Matricola: {equipment.uuid}</p>
                           </div>
-
-                          <ArrowRight className='h-5 w-5 text-neutral-content/70' />
                         </div>
                       </div>
                     </div>

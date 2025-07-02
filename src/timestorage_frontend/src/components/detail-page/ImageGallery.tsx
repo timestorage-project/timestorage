@@ -1,6 +1,6 @@
-import React from 'react';
-import { Motion } from '../ui/motion';
-import { ImageGalleryProps } from './types';
+import React from 'react'
+import { Motion } from '../ui/motion'
+import { ImageGalleryProps } from './types'
 
 const ImageGallery: React.FC<ImageGalleryProps> = ({ fileCache, onImageClick }) => {
   const images = Object.entries(fileCache).filter(
@@ -14,7 +14,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ fileCache, onImageClick }) 
           No image previews currently available. Images will appear here once viewed or downloaded.
         </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -43,7 +43,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ fileCache, onImageClick }) 
         </Motion>
       ))}
     </div>
-  );
-};
+  )
+}
 
-export default ImageGallery;
+export default ImageGallery

@@ -55,9 +55,9 @@ const Dashboard: FC = () => {
 
   return (
     <div className='min-h-screen bg-base-200'>
-      <Header title={`PosaCheck - ${data.getIdentifier()}`} showMenu={true} />
+      <Header title={`PosaCheck - ${data.getIdentifier()}`} />
 
-      <div className='container mx-auto px-4 py-8 max-w-4xl'>
+      <div className='container mx-auto px-4 py-8'>
         <Motion variant='slideDown'>
           <h1 className='text-3xl font-bold mb-6'>
             Dashboard Overview

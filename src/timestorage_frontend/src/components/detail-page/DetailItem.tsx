@@ -1,5 +1,5 @@
-import React from 'react';
-import { DetailItemProps } from './types';
+import React from 'react'
+import { DetailItemProps } from './types'
 
 const DetailItem: React.FC<DetailItemProps> = ({ item, children, className = '' }) => {
   return (
@@ -13,7 +13,7 @@ const DetailItem: React.FC<DetailItemProps> = ({ item, children, className = '' 
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DetailItem;
+export default DetailItem

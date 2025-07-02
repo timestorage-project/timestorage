@@ -288,7 +288,7 @@ const DetailPage = () => {
     <div className='min-h-screen bg-base-200'>
       <Header title={pageData.title || (uuid ? `Details - ${uuid}` : 'Details')} />
 
-      <Container className='py-6 pb-24 max-w-4xl'>
+      <Container className='py-6 pb-24'>
         <Motion variant='fadeIn' className='space-y-6'>
           <div className='bg-base-100 rounded-lg p-6 shadow-sm'>
             <h1 className='text-2xl font-bold mb-2'>{pageData.title}</h1>

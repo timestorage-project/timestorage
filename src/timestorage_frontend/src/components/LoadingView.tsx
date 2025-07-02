@@ -1,23 +1,24 @@
 import { FC } from 'react'
-import { Spinner } from './ui/spinner'
-import { Typography } from './ui/typography'
-import { Motion } from './ui/motion'
 
 interface LoadingViewProps {
   message?: string
+  fullScreen?: boolean
 }
 
-const LoadingView: FC<LoadingViewProps> = ({ message = 'Loading...' }) => {
+const LoadingView: FC<LoadingViewProps> = ({ 
+  message = 'Loading...',
+  fullScreen = true 
+}) => {
+  const containerClasses = `flex flex-col items-center justify-center p-4 ${fullScreen ? 'min-h-screen' : 'py-12'}`
+  
   return (
-    <div className='min-h-screen  flex flex-col items-center justify-center p-4'>
-      <Motion variant='scale' duration={0.5}>
-        <div className='flex flex-col items-center'>
-          <Spinner size='lg' className='mb-4' />
-          <Typography variant='h4' className='mt-2'>
-            {message}
-          </Typography>
-        </div>
-      </Motion>
+    <div className={containerClasses}>
+      <div className="flex flex-col items-center space-y-4">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <h2 className="text-xl font-medium text-center">
+          {message}
+        </h2>
+      </div>
     </div>
   )
 }

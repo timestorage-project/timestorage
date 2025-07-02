@@ -2,11 +2,8 @@ import { FC } from 'react'
 import { Info, PlayCircle, Download, Wrench, Construction, FileText, CheckCircle, Building2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
-import { Container } from '@/components/ui/container'
-import { Grid } from '@/components/ui/grid'
-import { Card, CardContent } from '@/components/ui/card'
 import { Typography } from '@/components/ui/typography'
-import { Motion, motion } from '@/components/ui/motion'
+import { Motion } from '@/components/ui/motion'
 import BottomNavigation from '@/components/BottomNavigation'
 import Header from '@/components/Header'
 import ErrorView from '@/components/ErrorView'
@@ -57,103 +54,95 @@ const Dashboard: FC = () => {
   const wizardItems = Object.entries(data.nodes).filter(([_, item]) => item.isWizard)
 
   return (
-    <div className='min-h-screen '>
+    <div className='min-h-screen bg-base-200'>
       <Header title={`PosaCheck - ${data.getIdentifier()}`} showMenu={true} />
 
-      <Container maxWidth='sm' className='mt-8 mb-24 px-4'>
+      <div className='container mx-auto px-4 py-8 max-w-4xl'>
         <Motion variant='slideDown'>
-          <Typography variant='h3' className='mb-6'>
+          <h1 className='text-3xl font-bold mb-6'>
             Dashboard Overview
-          </Typography>
+          </h1>
         </Motion>
 
-        <Grid container className='gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10'>
           {/* Project Dashboard Card - only show if project data exists */}
           {project && (
-            <Grid item xs={6}>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0, duration: 0.3 }}
+            <Motion variant="slideUp" duration={300}>
+              <div 
+                className='card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-40 border-2 border-primary/20 rounded-lg overflow-hidden'
+                onClick={() => navigate(`/project/from-equipment/${uuid}`)}
               >
-                <Card
-                  className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 glass-effect border-2 border-primary/20'
-                  onClick={() => navigate(`/project/from-equipment/${uuid}`)}
-                >
-                  <CardContent className='p-4'>
-                    <div className='mb-2 text-primary'>
-                      <Building2 className='h-6 w-6 text-primary' />
-                    </div>
-                    <Typography variant='h6' className='mb-1'>
-                      Project Dashboard
-                    </Typography>
-                    <Typography variant='body2' color='muted'>
-                      View all equipment in this project
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
+                <div className='card-body p-4'>
+                  <div className='text-primary mb-2'>
+                    <Building2 className='h-6 w-6' />
+                  </div>
+                  <h2 className='card-title text-lg font-semibold'>
+                    Project Dashboard
+                  </h2>
+                  <p className='text-sm text-base-content/70'>
+                    View all equipment in this project
+                  </p>
+                </div>
+              </div>
+            </Motion>
           )}
           
           {regularItems.map(([key, item], index) => (
-            <Grid item xs={6} key={key}>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: (project ? index + 1 : index) * 0.1, duration: 0.3 }}
+            <Motion 
+              key={key}
+              variant="slideUp" 
+              duration={300} 
+              delay={(project ? index + 1 : index) * 100}
+            >
+              <div
+                className='card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-40 rounded-lg overflow-hidden'
+                onClick={() => navigate(`/view/${uuid}/${key}`)}
               >
-                <Card
-                  className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 glass-effect'
-                  onClick={() => navigate(`/view/${uuid}/${key}`)}
-                >
-                  <CardContent className='p-4'>
-                    <div className='mb-2 text-primary'>{getIconComponent(item.icon)}</div>
-                    <Typography variant='h6' className='mb-1'>
-                      {item.title}
-                    </Typography>
-                    <Typography variant='body2' color='muted'>
-                      {item.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Grid>
+                <div className='card-body p-4'>
+                  <div className='text-primary mb-2'>{getIconComponent(item.icon)}</div>
+                  <h2 className='card-title text-lg font-semibold'>
+                    {item.title}
+                  </h2>
+                  <p className='text-sm text-base-content/70'>
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+            </Motion>
           ))}
-        </Grid>
+        </div>
 
         {wizardItems.length > 0 && (
-          <Motion variant='slideDown' duration={0.5} delay={0.1}>
-            <Typography variant='h3' className='mt-10 mb-4'>
+          <Motion variant='slideDown' duration={500} delay={100}>
+            <h2 className='text-2xl font-bold mt-10 mb-4'>
               Installation Wizards
-            </Typography>
+            </h2>
 
-            <Grid container spacing={4}>
+            <div className='space-y-4'>
               {wizardItems.map(([key, item], index) => (
-                <Grid item xs={12} key={key}>
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + index * 0.1, duration: 0.3 }}
+                <Motion 
+                  key={key}
+                  variant="slideInLeft" 
+                  duration={300} 
+                  delay={400 + index * 100}
+                >
+                  <div
+                    className='card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-32 rounded-lg overflow-hidden'
+                    onClick={() => navigate(`/view/${uuid}/wizard/${key}`)}
                   >
-                    <Card
-                      className='h-40 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 wizard-card-style'
-                      onClick={() => navigate(`/view/${uuid}/wizard/${key}`)}
-                    >
-                      <CardContent className='p-4'>
-                        <div className='p-4'>{getIconComponent(item.icon, true)}</div>
-                        <Typography variant='h6' className='mb-1'>
-                          {item.title}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Grid>
+                    <div className='card-body p-4 flex flex-row items-center'>
+                      <div className='p-2 mr-4'>{getIconComponent(item.icon, true)}</div>
+                      <h3 className='card-title text-lg font-semibold'>
+                        {item.title}
+                      </h3>
+                    </div>
+                  </div>
+                </Motion>
               ))}
-            </Grid>
+            </div>
           </Motion>
         )}
-      </Container>
+      </div>
 
       <BottomNavigation />
     </div>

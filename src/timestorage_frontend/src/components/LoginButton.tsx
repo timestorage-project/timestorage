@@ -1,14 +1,21 @@
 import { FC, useState } from 'react'
-import { Button as ShadcnButton } from '@/components/ui/button'
-import { Loader2 } from 'lucide-react'
+import { LogIn, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { loginWithAuth0, logoutWithAuth0 } from '@/services/auth0Service'
 
 interface LoginButtonProps {
   fullWidth?: boolean
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
+  className?: string
 }
 
-const LoginButton: FC<LoginButtonProps> = ({ fullWidth = true }) => {
+const LoginButton: FC<LoginButtonProps> = ({ 
+  fullWidth = true, 
+  variant = 'primary',
+  size = 'md',
+  className = ''
+}) => {
   const [loading, setLoading] = useState(false)
   const isAuthenticated = useAuthStore((state: { isAuthenticated: boolean }) => state.isAuthenticated)
 
@@ -32,16 +39,31 @@ const LoginButton: FC<LoginButtonProps> = ({ fullWidth = true }) => {
     }
   }
 
+  const buttonClasses = [
+    'btn',
+    `btn-${variant}`,
+    `btn-${size}`,
+    fullWidth ? 'w-full' : '',
+    loading ? 'loading' : '',
+    className
+  ].filter(Boolean).join(' ')
+
   return (
-    <ShadcnButton
-      className={fullWidth ? 'w-full' : ''} // Apply w-full class conditionally
+    <button
+      className={buttonClasses}
       onClick={isAuthenticated ? handleLogout : handleLogin}
       disabled={loading}
-      type='button' // Good practice for buttons not submitting forms
+      type="button"
     >
-      {loading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+      {!loading && (
+        isAuthenticated ? (
+          <LogOut className="w-4 h-4 mr-2" />
+        ) : (
+          <LogIn className="w-4 h-4 mr-2" />
+        )
+      )}
       {isAuthenticated ? 'Logout' : 'Login with Auth0'}
-    </ShadcnButton>
+    </button>
   )
 }
 

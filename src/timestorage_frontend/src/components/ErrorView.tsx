@@ -1,31 +1,45 @@
 import { FC } from 'react'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, RotateCw } from 'lucide-react'
 import { useData } from '../context/DataContext'
-import { Button } from './ui/button'
-import { Typography } from './ui/typography'
-import { Motion } from './ui/motion'
 
 interface ErrorViewProps {
   message: string
+  fullScreen?: boolean
+  onRetry?: () => void
 }
 
-const ErrorView: FC<ErrorViewProps> = ({ message }) => {
+const ErrorView: FC<ErrorViewProps> = ({ 
+  message, 
+  fullScreen = true,
+  onRetry 
+}) => {
   const { reloadData } = useData()
+  const containerClasses = `flex items-center justify-center z-50 ${fullScreen ? 'fixed inset-0' : 'py-12'}`
+  
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry()
+    } else {
+      reloadData()
+    }
+  }
 
   return (
-    <div className='fixed inset-0 flex items-center justify-center /90 z-50'>
-      <div className='flex items-center justify-center'>
-        <Motion variant='scale' duration={0.4}>
-          <div className='flex flex-col items-center gap-4 p-6 rounded-lg bg-card shadow-lg border'>
-            <AlertCircle className='h-12 w-12 text-destructive' />
-            <Typography variant='h5' className='text-center'>
-              {message}
-            </Typography>
-            <Button variant='default' onClick={reloadData} className='mt-2'>
+    <div className={containerClasses}>
+      <div className="card bg-base-100 shadow-xl max-w-md w-full">
+        <div className="card-body items-center text-center">
+          <AlertCircle className="h-12 w-12 text-error mb-4" />
+          <h2 className="card-title text-lg">{message}</h2>
+          <div className="card-actions mt-4">
+            <button 
+              className="btn btn-primary"
+              onClick={handleRetry}
+            >
+              <RotateCw className="h-4 w-4 mr-2" />
               Try Again
-            </Button>
+            </button>
           </div>
-        </Motion>
+        </div>
       </div>
     </div>
   )

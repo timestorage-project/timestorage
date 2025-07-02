@@ -1,21 +1,56 @@
 import * as React from 'react'
 import { cn } from '@/utils/cn'
 
-export interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
-  size?: 'sm' | 'md' | 'lg'
+export interface SpinnerProps extends React.HTMLAttributes<HTMLSpanElement> {
+  /**
+   * Size of the spinner
+   * @default 'md'
+   */
+  size?: 'xs' | 'sm' | 'md' | 'lg'
+  
+  /**
+   * Color variant of the spinner
+   * @default 'primary'
+   */
+  variant?: 'primary' | 'secondary' | 'accent' | 'info' | 'success' | 'warning' | 'error' | 'ghost' | 'neutral'
+  
+  /**
+   * Type of spinner
+   * @default 'spinner'
+   */
+  type?: 'spinner' | 'dots' | 'ring' | 'ball' | 'bars' | 'infinity'
 }
 
-export function Spinner({ className, size = 'md', ...props }: SpinnerProps) {
-  const sizeClass = {
-    sm: 'h-4 w-4 border-2',
-    md: 'h-8 w-8 border-3',
-    lg: 'h-12 w-12 border-4'
+/**
+ * A loading spinner component using DaisyUI's loading utilities
+ */
+export function Spinner({ 
+  className, 
+  size = 'md', 
+  variant = 'primary',
+  type = 'spinner',
+  ...props 
+}: SpinnerProps) {
+  const sizeClasses = {
+    xs: 'loading-xs',
+    sm: 'loading-sm',
+    md: 'loading-md',
+    lg: 'loading-lg'
   }
-
+  
+  const variantClass = variant ? `text-${variant}` : ''
+  const typeClass = type === 'spinner' ? 'loading-spinner' : `loading-${type}`
+  
   return (
-    <div
-      className={cn('animate-spin rounded-full border-t-transparent border-primary', sizeClass[size], className)}
-      {...props}
+    <span 
+      className={cn(
+        'loading',
+        typeClass,
+        sizeClasses[size],
+        variantClass,
+        className
+      )} 
+      {...props} 
     />
   )
 }

@@ -1,9 +1,7 @@
 import { FC, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Building2, Package, ArrowRight } from 'lucide-react'
-import { Container } from '@/components/ui/container'
-import { Grid } from '@/components/ui/grid'
-import { Card, CardContent } from '@/components/ui/card'
+// Using DaisyUI classes directly instead of custom components
 import { Typography } from '@/components/ui/typography'
 import { Motion } from '@/components/ui/motion'
 import Header from '@/components/Header'
@@ -122,21 +120,21 @@ const ProjectDashboard: FC = () => {
   const projectSubtitle = projectInfo.subIdentification || ''
 
   return (
-    <div className='min-h-screen bg-background pb-20'>
+    <div className='min-h-screen bg-base-200 pb-20'>
       <Header title='Project Dashboard' />
-      <Container className='py-6'>
-        <Motion initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <div className='container mx-auto px-4 py-6 max-w-7xl'>
+        <Motion variant="fadeIn" duration={500}>
           {/* Project Header */}
           <div className='mb-8'>
-            <Typography variant='h1' className='mb-2'>
+            <h1 className='text-3xl font-bold mb-2'>
               {projectTitle}
-            </Typography>
+            </h1>
             {projectSubtitle && (
-              <Typography variant='h3' className='text-muted-foreground'>
+              <h3 className='text-xl text-neutral-content/80'>
                 {projectSubtitle}
-              </Typography>
+              </h3>
             )}
-            <div className='mt-4 flex items-center gap-4 text-sm text-muted-foreground'>
+            <div className='mt-4 flex flex-wrap items-center gap-4 text-sm text-neutral-content/70'>
               <span>Project ID: {project.uuid}</span>
               {projectInfo.category && <span>Category: {projectInfo.category}</span>}
             </div>
@@ -144,38 +142,38 @@ const ProjectDashboard: FC = () => {
 
           {/* Equipment Cards */}
           <div className='mb-6'>
-            <Typography variant='h2' className='mb-4'>
+            <h2 className='text-2xl font-semibold mb-4'>
               Equipment ({equipmentCards.length})
-            </Typography>
+            </h2>
 
             {equipmentCards.length === 0 ? (
-              <Card>
-                <CardContent className='flex items-center justify-center py-12'>
+              <div className='card bg-base-100 shadow-sm'>
+                <div className='card-body flex items-center justify-center py-12'>
                   <div className='text-center'>
-                    <Package className='mx-auto h-12 w-12 text-muted-foreground mb-4' />
-                    <Typography variant='h4' className='text-muted-foreground'>
+                    <Package className='mx-auto h-12 w-12 text-neutral-content/70 mb-4' />
+                    <h4 className='text-xl text-neutral-content/80'>
                       No equipment found
-                    </Typography>
-                    <Typography variant='body2' className='text-muted-foreground mt-2'>
+                    </h4>
+                    <p className='text-sm text-neutral-content/70 mt-2'>
                       This project doesn't have any equipment assigned yet.
-                    </Typography>
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ) : (
-              <Grid className='grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
                 {equipmentCards.map((equipment, index) => (
                   <Motion
                     key={equipment.uuid}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    variant="slideUp"
+                    duration={300}
+                    delay={index * 100}
                   >
-                    <Card
-                      className='cursor-pointer transition-all hover:shadow-lg hover:scale-105'
+                    <div
+                      className='card bg-base-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer'
                       onClick={() => handleEquipmentClick(equipment.uuid)}
                     >
-                      <CardContent className='p-6'>
+                      <div className='card-body p-6'>
                         <div className='flex items-start justify-between'>
                           <div className='flex-1'>
                             <div className='flex items-center gap-2 mb-3'>
@@ -184,37 +182,37 @@ const ProjectDashboard: FC = () => {
                               ) : (
                                 <Package className='h-5 w-5 text-primary' />
                               )}
-                              <Typography variant='body2' className='text-muted-foreground capitalize'>
+                              <span className='text-sm text-neutral-content/70 capitalize'>
                                 {equipment.type === 'placement' ? 'Placement' : 'Linked Structure'}
-                              </Typography>
+                              </span>
                             </div>
 
-                            <Typography variant='h4' className='mb-2 font-semibold'>
+                            <h4 className='text-lg font-semibold mb-2'>
                               {equipment.identification}
-                            </Typography>
+                            </h4>
 
                             {equipment.subIdentification && (
-                              <Typography variant='body2' className='text-muted-foreground mb-3'>
+                              <p className='text-sm text-neutral-content/70 mb-3'>
                                 {equipment.subIdentification}
-                              </Typography>
+                              </p>
                             )}
 
-                            <Typography variant='body2' className='text-xs text-muted-foreground'>
+                            <p className='text-xs text-neutral-content/60'>
                               UUID: {equipment.uuid}
-                            </Typography>
+                            </p>
                           </div>
 
-                          <ArrowRight className='h-5 w-5 text-muted-foreground' />
+                          <ArrowRight className='h-5 w-5 text-neutral-content/70' />
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </Motion>
                 ))}
-              </Grid>
+              </div>
             )}
           </div>
         </Motion>
-      </Container>
+      </div>
       <BottomNavigation />
     </div>
   )

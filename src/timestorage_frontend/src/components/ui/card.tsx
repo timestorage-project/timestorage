@@ -1,48 +1,106 @@
 import * as React from 'react'
-
 import { cn } from '@/utils/cn'
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn('rounded-lg border-gray-200 border bg-white text-gray-900 shadow-sm', className)}
-    {...props}
-  />
-))
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * If true, the card will have a border
+   * @default true
+   */
+  bordered?: boolean
+  /**
+   * If true, the card will have a shadow
+   * @default true
+   */
+  shadow?: boolean
+  /**
+   * The variant of the card
+   * @default 'default'
+   */
+  variant?: 'default' | 'bordered' | 'ghost' | 'compact'
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, bordered = true, shadow = true, variant = 'default', ...props }, ref) => {
+    const baseClasses = 'card bg-base-100'
+    const variantClasses = {
+      default: '',
+      bordered: 'border border-base-300',
+      ghost: 'bg-opacity-50',
+      compact: 'card-compact'
+    }
+
+    const classes = cn(
+      baseClasses,
+      variantClasses[variant],
+      {
+        'border border-base-300': bordered && variant !== 'bordered',
+        'shadow-md': shadow
+      },
+      className
+    )
+
+    return <div ref={ref} className={classes} {...props} />
+  }
+)
 Card.displayName = 'Card'
 
-const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />
+interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * If true, adds bottom margin to the header
+   * @default true
+   */
+  withDivider?: boolean
+}
+
+const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
+  ({ className, withDivider = true, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        'card-title p-6',
+        {
+          'border-b border-base-200 pb-4 mb-4': withDivider
+        },
+        className
+      )}
+      {...props}
+    />
   )
 )
 CardHeader.displayName = 'CardHeader'
 
 const CardTitle = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement> & { children: React.ReactNode }
->(({ className, children, ...props }, ref) => (
-  <h3 ref={ref} className={cn('text-2xl font-semibold leading-none tracking-tight', className)} {...props}>
-    {children}
-  </h3>
+  HTMLHeadingElement,
+  React.HTMLAttributes<HTMLHeadingElement> & { as?: React.ElementType }
+>(({ className, as: Component = 'h3', ...props }, ref) => (
+  <Component ref={ref} className={cn('text-xl font-bold', className)} {...props} />
 ))
 CardTitle.displayName = 'CardTitle'
 
 const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => (
-    <p ref={ref} className={cn('text-sm text-muted-foreground', className)} {...props} />
+    <p ref={ref} className={cn('text-sm text-base-content/70', className)} {...props} />
   )
 )
 CardDescription.displayName = 'CardDescription'
 
 const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('card-body p-6', className)} {...props} />
+  )
 )
 CardContent.displayName = 'CardContent'
 
 const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn('card-actions justify-end p-6 pt-0', className)}
+      {...props}
+    />
+  )
 )
 CardFooter.displayName = 'CardFooter'
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+export type { CardProps, CardHeaderProps }

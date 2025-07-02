@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Motion } from '../components/ui/motion'
 
 // Shadcn/UI components
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Progress } from '../components/ui/progress'
 import { Label } from '../components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
+import { Select } from '../components/ui/select'
 import { Container } from '../components/ui/container'
 import { Typography } from '../components/ui/typography'
 
@@ -41,6 +41,7 @@ const WizardPage = () => {
   const [error, setError] = useState<string | null>(null)
 
   const [saving, setSaving] = useState(false)
+  const [animationDirection, setAnimationDirection] = useState(1)
 
   // Effect to find all available wizard sections when data is loaded
   useEffect(() => {
@@ -228,7 +229,7 @@ const WizardPage = () => {
 
         {!loading && !error && !selectedWizard && availableWizards.length > 0 && (
           <Container maxWidth='sm' className='py-4'>
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <Motion variant="fadeIn">
               <Typography variant='h5' className='mb-3'>
                 Select an installation wizard
               </Typography>
@@ -244,7 +245,7 @@ const WizardPage = () => {
                   </Button>
                 ))}
               </div>
-            </motion.div>
+            </Motion>
           </Container>
         )}
         <BottomNavigation />
@@ -260,11 +261,12 @@ const WizardPage = () => {
     }
     setState(prev => ({
       ...prev,
-      currentQuestionIndex: prev.currentQuestionIndex + 1
+      currentQuestionIndex: Math.min(prev.currentQuestionIndex + 1, questions.length - 1),
     }))
   }
 
   const handlePrevious = () => {
+    setAnimationDirection(-1)
     setState(prev => ({
       ...prev,
       currentQuestionIndex: Math.max(0, prev.currentQuestionIndex - 1)
@@ -321,18 +323,15 @@ const WizardPage = () => {
                   ? (state.answers[currentQuestion.id] as string)
                   : ''
               }
-              onValueChange={(value: string) => handleAnswer(value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleAnswer(e.target.value)}
+              placeholder='Select an option'
+              id={`dropdown-${currentQuestion.id}`}
             >
-              <SelectTrigger id={`dropdown-${currentQuestion.id}`}>
-                <SelectValue placeholder='Select an option' />
-              </SelectTrigger>
-              <SelectContent>
-                {currentQuestion.options?.map(option => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+              {currentQuestion.options?.map(option => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
             </Select>
           </div>
         )
@@ -350,7 +349,7 @@ const WizardPage = () => {
             <div className='flex flex-wrap gap-2 mb-3'>
               <label htmlFor='photo-upload'>
                 <Button
-                  variant='default'
+                  variant='primary'
                   className='cursor-pointer flex items-center gap-2'
                   disabled={!!state.answers[currentQuestion.id]}
                 >
@@ -361,7 +360,7 @@ const WizardPage = () => {
 
               {state.answers[currentQuestion.id] && (
                 <Button
-                  variant='destructive'
+                  variant='secondary'
                   className='flex items-center gap-2'
                   onClick={() => handleRemovePhoto(currentQuestion.id)}
                 >
@@ -393,17 +392,16 @@ const WizardPage = () => {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoCapture(e, true)}
             />
             <label htmlFor='multi-photo-upload'>
-              <Button variant='default' className='cursor-pointer flex items-center gap-2'>
+              <Button variant='primary' className='cursor-pointer flex items-center gap-2'>
                 <ImagePlus className='h-4 w-4' />
                 Add Photos
               </Button>
             </label>
 
             {Array.isArray(state.answers[currentQuestion.id]) && state.answers[currentQuestion.id].length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className='mt-3 p-3 bg-muted rounded'
+              <Motion
+                variant="fadeIn"
+                className='mt-3 p-3 bg-base-200 rounded-lg'
               >
                 <Typography variant='body2' className='text-muted-foreground'>
                   {(state.answers[currentQuestion.id] as string[]).length} photo(s) uploaded
@@ -416,15 +414,15 @@ const WizardPage = () => {
                   ))}
                 </div>
                 <Button
-                  variant='destructive'
-                  size='sm'
-                  className='mt-3 flex items-center gap-2'
-                  onClick={() => handleRemovePhoto(currentQuestion.id)}
+                  variant='outline'
+                  onClick={handlePrevious}
+                  className='flex items-center gap-1'
+                  disabled={state.currentQuestionIndex === 0}
                 >
                   <Trash className='h-4 w-4' />
                   Clear All
                 </Button>
-              </motion.div>
+              </Motion>
             )}
           </div>
         )
@@ -445,13 +443,10 @@ const WizardPage = () => {
 
       {!loading && !error && selectedWizard && questions.length > 0 && currentQuestion && (
         <Container maxWidth='sm' className='pb-10 pt-2'>
-          <AnimatePresence mode='wait'>
-            <motion.div
+          <div className='w-full'>
+            <Motion
               key={state.currentQuestionIndex}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
+              variant={animationDirection > 0 ? 'slideInRight' : 'slideInLeft'}
               className='w-full'
             >
               <Progress value={((state.currentQuestionIndex + 1) / questions.length) * 100} className='mb-3' />
@@ -477,7 +472,7 @@ const WizardPage = () => {
                   </Button>
 
                   <Button
-                    variant={state.currentQuestionIndex === questions.length - 1 ? 'default' : 'outline'}
+                    variant={state.currentQuestionIndex === questions.length - 1 ? 'primary' : 'outline'}
                     onClick={state.currentQuestionIndex === questions.length - 1 ? handleWizardCompletion : handleNext}
                     className='flex items-center gap-1'
                   >
@@ -486,8 +481,8 @@ const WizardPage = () => {
                   </Button>
                 </div>
               </div>
-            </motion.div>
-          </AnimatePresence>
+            </Motion>
+          </div>
         </Container>
       )}
       <BottomNavigation />

@@ -1,36 +1,110 @@
 import * as React from 'react'
-import * as RadioGroupPrimitive from '@radix-ui/react-radio-group'
-import { Circle } from 'lucide-react'
-
 import { cn } from '@/utils/cn'
 
-const RadioGroup = React.forwardRef<
-  React.ElementRef<typeof RadioGroupPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
->(({ className, ...props }, ref) => {
-  return <RadioGroupPrimitive.Root className={cn('grid gap-2', className)} {...props} ref={ref} />
-})
-RadioGroup.displayName = RadioGroupPrimitive.Root.displayName
+interface RadioGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+  value?: string
+  onValueChange?: (value: string) => void
+  defaultValue?: string
+  disabled?: boolean
+  name?: string
+  orientation?: 'horizontal' | 'vertical'
+}
 
-const RadioGroupItem = React.forwardRef<
-  React.ElementRef<typeof RadioGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
->(({ className, ...props }, ref) => {
-  return (
-    <RadioGroupPrimitive.Item
-      ref={ref}
-      className={cn(
-        'aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-        className
-      )}
-      {...props}
-    >
-      <RadioGroupPrimitive.Indicator className='flex items-center justify-center'>
-        <Circle className='h-2.5 w-2.5 fill-current text-current' />
-      </RadioGroupPrimitive.Indicator>
-    </RadioGroupPrimitive.Item>
-  )
-})
-RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName
+const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
+  ({ 
+    className, 
+    value: valueProp, 
+    onValueChange, 
+    defaultValue, 
+    disabled = false,
+    name,
+    orientation = 'vertical',
+    children,
+    ...props 
+  }, ref) => {
+    const [value, setValue] = React.useState(defaultValue || '')
+    const currentValue = valueProp !== undefined ? valueProp : value
+
+    const handleChange = (newValue: string) => {
+      if (valueProp === undefined) {
+        setValue(newValue)
+      }
+      onValueChange?.(newValue)
+    }
+
+    return (
+      <div 
+        ref={ref}
+        className={cn(
+          'flex gap-4',
+          orientation === 'vertical' ? 'flex-col' : 'flex-row',
+          className
+        )}
+        role='radiogroup'
+        {...props}
+      >
+        {React.Children.map(children, (child) => {
+          if (React.isValidElement(child) && child.type === RadioGroupItem) {
+            return React.cloneElement(child as React.ReactElement, {
+              checked: child.props.value === currentValue,
+              disabled: disabled || child.props.disabled,
+              name,
+              onCheckedChange: () => handleChange(child.props.value)
+            })
+          }
+          return child
+        })}
+      </div>
+    )
+  }
+)
+RadioGroup.displayName = 'RadioGroup'
+
+interface RadioGroupItemProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+  value: string
+  id?: string
+  disabled?: boolean
+  className?: string
+  children?: React.ReactNode
+  onCheckedChange?: (checked: boolean) => void
+}
+
+const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
+  ({ className, children, id, value, disabled, checked, onCheckedChange, ...props }, ref) => {
+    const inputId = id || `radio-${value}`
+    
+    return (
+      <div className='flex items-center gap-2'>
+        <input
+          ref={ref}
+          type='radio'
+          id={inputId}
+          value={value}
+          checked={checked}
+          disabled={disabled}
+          onChange={() => onCheckedChange?.(!checked)}
+          className={cn(
+            'radio radio-primary',
+            disabled && 'opacity-50 cursor-not-allowed',
+            className
+          )}
+          {...props}
+        />
+        {children && (
+          <label 
+            htmlFor={inputId} 
+            className={cn(
+              'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+              disabled && 'opacity-50 cursor-not-allowed'
+            )}
+          >
+            {children}
+          </label>
+        )}
+      </div>
+    )
+  }
+)
+RadioGroupItem.displayName = 'RadioGroupItem'
 
 export { RadioGroup, RadioGroupItem }

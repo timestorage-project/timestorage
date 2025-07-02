@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { Motion } from '@/components/ui/motion'
-import { Container } from '@/components/ui/container'
 import BottomNavigation from '@/components/BottomNavigation'
 import { useData } from '@/context/DataContext'
 import ErrorView from '@/components/ErrorView'
@@ -288,14 +287,14 @@ const DetailPage = () => {
     <div className='min-h-screen bg-base-200'>
       <Header title={pageData.title || (uuid ? `Details - ${uuid}` : 'Details')} />
 
-      <Container className='py-6 pb-24'>
+      <div className='container mx-auto px-4 py-6 pb-24'>
         <Motion variant='fadeIn' className='space-y-6'>
-          <div className='bg-base-100 rounded-lg p-6 shadow-sm'>
-            <h1 className='text-2xl font-bold mb-2'>{pageData.title}</h1>
-            {pageData.description && <p className='text-base-content/70 mb-6'>{pageData.description}</p>}
+          <div className='mb-8'>
+            <h1 className='text-3xl font-bold mb-2'>{pageData.title}</h1>
+            {pageData.description && <h3 className='text-xl'>{pageData.description}</h3>}
           </div>
 
-          <div className='space-y-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
             {pageData.children?.map((item: PageDataItem, index: number) => (
               <DetailItem key={index} item={item}>
                 {renderValue(item)}
@@ -326,7 +325,7 @@ const DetailPage = () => {
             </div>
           )}
         </Motion>
-      </Container>
+      </div>
 
       <BottomNavigation />
     </div>

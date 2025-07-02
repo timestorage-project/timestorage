@@ -102,5 +102,36 @@ export const en = {
   GIUNTO_SECONDARIO_LATERALE_BASSO_SX_QUESTION: 'Please upload a photo of the secondary joint side bottom left.',
   GIUNTO_SECONDARIO_LATERALE_ALTO_DX_QUESTION: 'Please upload a photo of the secondary joint side top right.',
   GIUNTO_SECONDARIO_LATERALE_BASSO_DX_QUESTION: 'Please upload a photo of the secondary joint side bottom right.',
-  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Please upload a general photo of the secondary joint side.'
+  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Please upload a general photo of the secondary joint side.',
+
+  // Bottom Navigation
+  BOTTOM_NAV_HOME: 'Home',
+  BOTTOM_NAV_PROJECT: 'Project',
+  BOTTOM_NAV_LOGOUT: 'Logout',
+  BOTTOM_NAV_LOGIN: 'Login',
+
+  // Wizard Page
+  WIZARD_SAVING_ANSWERS: 'Saving your answers...',
+  WIZARD_LOADING: 'Loading installation wizard...',
+  WIZARD_ANSWER_QUESTION: 'Answer the question',
+  WIZARD_YOUR_ANSWER: 'Your answer',
+  WIZARD_ENTER_ANSWER: 'Enter your answer',
+  WIZARD_SELECT_OPTION: 'Select an option',
+  WIZARD_SELECT_OPTIONS: 'Select options',
+  WIZARD_TAKE_PHOTO: 'Take Photo',
+  WIZARD_CHOOSE_PHOTO: 'Choose Photo',
+  WIZARD_REMOVE: 'Remove',
+  WIZARD_TAKE_PHOTOS: 'Take Photos',
+  WIZARD_CHOOSE_PHOTOS: 'Choose Photos',
+  WIZARD_PHOTOS_STAGED: 'photo(s) staged for upload',
+  WIZARD_CLEAR_ALL: 'Clear All',
+  WIZARD_BACK: 'Back',
+  WIZARD_NEXT: 'Next',
+  WIZARD_COMPLETE: 'Complete',
+  WIZARD_SELECT_WIZARD: 'Select an installation wizard',
+
+  // Language Switcher
+  LANGUAGE: 'Language',
+  ENGLISH: 'English',
+  ITALIAN: 'Italian',
 }

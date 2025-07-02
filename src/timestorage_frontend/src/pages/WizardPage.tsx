@@ -14,6 +14,7 @@ import { fileToBase64, getFileMetadata } from '../utils/fileUtils'
 import * as canisterService from '../services/canisterService'
 import { IWizardQuestion } from '@/types/structures'
 import Header from '@/components/Header'
+import { useTranslation } from '../hooks/useTranslation'
 
 interface WizardState {
   currentQuestionIndex: number;
@@ -36,6 +37,7 @@ const WizardPage = () => {
   const [error, setError] = useState<string | null>(null)
   const [stagedFiles, setStagedFiles] = useState<StagedFiles>({})
   const [previewUrls, setPreviewUrls] = useState<Record<string, string | string[]>>({})
+  const { t } = useTranslation()
 
   const [isUploading, setIsUploading] = useState(false)
 
@@ -229,11 +231,11 @@ const WizardPage = () => {
   }, [state, navigate, storageKey, uuid, selectedWizard])
 
   if (saving) {
-    return <LoadingView message="Saving your answers..." />
+    return <LoadingView message={t('WIZARD_SAVING_ANSWERS')} />
   }
 
   if (loading && questions.length === 0) {
-    return <LoadingView message="Loading installation wizard..." />
+    return <LoadingView message={t('WIZARD_LOADING')} />
   }
 
   if (error) {
@@ -265,18 +267,18 @@ const WizardPage = () => {
     return (
       <div className="card bg-base-100 shadow-xl w-full max-w-lg">
         <div className="card-body">
-          <h2 className="card-title text-2xl font-bold mb-4">{currentQuestion.question || 'Answer the question'}</h2>
+          <h2 className="card-title text-2xl font-bold mb-4">{t(currentQuestion.question) || t('WIZARD_ANSWER_QUESTION')}</h2>
           {(() => {
             switch (currentQuestion.type) {
               case 'text':
                 return (
                   <div className="form-control w-full">
                     <label className="label mb-2">
-                      <span className="label-text">{currentQuestion.question || 'Your answer'}</span>
+                      <span className="label-text">{t(currentQuestion.question) || t('WIZARD_YOUR_ANSWER')}</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Enter your answer"
+                      placeholder={t('WIZARD_ENTER_ANSWER')}
                       className="input input-bordered w-full input-persistent-border"
                       value={state.answers[currentQuestion.id] || ''}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAnswer(e.target.value)}
@@ -288,7 +290,7 @@ const WizardPage = () => {
                 return (
                   <div className="form-control w-full">
                     <label className="label mb-2">
-                      <span className="label-text">{currentQuestion.question || 'Select an option'}</span>
+                      <span className="label-text">{t(currentQuestion.question) || t('WIZARD_SELECT_OPTION')}</span>
                     </label>
                     <select
                       className="select select-bordered select-lg w-full select-persistent-border"
@@ -300,11 +302,11 @@ const WizardPage = () => {
                       onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleAnswer(e.target.value)}
                     >
                       <option disabled value="">
-                        Select an option
+                        {t('WIZARD_SELECT_OPTION')}
                       </option>
                       {currentQuestion.options?.map((option) => (
                         <option key={option} value={option}>
-                          {option}
+                          {t(option)}
                         </option>
                       ))}
                     </select>
@@ -315,7 +317,7 @@ const WizardPage = () => {
                 return (
                   <div className="form-control w-full">
                     <label className="label mb-2">
-                      <span className="label-text">{currentQuestion.question || 'Select options'}</span>
+                      <span className="label-text">{t(currentQuestion.question) || t('WIZARD_SELECT_OPTIONS')}</span>
                     </label>
                     <div className="flex flex-col space-y-2">
                       {currentQuestion.options?.map((option) => (
@@ -336,7 +338,7 @@ const WizardPage = () => {
                               }
                             }}
                           />
-                          <span className="label-text">{option}</span>
+                          <span className="label-text">{t(option)}</span>
                         </label>
                       ))}
                     </div>
@@ -367,7 +369,7 @@ const WizardPage = () => {
                         onClick={() => document.getElementById('camera-upload')?.click()}
                       >
                         <Camera className="h-4 w-4" />
-                        Take Photo
+                        {t('WIZARD_TAKE_PHOTO')}
                       </button>
                       <label htmlFor="photo-upload">
                         <button
@@ -375,7 +377,7 @@ const WizardPage = () => {
                           onClick={() => document.getElementById('photo-upload')?.click()}
                         >
                           <ImagePlus className="h-4 w-4" />
-                          Choose Photo
+                          {t('WIZARD_CHOOSE_PHOTO')}
                         </button>
                       </label>
                     </div>
@@ -400,7 +402,7 @@ const WizardPage = () => {
                           }}
                         >
                           <Trash className="h-3 w-3" />
-                          Remove
+                          {t('WIZARD_REMOVE')}
                         </button>
                       </div>
                     )}
@@ -433,7 +435,7 @@ const WizardPage = () => {
                         onClick={() => document.getElementById('multi-camera-upload')?.click()}
                       >
                         <Camera className="h-4 w-4" />
-                        Take Photos
+                        {t('WIZARD_TAKE_PHOTOS')}
                       </button>
                       <label htmlFor="multi-photo-upload">
                         <button
@@ -441,7 +443,7 @@ const WizardPage = () => {
                           onClick={() => document.getElementById('multi-photo-upload')?.click()}
                         >
                           <ImagePlus className="h-4 w-4" />
-                          Choose Photos
+                          {t('WIZARD_CHOOSE_PHOTOS')}
                         </button>
                       </label>
                     </div>
@@ -450,7 +452,7 @@ const WizardPage = () => {
                       (previewUrls[currentQuestion.id] as string[]).length > 0 && (
                         <div className="mt-3 p-3 bg-base-200 rounded-lg">
                           <p className="text-sm text-muted-foreground">
-                            {(previewUrls[currentQuestion.id] as string[]).length} photo(s) staged for upload
+                            {(previewUrls[currentQuestion.id] as string[]).length} {t('WIZARD_PHOTOS_STAGED')}
                           </p>
                           <div className="mt-2 flex overflow-x-auto gap-2">
                             {(previewUrls[currentQuestion.id] as string[]).map((url: string, index: number) => (
@@ -492,7 +494,7 @@ const WizardPage = () => {
                             }}
                           >
                             <Trash className="h-4 w-4" />
-                            Clear All
+                            {t('WIZARD_CLEAR_ALL')}
                           </button>
                         </div>
                       )}
@@ -511,7 +513,7 @@ const WizardPage = () => {
 
   return (
     <div className="min-h-screen bg-base-200">
-      <Header title={wizardTitle} />
+      <Header title={t(wizardTitle)} />
 
       <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center pb-24">
         {!loading && !error && selectedWizard && questions.length > 0 && (
@@ -539,7 +541,7 @@ const WizardPage = () => {
                 onClick={handlePrevious}
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back
+                {t('WIZARD_BACK')}
               </button>
 
               <button
@@ -550,7 +552,7 @@ const WizardPage = () => {
                 disabled={isUploading}
               >
                 {isUploading && <span className="loading loading-spinner"></span>}
-                {state.currentQuestionIndex === questions.length - 1 ? 'Complete' : 'Next'}
+                {state.currentQuestionIndex === questions.length - 1 ? t('WIZARD_COMPLETE') : t('WIZARD_NEXT')}
                 {state.currentQuestionIndex !== questions.length - 1 && <ArrowRight className="h-4 w-4" />}
               </button>
             </div>
@@ -560,7 +562,7 @@ const WizardPage = () => {
         {!selectedWizard && availableWizards.length > 0 && (
           <div className="card bg-base-100 shadow-xl w-full max-w-lg">
             <div className="card-body">
-              <h2 className="card-title text-2xl font-bold mb-4">Select an installation wizard</h2>
+              <h2 className="card-title text-2xl font-bold mb-4">{t('WIZARD_SELECT_WIZARD')}</h2>
               <div className="space-y-2">
                 {availableWizards.map((wizard) => (
                   <button
@@ -568,7 +570,7 @@ const WizardPage = () => {
                     className="btn btn-outline w-full"
                     onClick={() => setSelectedWizard(wizard.id)}
                   >
-                    {wizard.title}
+                    {t(wizard.title)}
                   </button>
                 ))}
               </div>

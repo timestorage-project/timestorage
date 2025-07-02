@@ -102,5 +102,36 @@ export const it = {
   GIUNTO_SECONDARIO_LATERALE_BASSO_SX_QUESTION: 'Carica una foto del giunto secondario laterale basso sinistro.',
   GIUNTO_SECONDARIO_LATERALE_ALTO_DX_QUESTION: 'Carica una foto del giunto secondario laterale alto destro.',
   GIUNTO_SECONDARIO_LATERALE_BASSO_DX_QUESTION: 'Carica una foto del giunto secondario laterale basso destro.',
-  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Carica una foto generale del giunto secondario laterale.'
+  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Carica una foto generale del giunto secondario laterale.',
+
+  // Bottom Navigation
+  BOTTOM_NAV_HOME: 'Home',
+  BOTTOM_NAV_PROJECT: 'Commessa',
+  BOTTOM_NAV_LOGOUT: 'Logout',
+  BOTTOM_NAV_LOGIN: 'Login',
+
+  // Wizard Page
+  WIZARD_SAVING_ANSWERS: 'Salvataggio delle risposte...',
+  WIZARD_LOADING: 'Caricamento della procedura guidata...',
+  WIZARD_ANSWER_QUESTION: 'Rispondi alla domanda',
+  WIZARD_YOUR_ANSWER: 'La tua risposta',
+  WIZARD_ENTER_ANSWER: 'Inserisci la tua risposta',
+  WIZARD_SELECT_OPTION: 'Seleziona un\'opzione',
+  WIZARD_SELECT_OPTIONS: 'Seleziona opzioni',
+  WIZARD_TAKE_PHOTO: 'Scatta Foto',
+  WIZARD_CHOOSE_PHOTO: 'Scegli Foto',
+  WIZARD_REMOVE: 'Rimuovi',
+  WIZARD_TAKE_PHOTOS: 'Scatta Foto',
+  WIZARD_CHOOSE_PHOTOS: 'Scegli Foto',
+  WIZARD_PHOTOS_STAGED: 'foto in coda per il caricamento',
+  WIZARD_CLEAR_ALL: 'Cancella Tutto',
+  WIZARD_BACK: 'Indietro',
+  WIZARD_NEXT: 'Avanti',
+  WIZARD_COMPLETE: 'Completa',
+  WIZARD_SELECT_WIZARD: 'Seleziona una procedura guidata',
+
+  // Language Switcher
+  LANGUAGE: 'Lingua',
+  ENGLISH: 'Inglese',
+  ITALIAN: 'Italiano',
 }

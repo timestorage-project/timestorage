@@ -9,6 +9,7 @@ import ErrorView from '@/components/ErrorView'
 import LoadingView from '@/components/LoadingView'
 import BottomNavigation from '@/components/BottomNavigation'
 import * as canisterService from '@/services/canisterService'
+import { historyService } from '@/services/historyService'
 
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -56,6 +57,13 @@ const ProjectDashboard: FC = () => {
         }
 
         setProject(projectData)
+        
+        // Add project to history
+        historyService.addProject(
+          projectData.uuid,
+          projectData.info.identification,
+          projectData.info.subIdentification
+        )
 
         // Process equipment cards from placements and linkedStructures
         const cards: EquipmentCard[] = []

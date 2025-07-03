@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Home, LogIn, LogOut, Building2 } from 'lucide-react'
+import { Home, LogIn, LogOut, Building2, Package } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
 import { useAuthStore } from '@/store/auth.store'
@@ -24,27 +24,37 @@ const BottomNavigation: FC = () => {
     await logoutWithAuth0()
   }
 
-  const isHomeActive = location.pathname === `/view/${equipmentUuid}`
+  const isMainHomeActive = location.pathname === '/go'
+  const isProductHomeActive = location.pathname === `/view/${equipmentUuid}`
   const isProjectActive = location.pathname.startsWith('/project/')
 
   return (
     <div className='dock dock-md bg-base-200 border-t border-base-300'>
-      {/* Home Button */}
-      <button className={isHomeActive ? 'dock-active' : ''} onClick={() => navigate(`/view/${equipmentUuid}`)}>
+      {/* Main Home Button - Goes to /go (History Dashboard) */}
+      <button className={isMainHomeActive ? 'dock-active' : ''} onClick={() => navigate('/go')}>
         <Home className='size-[1.2em]' />
         <span className='dock-label'>{t('BOTTOM_NAV_HOME')}</span>
       </button>
 
-      {/* Project Button - Only show if project exists and not already on project page */}
-      {project && !isProjectActive && (
-        <button
-          className={isProjectActive ? 'dock-active' : ''}
-          onClick={() => navigate(`/project/from-equipment/${equipmentUuid}`)}
-        >
-          <Building2 className='size-[1.2em]' />
-          <span className='dock-label'>{t('BOTTOM_NAV_PROJECT')}</span>
-        </button>
-      )}
+      {/* Product Home Button - Goes to current equipment UUID dashboard */}
+      <button 
+        className={isProductHomeActive ? 'dock-active' : ''} 
+        onClick={() => equipmentUuid && navigate(`/view/${equipmentUuid}`)}
+        disabled={!equipmentUuid}
+      >
+        <Package className='size-[1.2em]' />
+        <span className='dock-label'>{t('BOTTOM_NAV_PRODUCT_HOME')}</span>
+      </button>
+
+      {/* Project Button - Goes to project view */}
+      <button
+        className={isProjectActive ? 'dock-active' : ''}
+        onClick={() => project && equipmentUuid && navigate(`/project/from-equipment/${equipmentUuid}`)}
+        disabled={!project || isProjectActive}
+      >
+        <Building2 className='size-[1.2em]' />
+        <span className='dock-label'>{t('BOTTOM_NAV_PROJECT')}</span>
+      </button>
 
       {/* Auth Button */}
       {isAuthenticated ? (

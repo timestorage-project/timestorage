@@ -6,6 +6,7 @@ import mockEquipmentData from '../mocks/mock-equipment.json'
 import { it } from '@/lang/it'
 import { AssetCore, FetchingStatus, IWizardQuestion } from '@/types/structures'
 import { DataStructure } from '@/types/DataStructure'
+import { historyService } from '../services/historyService'
 
 // Use the transformed project type from canisterService
 type TransformedProjectAPIResponse = Awaited<ReturnType<typeof canisterService.getProject>>
@@ -138,12 +139,24 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
         })
         if (projectResult) {
           setProject(projectResult)
+          // Add project to history
+          historyService.addProject(
+            uuid,
+            projectResult.info.identification,
+            projectResult.info.subIdentification
+          )
         }
 
         setFetchingStatus('data')
         const dataResult = await fetchData(uuid, translations).catch(() => null)
         if (dataResult) {
           setData(dataResult)
+          // Add UUID to history
+          historyService.addUUID(
+            uuid,
+            dataResult.info?.identification,
+            dataResult.info?.subIdentification
+          )
         } else if (projectResult) {
           navigate(`/linking/${uuid}`)
         }

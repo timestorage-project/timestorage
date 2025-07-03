@@ -8,8 +8,8 @@ const MockDashboardRedirect = () => {
   const { t } = useTranslation()
 
   useEffect(() => {
-    // Immediately navigate to the mock dashboard
-    navigate('/view/mock-dashboard')
+    // Immediately navigate to the go route (history dashboard)
+    navigate('/go')
   }, [navigate])
 
   // Render a loading view while the navigation occurs

@@ -106,6 +106,7 @@ export const en = {
 
   // Bottom Navigation
   BOTTOM_NAV_HOME: 'Home',
+  BOTTOM_NAV_PRODUCT_HOME: 'Product',
   BOTTOM_NAV_PROJECT: 'Project',
   BOTTOM_NAV_LOGOUT: 'Logout',
   BOTTOM_NAV_LOGIN: 'Login',
@@ -143,4 +144,25 @@ export const en = {
   LOADING_COMPLETING_LOGIN: 'Completing login...',
   LOADING_PAGE: 'Loading page...',
   LOADING_PROJECT_DATA: 'Loading project data...',
+
+  // History Dashboard
+  HISTORY_TITLE: 'History',
+  HISTORY_RECENT_PROJECTS: 'Recent Projects',
+  HISTORY_RECENT_EQUIPMENT: 'Recent Equipment',
+  HISTORY_NO_RECENT_PROJECTS: 'No recent projects',
+  HISTORY_NO_RECENT_EQUIPMENT: 'No recent equipment',
+  HISTORY_PROJECTS_APPEAR_HERE: 'Projects you visit will appear here',
+  HISTORY_EQUIPMENT_APPEAR_HERE: 'Equipment you view will appear here',
+  HISTORY_CLEAR_HISTORY: 'Clear History',
+  HISTORY_CLEAR_CONFIRM: 'Are you sure you want to clear your history?',
+  HISTORY_PROJECT_TYPE: 'Project',
+  HISTORY_EQUIPMENT_TYPE: 'Equipment',
+  HISTORY_UNTITLED_PROJECT: 'Untitled Project',
+  HISTORY_EQUIPMENT_DEFAULT: 'Equipment',
+  HISTORY_JUST_NOW: 'Just now',
+  HISTORY_MINUTES_AGO: 'minutes ago',
+  HISTORY_HOUR_AGO: '1 hour ago',
+  HISTORY_HOURS_AGO: 'hours ago',
+  HISTORY_YESTERDAY: 'Yesterday',
+  HISTORY_DAYS_AGO: 'days ago',
 }

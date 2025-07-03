@@ -106,6 +106,7 @@ export const it = {
 
   // Bottom Navigation
   BOTTOM_NAV_HOME: 'Home',
+  BOTTOM_NAV_PRODUCT_HOME: 'Prodotto',
   BOTTOM_NAV_PROJECT: 'Commessa',
   BOTTOM_NAV_LOGOUT: 'Logout',
   BOTTOM_NAV_LOGIN: 'Login',
@@ -143,4 +144,25 @@ export const it = {
   LOADING_COMPLETING_LOGIN: 'Completamento login...',
   LOADING_PAGE: 'Caricamento pagina...',
   LOADING_PROJECT_DATA: 'Caricamento dati progetto...',
+
+  // History Dashboard
+  HISTORY_TITLE: 'Cronologia',
+  HISTORY_RECENT_PROJECTS: 'Commesse Recenti',
+  HISTORY_RECENT_EQUIPMENT: 'Serramenti Recenti',
+  HISTORY_NO_RECENT_PROJECTS: 'Nessuna commessa recente',
+  HISTORY_NO_RECENT_EQUIPMENT: 'Nessun serramento recente',
+  HISTORY_PROJECTS_APPEAR_HERE: 'Le commesse che visiti appariranno qui',
+  HISTORY_EQUIPMENT_APPEAR_HERE: 'Gli equipaggiamenti che visualizzi appariranno qui',
+  HISTORY_CLEAR_HISTORY: 'Cancella Cronologia',
+  HISTORY_CLEAR_CONFIRM: 'Sei sicuro di voler cancellare la cronologia?',
+  HISTORY_PROJECT_TYPE: 'Commesse',
+  HISTORY_EQUIPMENT_TYPE: 'Serramenti',
+  HISTORY_UNTITLED_PROJECT: 'Commesse Senza Titolo',
+  HISTORY_EQUIPMENT_DEFAULT: 'Serramento',
+  HISTORY_JUST_NOW: 'Proprio ora',
+  HISTORY_MINUTES_AGO: 'minuti fa',
+  HISTORY_HOUR_AGO: '1 ora fa',
+  HISTORY_HOURS_AGO: 'ore fa',
+  HISTORY_YESTERDAY: 'Ieri',
+  HISTORY_DAYS_AGO: 'giorni fa',
 }

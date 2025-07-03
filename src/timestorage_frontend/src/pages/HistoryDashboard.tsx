@@ -85,7 +85,8 @@ const HistoryDashboard: FC = () => {
       <Header title={t('HISTORY_TITLE')} />
       <div className='container mx-auto px-4 py-6'>
         <Motion variant='fadeIn' duration={500}>
-          {/* Projects Section */}
+          {/* Projects Section - Only show if there are 2 or more projects */}
+          {projects.length > 1 && (
           <div className='mb-8'>
             <div className='flex items-center justify-between mb-4'>
               <h2 className='text-2xl font-semibold'>{t('HISTORY_RECENT_PROJECTS')}</h2>
@@ -161,6 +162,7 @@ const HistoryDashboard: FC = () => {
               </div>
             )}
           </div>
+          )}
 
           {/* UUIDs Section */}
           <div>

@@ -78,6 +78,37 @@ module Types {
   };
 
   // =================================================================
+  // ASSET CORE TYPES
+  // =================================================================
+
+  public type AssetStatus = {
+    #empty;
+    #initialized;
+    #processing;
+    #completed;
+    #aborted;
+    #deleted;
+  };
+
+  public type GrantType = {
+    #install;
+    #edit;
+    #owner;
+  };
+
+  public type Grant = {
+    principal : Principal;
+    grantType : GrantType;
+  };
+
+  public type AssetCore = {
+    identifier : ?Text;
+    subidentifier : ?Text;
+    status : AssetStatus;
+    grants : [Grant];
+  };
+
+  // =================================================================
   // API REQUEST & RESPONSE TYPES
   // =================================================================
 

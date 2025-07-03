@@ -1,38 +1,34 @@
-import { FC, useEffect } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { handleAuth0Callback } from '@/services/auth0Service'
 import LoadingView from '@/components/LoadingView'
-import { useAuthStore } from '@/store/auth.store'
-import { useTranslation } from '../hooks/useTranslation'
 
 const Auth0CallbackPage: FC = () => {
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const { login } = useAuthStore()
-  const { t } = useTranslation()
 
   useEffect(() => {
-    const processCallback = async () => {
+    const completeAuth = async () => {
       try {
-        const hash = window.location.hash.substring(1)
-        const params = new URLSearchParams(hash)
-        const idToken = params.get('id_token')
-
-        if (idToken) {
-          await login(idToken)
-          navigate('/') // Redirect to home page after successful login
-        } else {
-          throw new Error('No id_token found in URL')
-        }
-      } catch (error) {
-        console.error('Auth0 callback error:', error)
-        navigate('/login?error=callback_failed') // Redirect to login with an error
+        await handleAuth0Callback()
+        // handleAuth0Callback already redirects to intended url via history.replaceState
+        // In case there is none, fall back to root
+        navigate('/', { replace: true })
+      } catch (err) {
+        console.error('Auth0 callback handling failed', err)
+        setError('Authentication failed. Please try logging in again.')
       }
     }
 
-    processCallback()
-  }, [login, navigate])
+    completeAuth()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  return <LoadingView message={t('LOADING_COMPLETING_LOGIN')} />
+  if (error) {
+    return <div className='flex h-screen w-screen items-center justify-center text-red-600'>{error}</div>
+  }
+
+  return <LoadingView message='Completing login...' />
 }
 
 export default Auth0CallbackPage
-

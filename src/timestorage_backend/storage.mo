@@ -78,4 +78,13 @@ module Storage {
     public func newUuidLinksMap() : TrieMap.TrieMap<Types.UUID, [Types.UUID]> {
       TrieMap.TrieMap<Types.UUID, [Types.UUID]>(Text.equal, Text.hash);
     };
+
+    // =================================================================
+    // ASSET CORE STORAGE MAP
+    // =================================================================
+
+    // uuid -> AssetCore
+    public func newAssetCoreMap() : TrieMap.TrieMap<Types.UUID, Types.AssetCore> {
+      TrieMap.TrieMap<Types.UUID, Types.AssetCore>(Text.equal, Text.hash);
+    };
 };

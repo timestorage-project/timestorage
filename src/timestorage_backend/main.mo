@@ -42,6 +42,7 @@ shared (msg) actor class TimestorageBackend() {
     stable var uuidToProjectStable : [(Types.UUID, Types.UUID)] = [];
     stable var projectToUuidsStable : [(Types.UUID, [Types.UUID])] = [];
     stable var uuidLinksStable : [(Types.UUID, [Types.UUID])] = [];
+    stable var assetCoreStable : [(Types.UUID, Types.AssetCore)] = [];
 
     // =================================================================
     // VOLATILE STATE
@@ -55,6 +56,7 @@ shared (msg) actor class TimestorageBackend() {
     var editors = Auth.newEditorMap();
     var uuidOwners = Storage.newUUIDOwnerMap();
     var valueLocks = Storage.newValueLockMap();
+    var assetCoreMap = Storage.newAssetCoreMap();
 
     //Project Volatile State
     var projects = Storage.newProjectMap();
@@ -102,6 +104,7 @@ shared (msg) actor class TimestorageBackend() {
         for ((k, v) in uuidToProjectStable.vals()) { uuidToProject.put(k, v) };
         for ((k, v) in projectToUuidsStable.vals()) { projectToUuids.put(k, v) };
         for ((k, v) in uuidLinksStable.vals()) { uuidLinks.put(k, v) };
+        for ((k, v) in assetCoreStable.vals()) { assetCoreMap.put(k, v) };
     };
 
     system func preupgrade() {
@@ -126,6 +129,7 @@ shared (msg) actor class TimestorageBackend() {
         uuidToProjectStable := Iter.toArray(uuidToProject.entries());
         projectToUuidsStable := Iter.toArray(projectToUuids.entries());
         uuidLinksStable := Iter.toArray(uuidLinks.entries());
+        assetCoreStable := Iter.toArray(assetCoreMap.entries());
     };
 
     // =================================================================
@@ -185,8 +189,6 @@ shared (msg) actor class TimestorageBackend() {
         return docs;
     };
 
-
-
     // isAdmin function
     public shared query (msg) func isAdmin() : async Bool {
         return Auth.isAdmin(msg.caller, admins);
@@ -194,7 +196,8 @@ shared (msg) actor class TimestorageBackend() {
 
     // isEditor function
     public shared query (msg) func isEditor() : async Bool {
-        Auth.isEditor(msg.caller, editors);
+        // FIX: Added 'return' keyword
+        return Auth.isEditor(msg.caller, editors);
     };
 
     // addAdmin function
@@ -207,9 +210,10 @@ shared (msg) actor class TimestorageBackend() {
 
     // addEditor function
     public shared (msg) func addEditor(newEditor : Principal) : async Result.Result<Text, Text> {
+        // FIX: Switch branches must return a value for the function to return.
         switch (Auth.addEditor(newEditor, msg.caller, admins, editors)) {
-            case (#err(e)) { #err(e) };
-            case (#ok(())) { #ok("New editor added successfully.") };
+            case (#err(e)) { return #err(e) };
+            case (#ok(())) { return #ok("New editor added successfully.") };
         };
     };
 
@@ -224,8 +228,8 @@ shared (msg) actor class TimestorageBackend() {
     // removeEditor function
     public shared (msg) func removeEditor(editorToRemove : Principal) : async Result.Result<Text, Text> {
         switch (Auth.removeEditor(editorToRemove, msg.caller, admins, editors)) {
-            case (#err(e)) { #err(e) };
-            case (#ok(())) { #ok("Editor removed successfully.") };
+            case (#err(e)) { return #err(e) };
+            case (#ok(())) { return #ok("Editor removed successfully.") };
         };
     };
 
@@ -250,6 +254,15 @@ shared (msg) actor class TimestorageBackend() {
         // Initialize the value submap
         let subMap = TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
         uuidKeyValueMap.put(uuid, subMap);
+
+        // Create and store the AssetCore
+        let newAssetCore : Types.AssetCore = {
+            identifier = null;
+            subidentifier = null;
+            status = #initialized;
+            grants = [{ principal = msg.caller; grantType = #owner }];
+        };
+        assetCoreMap.put(uuid, newAssetCore);
 
         return #ok("UUID inserted successfully.");
     };
@@ -295,7 +308,109 @@ shared (msg) actor class TimestorageBackend() {
         let subMap = TrieMap.TrieMap<Text, Text>(Text.equal, Text.hash);
         uuidKeyValueMap.put(uuid, subMap);
 
+        // Create and store the AssetCore
+        let newAssetCore : Types.AssetCore = {
+            identifier = null;
+            subidentifier = null;
+            status = #empty;
+            grants = [{ principal = msg.caller; grantType = #owner }];
+        };
+        assetCoreMap.put(uuid, newAssetCore);
+
         return #ok("UUID created successfully without structure. Use updateUUIDStructure to add structure later.");
+    };
+
+    // =================================================================
+    // ASSET CORE MANAGEMENT
+    // =================================================================
+
+    public shared query (msg) func getAssetCore(uuid : UUID) : async Result.Result<Types.AssetCore, Text> {
+        switch (assetCoreMap.get(uuid)) {
+            case (null) { return #err("AssetCore not found for this UUID.") };
+            case (?assetCore) { return #ok(assetCore) };
+        };
+    };
+
+    public shared (msg) func updateAssetStatus(uuid : UUID, newStatus : Types.AssetStatus) : async Result.Result<Text, Text> {
+        let assetCore = switch (assetCoreMap.get(uuid)) {
+            case (null) { return #err("AssetCore not found for this UUID.") };
+            case (?ac) { ac };
+        };
+
+        // FIX: `Array.exists` does not exist. Use `Option.isSome(Array.find(...))` instead.
+        let isOwner : Bool = Option.isSome(Array.find(assetCore.grants, func(g : Types.Grant) : Bool { g.principal == msg.caller and g.grantType == #owner }));
+        if (not isOwner) {
+            return #err("Unauthorized: Only the owner can change the status.");
+        };
+
+        let updatedAssetCore : Types.AssetCore = {
+            identifier = assetCore.identifier;
+            subidentifier = assetCore.subidentifier;
+            status = newStatus;
+            grants = assetCore.grants;
+        };
+        assetCoreMap.put(uuid, updatedAssetCore);
+
+        return #ok("Asset status updated successfully.");
+    };
+
+    public shared (msg) func addGrant(uuid : UUID, principal : Principal, grantType : Types.GrantType) : async Result.Result<Text, Text> {
+        let assetCore = switch (assetCoreMap.get(uuid)) {
+            case (null) { return #err("AssetCore not found for this UUID.") };
+            case (?ac) { ac };
+        };
+
+        // FIX: `Array.exists` does not exist. Use `Option.isSome(Array.find(...))` instead.
+        let isOwner : Bool = Option.isSome(Array.find(assetCore.grants, func(g : Types.Grant) : Bool { g.principal == msg.caller and g.grantType == #owner }));
+        if (not isOwner) {
+            return #err("Unauthorized: Only the owner can add grants.");
+        };
+
+        // FIX: `Array.exists` does not exist. Use `Option.isSome(Array.find(...))` instead.
+        let grantExists : Bool = Option.isSome(Array.find(assetCore.grants, func(g : Types.Grant) : Bool { g.principal == principal and g.grantType == grantType }));
+        if (grantExists) {
+            return #err("Grant already exists for this principal.");
+        };
+
+        let newGrant : Types.Grant = {
+            principal = principal;
+            grantType = grantType;
+        };
+        let updatedGrants = Array.append(assetCore.grants, [newGrant]);
+        let updatedAssetCore : Types.AssetCore = {
+            identifier = assetCore.identifier;
+            subidentifier = assetCore.subidentifier;
+            status = assetCore.status;
+            grants = updatedGrants;
+        };
+        assetCoreMap.put(uuid, updatedAssetCore);
+
+        return #ok("Grant added successfully.");
+    };
+
+    public shared (msg) func removeGrant(uuid : UUID, principal : Principal) : async Result.Result<Text, Text> {
+        let assetCore = switch (assetCoreMap.get(uuid)) {
+            case (null) { return #err("AssetCore not found for this UUID.") };
+            case (?ac) { ac };
+        };
+
+        // FIX: `Array.exists` does not exist. Use `Option.isSome(Array.find(...))` instead.
+        let isOwner : Bool = Option.isSome(Array.find(assetCore.grants, func(g : Types.Grant) : Bool { g.principal == msg.caller and g.grantType == #owner }));
+        if (not isOwner) {
+            return #err("Unauthorized: Only the owner can remove grants.");
+        };
+
+        // FIX: The predicate for `Array.filter` must explicitly return a `Bool`.
+        let updatedGrants = Array.filter(assetCore.grants, func(g : Types.Grant) : Bool { g.principal != principal });
+        let updatedAssetCore : Types.AssetCore = {
+            identifier = assetCore.identifier;
+            subidentifier = assetCore.subidentifier;
+            status = assetCore.status;
+            grants = updatedGrants;
+        };
+        assetCoreMap.put(uuid, updatedAssetCore);
+
+        return #ok("Grant removed successfully.");
     };
 
     // Upload an image associated with a UUID
@@ -829,7 +944,8 @@ shared (msg) actor class TimestorageBackend() {
                 };
             };
         } else {
-            #err("Unauthorized: Admin or Editor role required.");
+            // FIX: Added 'return' keyword
+            return #err("Unauthorized: Admin or Editor role required.");
         };
     };
 
@@ -837,16 +953,16 @@ shared (msg) actor class TimestorageBackend() {
     // PROJECT API - WRITE METHODS
     // =================================================================
 
-    public shared (msg) func createProject(projectUuid: Types.UUID, info: Types.ProjectInfo): async Types.Response<Text> {
+    public shared (msg) func createProject(projectUuid : Types.UUID, info : Types.ProjectInfo) : async Types.Response<Text> {
         switch (Auth.requireAdminOrEditor(msg.caller, admins, editors)) {
-            case (#err(e)) { return #err(e); };
+            case (#err(e)) { return #err(e) };
             case (#ok()) {};
         };
         if (projects.get(projectUuid) != null) {
             return #err("Project with this UUID already exists.");
         };
 
-        let newProject: Types.ProjectCore = {
+        let newProject : Types.ProjectCore = {
             owner = msg.caller;
             status = #draft;
             info = info;
@@ -855,10 +971,10 @@ shared (msg) actor class TimestorageBackend() {
         return #ok("Project created successfully.");
     };
 
-    public shared (msg) func updateProjectInfo(projectUuid: Types.UUID, newInfo: Types.ProjectInfo): async Types.Response<Text> {
+    public shared (msg) func updateProjectInfo(projectUuid : Types.UUID, newInfo : Types.ProjectInfo) : async Types.Response<Text> {
         // 1. Find the project or return an error
-        let project = switch(projects.get(projectUuid)) {
-            case (null) { return #err("Project not found."); };
+        let project = switch (projects.get(projectUuid)) {
+            case (null) { return #err("Project not found.") };
             case (?p) { p };
         };
 
@@ -873,19 +989,19 @@ shared (msg) actor class TimestorageBackend() {
         };
 
         // 4. Create the updated project record and save it
-        let updatedProject: Types.ProjectCore = {
+        let updatedProject : Types.ProjectCore = {
             owner = project.owner;
             status = project.status;
             info = newInfo; // Use the new info provided
         };
         projects.put(projectUuid, updatedProject);
-        
+
         return #ok("Project info updated successfully.");
     };
 
-    public shared (msg) func updateProjectStatus(projectUuid: Types.UUID, newStatus: Types.ProjectStatus): async Types.Response<Text> {
-        let project = switch(projects.get(projectUuid)) {
-            case (null) { return #err("Project not found."); };
+    public shared (msg) func updateProjectStatus(projectUuid : Types.UUID, newStatus : Types.ProjectStatus) : async Types.Response<Text> {
+        let project = switch (projects.get(projectUuid)) {
+            case (null) { return #err("Project not found.") };
             case (?p) { p };
         };
 
@@ -897,26 +1013,26 @@ shared (msg) actor class TimestorageBackend() {
             return #err("Cannot change status of a completed project.");
         };
 
-        let updatedProject: Types.ProjectCore = {
+        let updatedProject : Types.ProjectCore = {
             owner = project.owner;
             info = project.info;
             status = newStatus;
         };
         projects.put(projectUuid, updatedProject);
-        
+
         return #ok("Project status updated successfully.");
     };
 
-    public shared (msg) func deleteProject(projectUuid: Types.UUID): async Types.Response<Text> {
-        let project = switch(projects.get(projectUuid)) {
-            case (null) { return #err("Project not found."); };
+    public shared (msg) func deleteProject(projectUuid : Types.UUID) : async Types.Response<Text> {
+        let project = switch (projects.get(projectUuid)) {
+            case (null) { return #err("Project not found.") };
             case (?p) { p };
         };
 
         if (project.owner != msg.caller) {
             return #err("Unauthorized: Only the project owner can delete a project.");
         };
-        
+
         if (project.status == #completed) {
             return #err("Cannot delete a completed project.");
         };
@@ -946,12 +1062,15 @@ shared (msg) actor class TimestorageBackend() {
 
         return #ok("Project and all associated data have been deleted successfully.");
     };
-    
-    public shared (msg) func assignUuidToProject(projectUuid: Types.UUID, itemUuid: Types.UUID): async Types.Response<Text> {
+
+    public shared (msg) func assignUuidToProject(projectUuid : Types.UUID, itemUuid : Types.UUID) : async Types.Response<Text> {
         // Auth: must be owner of project
-        let _ = switch(projects.get(projectUuid)) {
-            case (null) { return #err("Project not found"); };
-            case (?p) { if (p.owner != msg.caller) { return #err("Unauthorized"); }; p };
+        let _ = switch (projects.get(projectUuid)) {
+            case (null) { return #err("Project not found") };
+            case (?p) {
+                if (p.owner != msg.caller) { return #err("Unauthorized") };
+                p;
+            };
         };
         if (uuidToProject.get(itemUuid) != null) {
             return #err("This UUID is already assigned to another project.");
@@ -963,13 +1082,13 @@ shared (msg) actor class TimestorageBackend() {
         // Update reverse map for efficient querying
         var assigned = Option.get(projectToUuids.get(projectUuid), []);
         projectToUuids.put(projectUuid, Array.append(assigned, [itemUuid]));
-        
+
         return #ok("UUID assigned to project.");
     };
 
-    public shared (msg) func unassignUuidFromProject(projectUuid: Types.UUID, itemUuid: Types.UUID): async Types.Response<Text> {
-        let project = switch(projects.get(projectUuid)) {
-            case (null) { return #err("Project not found."); };
+    public shared (msg) func unassignUuidFromProject(projectUuid : Types.UUID, itemUuid : Types.UUID) : async Types.Response<Text> {
+        let project = switch (projects.get(projectUuid)) {
+            case (null) { return #err("Project not found.") };
             case (?p) { p };
         };
 
@@ -983,7 +1102,9 @@ shared (msg) actor class TimestorageBackend() {
 
         // Verify that the UUID is indeed assigned to this project
         switch (uuidToProject.get(itemUuid)) {
-            case null { return #err("This UUID is not assigned to any project."); };
+            case null {
+                return #err("This UUID is not assigned to any project.");
+            };
             case (?pUuid) {
                 if (pUuid != projectUuid) {
                     return #err("This UUID is assigned to a different project.");
@@ -1000,22 +1121,27 @@ shared (msg) actor class TimestorageBackend() {
                 let newAssignedUuids = Array.filter(assignedUuids, func(uuid : Types.UUID) : Bool { uuid != itemUuid });
                 projectToUuids.put(projectUuid, newAssignedUuids);
             };
-            case null { /* Should not happen if logic is consistent, but safe to ignore */ };
+            case null {
+                /* Should not happen if logic is consistent, but safe to ignore */
+            };
         };
 
         return #ok("UUID unassigned from project successfully.");
     };
 
-    public shared (msg) func addPlacementToProject(projectUuid: Types.UUID, placementUuid: Types.UUID): async Types.Response<Text> {
+    public shared (msg) func addPlacementToProject(projectUuid : Types.UUID, placementUuid : Types.UUID) : async Types.Response<Text> {
         // Auth: must be owner of project
-        let _ = switch(projects.get(projectUuid)) {
-            case (null) { return #err("Project not found"); };
-            case (?p) { if (p.owner != msg.caller) { return #err("Unauthorized"); }; p };
+        let _ = switch (projects.get(projectUuid)) {
+            case (null) { return #err("Project not found") };
+            case (?p) {
+                if (p.owner != msg.caller) { return #err("Unauthorized") };
+                p;
+            };
         };
         if (uuidToStructure.get(placementUuid) == null) {
             return #err("Placement UUID does not exist as a valid entity.");
         };
-        
+
         var placementsList = Option.get(projectPlacements.get(projectUuid), []);
         // Avoid duplicates
         if (Option.isSome(Array.find(placementsList, func(p : Types.UUID) : Bool { p == placementUuid }))) {
@@ -1026,14 +1152,14 @@ shared (msg) actor class TimestorageBackend() {
         return #ok("Placement added to project.");
     };
 
-    public shared (msg) func linkUuids(uuid1: Types.UUID, uuid2: Types.UUID): async Types.Response<Text> {
+    public shared (msg) func linkUuids(uuid1 : Types.UUID, uuid2 : Types.UUID) : async Types.Response<Text> {
         // For simplicity, we assume any editor/admin can link any two UUIDs.
         // A stricter check might be to ensure caller owns at least one.
         switch (Auth.requireAdminOrEditor(msg.caller, admins, editors)) {
-            case (#err(e)) { return #err(e); };
+            case (#err(e)) { return #err(e) };
             case (#ok()) {};
         };
-        if (uuid1 == uuid2) { return #err("Cannot link a UUID to itself."); };
+        if (uuid1 == uuid2) { return #err("Cannot link a UUID to itself.") };
 
         // Link 1 -> 2
         var links1 = Option.get(uuidLinks.get(uuid1), []);
@@ -1046,17 +1172,17 @@ shared (msg) actor class TimestorageBackend() {
         if (not Option.isSome(Array.find(links2, func(u : Types.UUID) : Bool { u == uuid1 }))) {
             uuidLinks.put(uuid2, Array.append(links2, [uuid1]));
         };
-        
+
         return #ok("UUIDs linked successfully.");
     };
 
-    public shared (msg) func unlinkUuids(uuid1: Types.UUID, uuid2: Types.UUID): async Types.Response<Text> {
+    public shared (msg) func unlinkUuids(uuid1 : Types.UUID, uuid2 : Types.UUID) : async Types.Response<Text> {
         // Permissions check
         switch (Auth.requireAdminOrEditor(msg.caller, admins, editors)) {
-            case (#err(e)) { return #err(e); };
+            case (#err(e)) { return #err(e) };
             case (#ok()) {};
         };
-        if (uuid1 == uuid2) { return #err("Cannot unlink a UUID from itself."); };
+        if (uuid1 == uuid2) { return #err("Cannot unlink a UUID from itself.") };
 
         // Unlink 1 -> 2
         switch (uuidLinks.get(uuid1)) {
@@ -1064,7 +1190,9 @@ shared (msg) actor class TimestorageBackend() {
                 let newLinks = Array.filter(links, func(u : Types.UUID) : Bool { u != uuid2 });
                 uuidLinks.put(uuid1, newLinks);
             };
-            case null { /* Should not happen if logic is consistent, but safe to ignore */ };
+            case null {
+                /* Should not happen if logic is consistent, but safe to ignore */
+            };
         };
 
         // Unlink 2 -> 1 (for symmetry)
@@ -1073,21 +1201,23 @@ shared (msg) actor class TimestorageBackend() {
                 let newLinks = Array.filter(links, func(u : Types.UUID) : Bool { u != uuid1 });
                 uuidLinks.put(uuid2, newLinks);
             };
-            case null { /* Should not happen if logic is consistent, but safe to ignore */ };
+            case null {
+                /* Should not happen if logic is consistent, but safe to ignore */
+            };
         };
-        
+
         return #ok("UUIDs unlinked successfully.");
     };
 
     // =================================================================
     // THE "BUNDLER" API - QUERY METHOD
     // =================================================================
-    
+
     // Private helper to assemble project data
-    func _getProject_(projectUuid: Types.UUID) : Types.Response<Types.ProjectAPIResponse> {
+    func _getProject_(projectUuid : Types.UUID) : Types.Response<Types.ProjectAPIResponse> {
         // 1. Get Core Project Data
-        let projectCore = switch(projects.get(projectUuid)) {
-            case (null) { return #err("Project not found."); };
+        let projectCore = switch (projects.get(projectUuid)) {
+            case (null) { return #err("Project not found.") };
             case (?p) { p };
         };
 
@@ -1096,13 +1226,13 @@ shared (msg) actor class TimestorageBackend() {
         let projectDocsResponse = getRemoteDocumentResponses(projectFileIds);
 
         // 3. Get Placements and their documents
-        var placementsResponse: [Types.ProjectPlacementResponse] = [];
+        var placementsResponse : [Types.ProjectPlacementResponse] = [];
         let placementUuids = Option.get(projectPlacements.get(projectUuid), []);
         for (placementUuid in placementUuids.vals()) {
             let compositeKey = projectUuid # "|" # placementUuid;
             let placementFileIds = Option.get(placementDocuments.get(compositeKey), []);
-            
-            let placement: Types.ProjectPlacementResponse = {
+
+            let placement : Types.ProjectPlacementResponse = {
                 uuid = placementUuid;
                 info = getLinkedStructureIdentifier(placementUuid);
                 documents = getRemoteDocumentResponses(placementFileIds);
@@ -1111,16 +1241,16 @@ shared (msg) actor class TimestorageBackend() {
         };
 
         // 4. Get Linked Structures (UUIDs assigned to this project)
-        var linkedStructuresResponse: [Types.ProjectLinkedStructureResponse] = [];
+        var linkedStructuresResponse : [Types.ProjectLinkedStructureResponse] = [];
         let assignedUuids = Option.get(projectToUuids.get(projectUuid), []);
         for (assignedUuid in assignedUuids.vals()) {
-            let linkedStructure: Types.ProjectLinkedStructureResponse = {
+            let linkedStructure : Types.ProjectLinkedStructureResponse = {
                 uuid = assignedUuid;
                 info = getLinkedStructureIdentifier(assignedUuid);
             };
             linkedStructuresResponse := Array.append(linkedStructuresResponse, [linkedStructure]);
         };
-        
+
         // 5. Assemble the final response object
         let response : Types.ProjectAPIResponse = {
             uuid = projectUuid;
@@ -1134,18 +1264,17 @@ shared (msg) actor class TimestorageBackend() {
         return #ok(response);
     };
 
-    public shared query (msg) func getProjectByUuid(uuid: Types.UUID) : async Types.Response<Types.ProjectAPIResponse> {
-        let projectUuid = switch(uuidToProject.get(uuid)) {
-            case (null) { return #err("Project not found for this UUID."); };
+    public shared query (msg) func getProjectByUuid(uuid : Types.UUID) : async Types.Response<Types.ProjectAPIResponse> {
+        let projectUuid = switch (uuidToProject.get(uuid)) {
+            case (null) { return #err("Project not found for this UUID.") };
             case (?p) { p };
         };
 
         return _getProject_(projectUuid);
     };
 
-    public shared query (msg) func getProject(projectUuid: Types.UUID) : async Types.Response<Types.ProjectAPIResponse> {
+    public shared query (msg) func getProject(projectUuid : Types.UUID) : async Types.Response<Types.ProjectAPIResponse> {
         return _getProject_(projectUuid);
     };
 
-    
 };

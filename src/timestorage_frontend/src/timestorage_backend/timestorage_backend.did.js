@@ -1,6 +1,11 @@
 export const idlFactory = ({ IDL }) => {
   const Result = IDL.Variant({ ok: IDL.Text, err: IDL.Text })
   const UUID = IDL.Text
+  const GrantType = IDL.Variant({
+    owner: IDL.Null,
+    edit: IDL.Null,
+    install: IDL.Null
+  })
   const Response = IDL.Variant({ ok: IDL.Text, err: IDL.Text })
   const IssuerInfo = IDL.Record({
     principal: IDL.Opt(IDL.Text),
@@ -31,11 +36,30 @@ export const idlFactory = ({ IDL }) => {
     typeText: IDL.Opt(IDL.Text),
     location: IDL.Opt(LocationInfo)
   })
-  const Result_4 = IDL.Variant({ ok: IDL.Vec(IDL.Text), err: IDL.Text })
-  const Result_3 = IDL.Variant({
+  const Result_5 = IDL.Variant({ ok: IDL.Vec(IDL.Text), err: IDL.Text })
+  const Result_4 = IDL.Variant({
     ok: IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
     err: IDL.Text
   })
+  const AssetStatus = IDL.Variant({
+    deleted: IDL.Null,
+    aborted: IDL.Null,
+    initialized: IDL.Null,
+    completed: IDL.Null,
+    empty: IDL.Null,
+    processing: IDL.Null
+  })
+  const Grant = IDL.Record({
+    principal: IDL.Principal,
+    grantType: GrantType
+  })
+  const AssetCore = IDL.Record({
+    status: AssetStatus,
+    grants: IDL.Vec(Grant),
+    subidentifier: IDL.Opt(IDL.Text),
+    identifier: IDL.Opt(IDL.Text)
+  })
+  const Result_3 = IDL.Variant({ ok: AssetCore, err: IDL.Text })
   const FileResponseMetadata = IDL.Record({
     fileData: IDL.Text,
     mimeType: IDL.Text,
@@ -162,14 +186,15 @@ export const idlFactory = ({ IDL }) => {
   const TimestorageBackend = IDL.Service({
     addAdmin: IDL.Func([IDL.Principal], [Result], []),
     addEditor: IDL.Func([IDL.Principal], [Result], []),
+    addGrant: IDL.Func([UUID, IDL.Principal, GrantType], [Result], []),
     addPlacementToProject: IDL.Func([UUID, UUID], [Response], []),
     assignUuidToProject: IDL.Func([UUID, UUID], [Response], []),
     createEmptyUUID: IDL.Func([IDL.Text], [Result], []),
     createProject: IDL.Func([UUID, ProjectInfo], [Response], []),
     deleteProject: IDL.Func([UUID], [Response], []),
-    getAllUUIDs: IDL.Func([IDL.Opt(IDL.Principal)], [Result_4], ['query']),
-    getAllValues: IDL.Func([IDL.Text], [Result_3], ['query']),
-    getFileByUUIDAndId: IDL.Func([IDL.Text, IDL.Text], [Result__1_2], ['query']),
+    getAllUUIDs: IDL.Func([IDL.Opt(IDL.Principal)], [Result_5], ['query']),
+    getAllValues: IDL.Func([IDL.Text], [Result_4], ['query']),
+    getAssetCore: IDL.Func([UUID], [Result_3], ['query']),
     getFileMetadataByUUID: IDL.Func([IDL.Text], [Result__1_1], ['query']),
     getFileMetadataByUUIDAndId: IDL.Func([IDL.Text, IDL.Text], [Result__1], ['query']),
     getProject: IDL.Func([UUID], [Response_1], ['query']),
@@ -185,10 +210,12 @@ export const idlFactory = ({ IDL }) => {
     lockValue: IDL.Func([ValueLockRequest], [Result], []),
     removeAdmin: IDL.Func([IDL.Principal], [Result], []),
     removeEditor: IDL.Func([IDL.Principal], [Result], []),
+    removeGrant: IDL.Func([UUID, IDL.Principal], [Result], []),
     unassignUuidFromProject: IDL.Func([UUID, UUID], [Response], []),
     unlinkUuids: IDL.Func([UUID, UUID], [Response], []),
     unlockAllValues: IDL.Func([ValueUnlockAllRequest], [Result], []),
     unlockValue: IDL.Func([ValueUnlockRequest], [Result], []),
+    updateAssetStatus: IDL.Func([UUID, AssetStatus], [Result], []),
     updateManyValues: IDL.Func([IDL.Text, IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))], [Result], []),
     updateManyValuesAndLock: IDL.Func([IDL.Text, IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))], [Result], []),
     updateProjectInfo: IDL.Func([UUID, ProjectInfo], [Response], []),

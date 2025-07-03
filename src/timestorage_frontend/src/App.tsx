@@ -9,6 +9,7 @@ import MockDashboard from './components/MockDashboard'
 import MockDashboardRedirect from './pages/MockDashboardRedirect'
 import LinkingPage from './pages/LinkingPage'
 import { useTranslation } from './hooks/useTranslation'
+import GoPage from './pages/GoPage'
 import { DataProvider } from './context/DataContext'
 import './globals.css'
 import { authService } from './store/auth.store'
@@ -69,6 +70,7 @@ const App: FC = () => {
         <DataProvider>
           <Routes>
             <Route path='/' element={<MockDashboardRedirect />} />
+            <Route path='/go' element={<GoPage />} />
             <Route path='/view/mock-dashboard' element={<MockDashboard />} />
             <Route path='/project/:projectId' element={<ProjectDashboard />} />
             <Route path='/project/from-equipment/:uuid' element={<ProjectDashboard />} />

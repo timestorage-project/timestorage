@@ -4,7 +4,7 @@ import * as canisterService from '../services/canisterService'
 import { en } from '@/lang/en'
 import mockEquipmentData from '../mocks/mock-equipment.json'
 import { it } from '@/lang/it'
-import { FetchingStatus, IWizardQuestion } from '@/types/structures'
+import { AssetCore, FetchingStatus, IWizardQuestion } from '@/types/structures'
 import { DataStructure } from '@/types/DataStructure'
 
 // Use the transformed project type from canisterService
@@ -15,6 +15,7 @@ interface IDataContextType {
   uuid: string
   data: DataStructure | null
   project: TransformedProjectAPIResponse | null
+  assetCore: AssetCore | null
   fetchingStatus: FetchingStatus
   isLoading: boolean
   error: string | null
@@ -83,6 +84,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   // The state now holds our new DataStructure class instance.
   const [data, setData] = useState<DataStructure | null>(null)
   const [project, setProject] = useState<TransformedProjectAPIResponse | null>(null)
+  const [assetCore, setAssetCore] = useState<AssetCore | null>(null)
   const [fetchingStatus, setFetchingStatus] = useState<FetchingStatus>('none')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -145,6 +147,19 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
         } else if (projectResult) {
           navigate(`/linking/${uuid}`)
         }
+
+        const assetCoreResult = await canisterService.getAssetCore(uuid).catch(() => null)
+        if (assetCoreResult) {
+          setAssetCore(assetCoreResult)
+        } else {
+          setAssetCore({
+            status: 'initialized',
+            grants: [],
+            identifier: undefined,
+            subidentifier: undefined
+          })
+        }
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred while fetching data')
         setData(null) // Ensure data is null on error
@@ -182,6 +197,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
       value={{
         data: data ?? null,
         project,
+        assetCore,
         fetchingStatus,
         isLoading,
         error,

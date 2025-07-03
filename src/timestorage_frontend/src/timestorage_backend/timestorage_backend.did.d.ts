@@ -2,6 +2,18 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
+export interface AssetCore {
+  'status': AssetStatus,
+  'grants': Array<Grant>,
+  'subidentifier': [] | [string],
+  'identifier': [] | [string],
+}
+export type AssetStatus = { 'deleted': null } |
+{ 'aborted': null } |
+{ 'initialized': null } |
+{ 'completed': null } |
+{ 'empty': null } |
+{ 'processing': null };
 export type FileId = string;
 export interface FileMetadata {
   'mimeType': string,
@@ -27,6 +39,10 @@ export interface FileResponseMetadata {
   'fileName': string,
   'uploadTimestamp': string,
 }
+export interface Grant { 'principal': Principal, 'grantType': GrantType }
+export type GrantType = { 'owner': null } |
+{ 'edit': null } |
+{ 'install': null };
 export interface IssuerInfo {
   'principal': [] | [string],
   'name': [] | [string],
@@ -115,9 +131,11 @@ export type Result_1 = { 'ok': ValueLockStatus } |
 { 'err': string };
 export type Result_2 = { 'ok': [string, string, Array<FileResponse>] } |
 { 'err': string };
-export type Result_3 = { 'ok': Array<[string, string]> } |
+export type Result_3 = { 'ok': AssetCore } |
 { 'err': string };
-export type Result_4 = { 'ok': Array<string> } |
+export type Result_4 = { 'ok': Array<[string, string]> } |
+{ 'err': string };
+export type Result_5 = { 'ok': Array<string> } |
 { 'err': string };
 export type Result__1 = { 'ok': FileMetadataResponse } |
 { 'err': string };
@@ -129,13 +147,15 @@ export type Timestamp = bigint;
 export interface TimestorageBackend {
   'addAdmin': ActorMethod<[Principal], Result>,
   'addEditor': ActorMethod<[Principal], Result>,
+  'addGrant': ActorMethod<[UUID, Principal, GrantType], Result>,
   'addPlacementToProject': ActorMethod<[UUID, UUID], Response>,
   'assignUuidToProject': ActorMethod<[UUID, UUID], Response>,
   'createEmptyUUID': ActorMethod<[string], Result>,
   'createProject': ActorMethod<[UUID, ProjectInfo], Response>,
   'deleteProject': ActorMethod<[UUID], Response>,
-  'getAllUUIDs': ActorMethod<[[] | [Principal]], Result_4>,
-  'getAllValues': ActorMethod<[string], Result_3>,
+  'getAllUUIDs': ActorMethod<[[] | [Principal]], Result_5>,
+  'getAllValues': ActorMethod<[string], Result_4>,
+  'getAssetCore': ActorMethod<[UUID], Result_3>,
   'getFileByUUIDAndId': ActorMethod<[string, string], Result__1_2>,
   'getFileMetadataByUUID': ActorMethod<[string], Result__1_1>,
   'getFileMetadataByUUIDAndId': ActorMethod<[string, string], Result__1>,
@@ -152,10 +172,12 @@ export interface TimestorageBackend {
   'lockValue': ActorMethod<[ValueLockRequest], Result>,
   'removeAdmin': ActorMethod<[Principal], Result>,
   'removeEditor': ActorMethod<[Principal], Result>,
+  'removeGrant': ActorMethod<[UUID, Principal], Result>,
   'unassignUuidFromProject': ActorMethod<[UUID, UUID], Response>,
   'unlinkUuids': ActorMethod<[UUID, UUID], Response>,
   'unlockAllValues': ActorMethod<[ValueUnlockAllRequest], Result>,
   'unlockValue': ActorMethod<[ValueUnlockRequest], Result>,
+  'updateAssetStatus': ActorMethod<[UUID, AssetStatus], Result>,
   'updateManyValues': ActorMethod<[string, Array<[string, string]>], Result>,
   'updateManyValuesAndLock': ActorMethod<
     [string, Array<[string, string]>],

@@ -1,8 +1,9 @@
-import { FileResponse, idlFactory, TimestorageBackend, LinkedStructureIdentifier, ProjectInfo, ProjectAPIResponse, ProjectLinkedStructureResponse, ProjectPlacementResponse, ProjectStatus, RemoteDocumentResponse } from '@/timestorage_backend/timestorage_backend.did'
+import { AssetCore as RawAssetCore, FileResponse, idlFactory, TimestorageBackend, LinkedStructureIdentifier, ProjectInfo, ProjectAPIResponse, ProjectLinkedStructureResponse, ProjectPlacementResponse, ProjectStatus, RemoteDocumentResponse } from '@/timestorage_backend/timestorage_backend.did'
 import { Actor, HttpAgent } from '@dfinity/agent'
 import { idlFactory as sessionManagerIdlFactory } from '@/timestorage_session_manager/timestorage_session_manager.did'
 import { _SERVICE as SessionManagerService } from '@/timestorage_session_manager/timestorage_session_manager.did'
 import { authService } from '@/store/auth.store'
+import { AssetCore, Grant } from '@/types/structures'
 
 // Backend canister ID from environment variables
 const backendCanisterId = (process.env.CANISTER_ID_TIMESTORAGE_BACKEND as string) || 'u6s2n-gx777-77774-qaaba-cai'
@@ -203,6 +204,17 @@ const transformProjectAPIResponse = (raw: ProjectAPIResponse): TransformedProjec
   }))
 })
 
+const transformAssetCore = (raw: RawAssetCore): AssetCore => ({
+  identifier: extractOptional(raw.identifier),
+  subidentifier: extractOptional(raw.subidentifier),
+  status: Object.keys(raw.status)[0] as AssetCore['status'],
+  grants: raw.grants.map((g) => ({
+    principal: g.principal.toText(),
+    grantType: Object.keys(g.grantType)[0] as Grant['grantType'],
+  })),
+})
+
+
 // Backend canister methods
 
 export const getUUIDInfo = async (uuid: string): Promise<[string, string, FileResponse[]]> => {
@@ -237,6 +249,17 @@ export const getProject = async (projectUuid: string): Promise<TransformedProjec
   }
 
   return transformProjectAPIResponse(result.ok)
+}
+
+export const getAssetCore = async (uuid: string) => {
+  const actor = await getBackendActor()
+  const result = await actor.getAssetCore(uuid)
+
+  if ('err' in result) {
+    throw new Error(result.err)
+  }
+
+  return transformAssetCore(result.ok)
 }
 
 export const updateValue = async (uuid: string, key: string, value: string, lock: boolean = false) => {

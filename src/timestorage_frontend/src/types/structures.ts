@@ -153,3 +153,19 @@ export interface IRawDataStructureApiResponse {
 }
 
 export type FetchingStatus = 'none' | 'project' | 'data' | 'completed'
+
+export type AssetStatus = 'empty' | 'initialized' | 'processing' | 'completed' | 'aborted' | 'deleted';
+
+export type GrantType = 'install' | 'edit' | 'owner';
+
+export interface Grant {
+  principal: string;
+  grantType: GrantType;
+}
+
+export interface AssetCore {
+  identifier?: string;
+  subidentifier?: string;
+  status: AssetStatus;
+  grants: Grant[];
+}

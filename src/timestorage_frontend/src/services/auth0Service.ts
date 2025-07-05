@@ -6,7 +6,7 @@ import { SignIdentity, toHex } from '@dfinity/agent'
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN || 'cardinalsolar.eu.auth0.com'
 const AUTH0_CLIENT_ID = process.env.AUTH0_CLIENT_ID || '7say7cimou4IGL10QSAFj3BL1XC59ERz'
 const AUTH0_REDIRECT_URI = process.env.AUTH0_REDIRECT_URI || 'http://localhost:3000/auth/auth0/callback'
-
+const AUTH0_AUDIENCE = process.env.AUTH0_AUDIENCE || 'posacheck-services'
 // Initialize Auth0 client
 let auth0Client: Auth0Client | null = null
 // Prevent running callback logic multiple times on same page load
@@ -25,12 +25,16 @@ const initAuth0Client = async (): Promise<Auth0Client> => {
       useRefreshTokens: true,
       authorizationParams: {
         redirect_uri: AUTH0_REDIRECT_URI,
-        scope: 'openid profile email'
+        scope: 'openid profile email',
+        audience: AUTH0_AUDIENCE
       },
       // Use localstorage so the Auth0 transaction survives the full-page redirect
       cacheLocation: 'localstorage'
     })
   }
+
+
+
   return auth0Client
 }
 
@@ -82,7 +86,7 @@ export const logoutWithAuth0 = async (): Promise<void> => {
     // Logout from Auth0
     await client.logout({
       logoutParams: {
-        returnTo: 'http://localhost:3000/login'
+        returnTo: window.location.origin
       }
     })
 
@@ -109,14 +113,24 @@ export const handleAuth0Callback = async (): Promise<void> => {
     // Handle the redirect callback
     const result = await client.handleRedirectCallback()
 
-    // Get ID token
+    const accessToken = await client.getTokenSilently()
     const idToken = await client.getIdTokenClaims()
-    if (!idToken) {
-      throw new Error('No ID token available')
+    const user = await client.getUser()
+
+    if (!idToken || !user) {
+      throw new Error('No tokens or user available')
     }
 
     // Use the ID token to authenticate with the canister
-    await authService.login(idToken.__raw)
+    await authService.login({
+      accessToken: accessToken, idToken: idToken.__raw, user: {
+        sub: user.sub || '',
+        email: user.email || '',
+        firstName: user.given_name || user.name?.split(' ')[0] || '',
+        lastName: user.family_name || user.name?.split(' ').slice(1).join(' ') || '',
+        profilePictureUrl: user.picture || ''
+      }
+    })
 
     // Redirect to the intended page or home
     const targetUrl = result?.appState?.returnTo || '/'
@@ -140,5 +154,16 @@ export const isAuthenticatedWithAuth0 = async (): Promise<boolean> => {
   } catch (error) {
     console.error('Error checking Auth0 authentication:', error)
     return false
+  }
+}
+
+
+export const refreshTokens = async (): Promise<void> => {
+  try {
+    const client = await initAuth0Client()
+    await client.getTokenSilently({ cacheMode: 'off' })
+  } catch (error) {
+    console.error('Error refreshing tokens:', error)
+    throw error
   }
 }

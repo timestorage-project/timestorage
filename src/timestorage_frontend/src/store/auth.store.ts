@@ -1,11 +1,30 @@
 import { create } from 'zustand'
-import { Principal } from '@dfinity/principal'
 import { Actor, HttpAgent, Identity, Signature } from '@dfinity/agent'
 import { DelegationIdentity, DelegationChain, Ed25519KeyIdentity, Delegation, isDelegationValid } from '@dfinity/identity'
 import { idlFactory as sessionManagerIdlFactory } from '@/timestorage_session_manager/timestorage_session_manager.did'
 import { _SERVICE as SessionManagerService } from '@/timestorage_session_manager/timestorage_session_manager.did'
+import { internalApiClient } from '@/services/apiClient'
 
+export interface User {
+  id?: string
+  sub: string
+  email: string
+  firstName: string
+  lastName: string
+  profilePictureUrl?: string
+  principalId?: string // ICP Principal ID
+  createdAt?: string | Date
+  updatedAt?: string | Date
+  auth0Id?: string
+  roleId?: string
+  tenantId?: string
+}
 interface AuthState {
+  accessToken: string | null
+  idToken: string | null
+  user: User | null
+
+
   sessionIdentity: Ed25519KeyIdentity | null
   delegationIdentity: DelegationIdentity | null
   isAuthenticated: boolean
@@ -13,9 +32,12 @@ interface AuthState {
   userSub: string | null
   initialized: boolean
   init: () => Promise<void>
-  login: (idToken: string) => Promise<Principal | null>
+  login: (data: { accessToken: string; idToken: string; user: User }) => Promise<void>
   logout: () => Promise<void>
   getIdentity: () => Identity | undefined
+  setTokens: (accessToken: string, idToken: string) => void
+  getAccessToken: () => string | null
+  getIdToken: () => string | null
 }
 
 // Session manager canister ID from environment variables
@@ -56,6 +78,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   currentPrincipalId: '',
   userSub: null,
   initialized: false,
+
+  accessToken: null,
+  idToken: null,
+  user: null,
 
   init: async () => {
     const { initialized } = get()
@@ -123,7 +149,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  login: async (idToken: string) => {
+  login: async (data) => {
+    const { accessToken, idToken, user } = data
+
+    set({
+      accessToken,
+      idToken,
+      user,
+      isAuthenticated: true
+    })
+
     try {
       const { sessionIdentity } = get()
       if (!sessionIdentity) {
@@ -182,12 +217,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         delegationIdentity,
         isAuthenticated: true,
         currentPrincipalId: delegationIdentity.getPrincipal().toText(),
-        userSub: authResponse.user_sub
+        userSub: authResponse.user_sub,
+        accessToken: accessToken,
+        idToken: idToken,
+        user: user
       })
 
       console.log('Successfully logged in with principal:', delegationIdentity.getPrincipal().toText())
 
-      return delegationIdentity.getPrincipal()
+      // Call /me API to get updated user information
+      try {
+        const meResponse = await internalApiClient.get<User>('/users/me')
+        set({ user: meResponse.data })
+        console.log('Successfully fetched user profile from /me API')
+      } catch (apiError) {
+        console.warn('Failed to fetch user profile from /me API:', apiError)
+        // Don't throw here as login was successful, just log the warning
+      }
+
     } catch (error) {
       console.error('Login error:', error)
       throw error
@@ -196,9 +243,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     localStorage.removeItem(DELEGATION_STORAGE_KEY)
+    localStorage.removeItem(SESSION_IDENTITY_STORAGE_KEY)
+
     set({
-      delegationIdentity: null,
+      accessToken: null,
+      idToken: null,
+      user: null,
       isAuthenticated: false,
+      sessionIdentity: null,
+      delegationIdentity: null,
       currentPrincipalId: '',
       userSub: null
     })
@@ -210,7 +263,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return delegationIdentity
     }
     return sessionIdentity || undefined
-  }
+  },
+  setTokens: (accessToken, idToken) => {
+    set({ accessToken, idToken })
+  },
+  getAccessToken: () => get().accessToken,
+  getIdToken: () => get().idToken,
 }))
 
 // Auth service class for easier import and usage in components
@@ -225,8 +283,8 @@ export class AuthService {
     return this.store.init()
   }
 
-  async login(idToken: string): Promise<Principal | null> {
-    return this.store.login(idToken)
+  async login(data: { accessToken: string; idToken: string; user: User }): Promise<void> {
+    return this.store.login(data)
   }
 
   async logout(): Promise<void> {
@@ -251,3 +309,4 @@ export class AuthService {
 }
 
 export const authService = new AuthService()
+export const authStore = useAuthStore

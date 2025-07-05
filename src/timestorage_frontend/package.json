@@ -19,6 +19,7 @@
     "@dfinity/candid": "^2.2.0",
     "@dfinity/identity": "^2.4.0",
     "@dfinity/principal": "^2.2.0",
+    "@tanstack/react-query": "^5.81.5",
     "@types/file-saver": "^2.0.7",
     "clsx": "^2.1.1",
     "file-saver": "^2.0.5",

@@ -3,7 +3,7 @@ import { Actor, HttpAgent, Identity, Signature } from '@dfinity/agent'
 import { DelegationIdentity, DelegationChain, Ed25519KeyIdentity, Delegation, isDelegationValid } from '@dfinity/identity'
 import { idlFactory as sessionManagerIdlFactory } from '@/timestorage_session_manager/timestorage_session_manager.did'
 import { _SERVICE as SessionManagerService } from '@/timestorage_session_manager/timestorage_session_manager.did'
-import { internalApiClient } from '@/services/apiClient'
+import { internalApiClient, publicApiClient } from '@/services/apiClient'
 
 export interface User {
   id?: string
@@ -18,11 +18,16 @@ export interface User {
   auth0Id?: string
   roleId?: string
   tenantId?: string
+  isInstaller?: boolean
 }
 interface AuthState {
   accessToken: string | null
   idToken: string | null
   user: User | null
+  hasRole: boolean
+  roleCode: string | null
+  isInstaller: boolean
+  installerId: string | null
 
 
   sessionIdentity: Ed25519KeyIdentity | null
@@ -37,7 +42,8 @@ interface AuthState {
   getIdentity: () => Identity | undefined
   setTokens: (accessToken: string, idToken: string) => void
   getAccessToken: () => string | null
-  getIdToken: () => string | null
+  getIdToken: () => string | null,
+  checkAuthStatusAndRedirect: () => Promise<void>
 }
 
 // Session manager canister ID from environment variables
@@ -78,6 +84,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   currentPrincipalId: '',
   userSub: null,
   initialized: false,
+  hasRole: false,
+  roleCode: null,
+  isInstaller: false,
+  installerId: null,
 
   accessToken: null,
   idToken: null,
@@ -148,7 +158,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error('Error initializing auth store:', error)
     }
   },
+  checkAuthStatusAndRedirect: async () => {
+    if (typeof window === 'undefined') {
+      return
+    }
 
+    try {
+
+      const response = await publicApiClient.get<{
+        hasRole: boolean
+        roleCode: string | null
+        isInstaller: boolean
+        installerId: string | null
+        redirectUrl: string
+      }>('/auth-status')
+
+      set({
+        hasRole: response.data.hasRole,
+        roleCode: response.data.roleCode,
+        isInstaller: response.data.isInstaller,
+        installerId: response.data.installerId,
+      })
+
+
+    } catch (error) {
+      console.error('Auth status check failed:', error)
+      // Don't redirect on error, let the user continue
+    }
+  },
   login: async (data) => {
     const { accessToken, idToken, user } = data
 
@@ -227,6 +264,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Call /me API to get updated user information
       try {
+        await authStore.getState().checkAuthStatusAndRedirect()
+
         const meResponse = await internalApiClient.get<User>('/users/me')
         set({ user: meResponse.data })
         console.log('Successfully fetched user profile from /me API')

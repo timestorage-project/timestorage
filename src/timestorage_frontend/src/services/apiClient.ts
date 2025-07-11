@@ -172,10 +172,10 @@ export const apiClient = new ApiClient()
 
 // Internal API client for protected endpoints
 export const internalApiClient = new ApiClient({
-  baseURL: `${process.env.BACKEND_URL || 'http://localhost:3030'}/api-internal`
+  baseURL: `${process.env.BACKEND_URL || 'http://localhost:3030'}/api-internal/v1`
 })
 
 // Public API client for public endpoints
 export const publicApiClient = new ApiClient({
-  baseURL: `${process.env.BACKEND_URL || 'http://localhost:3030'}/api`
+  baseURL: `${process.env.BACKEND_URL || 'http://localhost:3030'}/api/v1`
 })

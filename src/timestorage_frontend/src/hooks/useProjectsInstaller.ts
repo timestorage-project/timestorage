@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { internalApiClient } from '@/services/apiClient'
 
 export interface InstallerProject {
@@ -72,31 +72,28 @@ export function useProjectsInstaller(query: GetInstallerProjectsQuery = {}): Use
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const buildQueryString = useCallback((params: GetInstallerProjectsQuery) => {
-    const searchParams = new URLSearchParams()
-    
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.set(key, value.toString())
-      }
-    })
-    
-    return searchParams.toString()
-  }, [])
-
+  
   const fetchProjects = useCallback(async () => {
     setLoading(true)
     setError(null)
     
     try {
-      const queryString = buildQueryString(query)
+      const searchParams = new URLSearchParams()
+      
+      Object.entries(query).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.set(key, value.toString())
+        }
+      })
+      
+      const queryParams = searchParams.toString()
       
       // Fetch all project types in parallel
       const [projectsRes, invitationsRes, currentRes, completedRes] = await Promise.all([
-        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-projects?${queryString}`),
-        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-invitations?${queryString}`),
-        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-current-projects?${queryString}`),
-        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-completed-projects?${queryString}`)
+        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-projects?${queryParams}`),
+        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-invitations?${queryParams}`),
+        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-current-projects?${queryParams}`),
+        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-completed-projects?${queryParams}`)
       ])
 
       setProjects(projectsRes.data.data)
@@ -109,7 +106,7 @@ export function useProjectsInstaller(query: GetInstallerProjectsQuery = {}): Use
     } finally {
       setLoading(false)
     }
-  }, [query, buildQueryString])
+  }, [])
 
   const updateProjectStatus = useCallback(async (id: string, status: 'accepted' | 'rejected') => {
     try {
@@ -136,12 +133,9 @@ export function useProjectsInstaller(query: GetInstallerProjectsQuery = {}): Use
     await fetchProjects()
   }, [fetchProjects])
 
-  // Create a stable reference for the query object
-  const queryString = useMemo(() => JSON.stringify(query), [query])
-
   useEffect(() => {
     fetchProjects()
-  }, [fetchProjects, queryString])
+  }, [fetchProjects])
 
   return {
     projects,

@@ -144,6 +144,7 @@ export const en = {
   LOADING_COMPLETING_LOGIN: 'Completing login...',
   LOADING_PAGE: 'Loading page...',
   LOADING_PROJECT_DATA: 'Loading project data...',
+  LOADING_INSTALLER_DATA: 'Loading installer data...',
 
   // History Dashboard
   HISTORY_TITLE: 'History',

@@ -144,6 +144,7 @@ export const it = {
   LOADING_COMPLETING_LOGIN: 'Completamento login...',
   LOADING_PAGE: 'Caricamento pagina...',
   LOADING_PROJECT_DATA: 'Caricamento dati progetto...',
+  LOADING_INSTALLER_DATA: 'Caricamento dati installatore...',
 
   // History Dashboard
   HISTORY_TITLE: 'Cronologia',

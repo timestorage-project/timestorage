@@ -20,7 +20,7 @@ import { useAuthStore } from '@/store/auth.store'
 
 const InstallerDashboard: FC = () => {
   const navigate = useNavigate()
-  const { user } = useAuthStore()
+  const { user ,isInstaller} = useAuthStore()
   const [currentPage, setCurrentPage] = useState(0)
   const [invitationsPage, setInvitationsPage] = useState(0)
 
@@ -33,7 +33,7 @@ const InstallerDashboard: FC = () => {
 
   useEffect(() => {
     // Redirect if user is not an installer
-    if (user && !user.isInstaller) {
+    if (user && !isInstaller) {
       navigate('/dashboard')
       return
     }
@@ -48,7 +48,7 @@ const InstallerDashboard: FC = () => {
     updateItemsPerPage()
     window.addEventListener('resize', updateItemsPerPage)
     return () => window.removeEventListener('resize', updateItemsPerPage)
-  }, [user, navigate])
+  }, [user, navigate, isInstaller])
 
   const handleProjectClick = (project: InstallerProject) => {
     navigate(`/installer-project/${project.id}`)
@@ -109,8 +109,12 @@ const InstallerDashboard: FC = () => {
     }
   }
 
-  // Get recent projects (last 30 days)
+  // Get recent projects (last 30 days) - deduplicate by id
   const recentProjects = [...currentProjects, ...completedProjects]
+    .filter((project, index, array) => {
+      // Remove duplicates by id
+      return array.findIndex(p => p.id === project.id) === index
+    })
     .filter(project => {
       const projectDate = new Date(project.updatedAt)
       const thirtyDaysAgo = new Date()

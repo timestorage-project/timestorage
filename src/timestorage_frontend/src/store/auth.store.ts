@@ -43,7 +43,7 @@ interface AuthState {
   setTokens: (accessToken: string, idToken: string) => void
   getAccessToken: () => string | null
   getIdToken: () => string | null,
-  checkAuthStatusAndRedirect: () => Promise<void>
+  checkAuthStatus: () => Promise<void>
 }
 
 // Session manager canister ID from environment variables
@@ -76,6 +76,10 @@ const createSessionManagerActor = (identity: Identity): SessionManagerService =>
 const DELEGATION_STORAGE_KEY = 'timestorage-delegation'
 // Local storage key for persisting session identity
 const SESSION_IDENTITY_STORAGE_KEY = 'timestorage-session-identity'
+// Local storage keys for persisting auth tokens and user data
+const ACCESS_TOKEN_STORAGE_KEY = 'timestorage-access-token'
+const ID_TOKEN_STORAGE_KEY = 'timestorage-id-token'
+const USER_DATA_STORAGE_KEY = 'timestorage-user-data'
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   sessionIdentity: null,
@@ -123,6 +127,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ sessionIdentity, initialized: true })
 
+      // Try to restore tokens and user data from localStorage
+      const storedAccessToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)
+      const storedIdToken = localStorage.getItem(ID_TOKEN_STORAGE_KEY)
+      const storedUserData = localStorage.getItem(USER_DATA_STORAGE_KEY)
+      
+      let restoredUser: User | null = null
+      if (storedUserData) {
+        try {
+          restoredUser = JSON.parse(storedUserData)
+        } catch (e) {
+          console.error('Failed to parse stored user data:', e)
+          localStorage.removeItem(USER_DATA_STORAGE_KEY)
+        }
+      }
+
       // Try to load existing delegation from localStorage
       const storedDelegation = localStorage.getItem(DELEGATION_STORAGE_KEY)
       if (storedDelegation) {
@@ -141,27 +160,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               delegationIdentity,
               isAuthenticated: true,
               currentPrincipalId: delegationIdentity.getPrincipal().toText(),
-              userSub: authResponse.user_sub
+              userSub: authResponse.user_sub,
+              accessToken: storedAccessToken,
+              idToken: storedIdToken,
+              user: restoredUser
             })
 
             console.log('Restored authenticated session with principal:', delegationIdentity.getPrincipal().toText())
             return
           } else {
             localStorage.removeItem(DELEGATION_STORAGE_KEY)
+            localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+            localStorage.removeItem(ID_TOKEN_STORAGE_KEY)
+            localStorage.removeItem(USER_DATA_STORAGE_KEY)
           }
         } catch (error) {
           console.error('Error restoring delegation:', error)
           localStorage.removeItem(DELEGATION_STORAGE_KEY)
+          localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+          localStorage.removeItem(ID_TOKEN_STORAGE_KEY)
+          localStorage.removeItem(USER_DATA_STORAGE_KEY)
         }
       }
     } catch (error) {
       console.error('Error initializing auth store:', error)
     }
   },
-  checkAuthStatusAndRedirect: async () => {
-    if (typeof window === 'undefined') {
-      return
-    }
+  checkAuthStatus: async () => {
 
     try {
 
@@ -245,6 +270,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Store the delegation in localStorage for persistence
       localStorage.setItem(DELEGATION_STORAGE_KEY, JSON.stringify(delegationChain.toJSON()))
+      
+      // Store tokens and user data in localStorage for persistence
+      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken)
+      localStorage.setItem(ID_TOKEN_STORAGE_KEY, idToken)
+      localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(user))
 
       // Get the authenticated user information
       const actor = createSessionManagerActor(delegationIdentity)
@@ -264,7 +294,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Call /me API to get updated user information
       try {
-        await authStore.getState().checkAuthStatusAndRedirect()
+        await authStore.getState().checkAuthStatus()
 
         const meResponse = await internalApiClient.get<User>('/users/me')
         set({ user: meResponse.data })
@@ -283,6 +313,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     localStorage.removeItem(DELEGATION_STORAGE_KEY)
     localStorage.removeItem(SESSION_IDENTITY_STORAGE_KEY)
+    localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+    localStorage.removeItem(ID_TOKEN_STORAGE_KEY)
+    localStorage.removeItem(USER_DATA_STORAGE_KEY)
 
     set({
       accessToken: null,
@@ -292,7 +325,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       sessionIdentity: null,
       delegationIdentity: null,
       currentPrincipalId: '',
-      userSub: null
+      userSub: null,
+      hasRole: false,
+      roleCode: null,
+      isInstaller: false,
+      installerId: null
     })
   },
 

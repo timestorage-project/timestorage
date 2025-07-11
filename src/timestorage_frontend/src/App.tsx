@@ -10,6 +10,7 @@ import MockDashboardRedirect from './pages/MockDashboardRedirect'
 import LinkingPage from './pages/LinkingPage'
 import HistoryDashboard from './pages/HistoryDashboard'
 import InstallerDashboard from './pages/InstallerDashboard'
+import ProtectedRoute from './components/ProtectedRoute'
 import { useTranslation } from './hooks/useTranslation'
 import GoPage from './pages/GoPage'
 import { DataProvider } from './context/DataContext'
@@ -33,10 +34,10 @@ const ThemeProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
 const AppRoutes: FC = () => {
   return (
     <Routes>
+      {/* Public routes */}
       <Route path='/' element={<MockDashboardRedirect />} />
       <Route path='/go' element={<GoPage />} />
       <Route path='/history' element={<HistoryDashboard />} />
-      <Route path='/installer-dashboard' element={<InstallerDashboard />} />
       <Route path='/view/mock-dashboard' element={<MockDashboard />} />
       <Route path='/project/:projectId' element={<ProjectDashboard />} />
       <Route path='/project/from-equipment/:uuid' element={<ProjectDashboard />} />
@@ -51,6 +52,13 @@ const AppRoutes: FC = () => {
       <Route path='/auth/auth0/callback' element={<Auth0CallbackPage />} />
       <Route path='/login' element={<LoginPage />} />
       <Route path='/linking/:uuid' element={<LinkingPage />} />
+      
+      {/* Protected routes - only installer dashboard requires authentication */}
+      <Route path='/installer-dashboard' element={
+        <ProtectedRoute>
+          <InstallerDashboard />
+        </ProtectedRoute>
+      } />
     </Routes>
   )
 }

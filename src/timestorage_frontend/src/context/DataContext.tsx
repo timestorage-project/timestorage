@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as canisterService from '../services/canisterService'
 import * as serverService from '../services/serverService'
@@ -21,6 +21,24 @@ interface IDataHookReturn {
   error: string | null
   reloadData: () => Promise<void>
   getWizardQuestions: (sectionId: string) => Promise<IWizardQuestion[]>
+  // Service methods exposed through provider abstraction
+  service: {
+    // Methods available in both services (allowing for different return types)
+    getUUIDInfo: (uuid: string) => Promise<[string, string, unknown[]]>
+    getProjectByUuid: (uuid: string) => Promise<TransformedProjectAPIResponse>
+    getProject: (projectUuid: string) => Promise<TransformedProjectAPIResponse>
+    getAssetCore: (uuid: string) => Promise<AssetCore>
+    isFileId: (value: string) => boolean
+    getFileIcon: (mimeType: string) => string
+    // Methods only available in canister service (will throw error if using server)
+    updateValue: (uuid: string, key: string, value: string, lock?: boolean) => Promise<unknown>
+    uploadFile: (uuid: string, fileData: string, metadata: { fileName: string; mimeType: string; uploadTimestamp: bigint }) => Promise<unknown>
+    getImage: (uuid: string, imageId: string) => Promise<boolean>
+    getFileMetadataByUUIDAndId: (uuid: string, fileId: string) => Promise<unknown>
+    getFileMetadataByUUID: (uuid: string) => Promise<unknown[]>
+    getFileByUUIDAndId: (uuid: string, fileId: string) => Promise<unknown>
+    downloadFileContent: (uuid: string, fileId: string) => Promise<unknown>
+  }
 }
 
 /**
@@ -225,6 +243,44 @@ export const useData = (uuid?: string, projectId?: string): IDataHookReturn => {
     return wizardNode.questions
   }
 
+  // Create the service object that abstracts provider calls using useMemo to keep it stable
+  const service = useMemo(() => {
+    const currentService = provider === 'canister' ? canisterService : serverService
+    
+    return {
+      // Methods available in both services
+      getUUIDInfo: currentService.getUUIDInfo,
+      getProjectByUuid: currentService.getProjectByUuid,
+      getProject: currentService.getProject,
+      getAssetCore: currentService.getAssetCore,
+      isFileId: currentService.isFileId,
+      getFileIcon: currentService.getFileIcon,
+      
+      // Methods only available in canister service
+      updateValue: provider === 'canister' 
+        ? canisterService.updateValue 
+        : () => { throw new Error('updateValue is not available in server provider') },
+      uploadFile: provider === 'canister' 
+        ? canisterService.uploadFile 
+        : () => { throw new Error('uploadFile is not available in server provider') },
+      getImage: provider === 'canister' 
+        ? canisterService.getImage 
+        : () => { throw new Error('getImage is not available in server provider') },
+      getFileMetadataByUUIDAndId: provider === 'canister' 
+        ? canisterService.getFileMetadataByUUIDAndId 
+        : () => { throw new Error('getFileMetadataByUUIDAndId is not available in server provider') },
+      getFileMetadataByUUID: provider === 'canister' 
+        ? canisterService.getFileMetadataByUUID 
+        : () => { throw new Error('getFileMetadataByUUID is not available in server provider') },
+      getFileByUUIDAndId: provider === 'canister' 
+        ? canisterService.getFileByUUIDAndId 
+        : () => { throw new Error('getFileByUUIDAndId is not available in server provider') },
+      downloadFileContent: provider === 'canister' 
+        ? canisterService.downloadFileContent 
+        : () => { throw new Error('downloadFileContent is not available in server provider') }
+    }
+  }, [provider])
+
   return {
     data: data ?? null,
     project,
@@ -235,6 +291,7 @@ export const useData = (uuid?: string, projectId?: string): IDataHookReturn => {
     uuid: resolvedUuid,
     getWizardQuestions,
     reloadData,
-    provider
+    provider,
+    service
   }
 }

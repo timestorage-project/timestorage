@@ -11,7 +11,7 @@ import { useData } from '../context/DataContext'
 import ErrorView from '../components/ErrorView'
 import LoadingView from '../components/LoadingView'
 import { fileToBase64, getFileMetadata } from '../utils/fileUtils'
-import * as canisterService from '../services/canisterService'
+
 import { IWizardQuestion } from '@/types/structures'
 import Header from '@/components/Header'
 import { useTranslation } from '../hooks/useTranslation'
@@ -29,7 +29,7 @@ interface StagedFiles {
 const WizardPage = () => {
   const navigate = useNavigate()
   const { uuid, sectionId } = useParams<{ uuid: string; sectionId: string }>()
-  const { uuid: resolvedUuid, getWizardQuestions, data } = useData(uuid)
+  const { uuid: resolvedUuid, getWizardQuestions, data, service } = useData(uuid)
   const { t } = useTranslation()
   const [availableWizards, setAvailableWizards] = useState<{ id: string; title: string }[]>([])
   const [selectedWizard, setSelectedWizard] = useState<string | null>(sectionId || null)
@@ -80,8 +80,8 @@ const WizardPage = () => {
     try {
       const base64Data = await fileToBase64(file)
       const metadata = getFileMetadata(file)
-      const result = await canisterService.uploadFile(resolvedUuid, base64Data, metadata)
-      const fileId = result.match(/ID: (file-\d+)/)?.[1]
+      const result = await service.uploadFile(resolvedUuid, base64Data, metadata)
+      const fileId = (result as string).match(/ID: (file-\d+)/)?.[1]
       if (!fileId) {
         throw new Error('Failed to extract file ID from response')
       }
@@ -170,7 +170,7 @@ const WizardPage = () => {
       // Filter out null values and submit each answer
       for (const submission of submissions.filter(Boolean)) {
         if (submission) {
-          await canisterService.updateValue(resolvedUuid, submission.key, submission.value, true)
+          await service.updateValue(resolvedUuid, submission.key, submission.value, true)
         }
       }
 

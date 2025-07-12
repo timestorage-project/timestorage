@@ -8,8 +8,9 @@ import Header from '@/components/Header'
 import ErrorView from '@/components/ErrorView'
 import LoadingView from '@/components/LoadingView'
 import BottomNavigation from '@/components/BottomNavigation'
-import * as canisterService from '@/services/canisterService'
+import { useData } from '@/context/DataContext'
 import { historyService } from '@/services/historyService'
+import * as canisterService from '@/services/canisterService'
 
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -31,6 +32,10 @@ const ProjectDashboard: FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [equipmentCards, setEquipmentCards] = useState<EquipmentCard[]>([])
   const { t } = useTranslation()
+  
+  // Get the service methods from useData hook - pass the UUID/projectId so provider is determined correctly
+  const currentUuid = projectId || uuid
+  const { service } = useData(currentUuid)
 
   useEffect(() => {
     const loadProjectData = async () => {
@@ -44,15 +49,15 @@ const ProjectDashboard: FC = () => {
           // Route 1: /project/:projectId or /projects/:projectId - Load by project ID
           try {
             // First try to get project directly by projectId
-            projectData = await canisterService.getProject(projectId)
+            projectData = await service.getProject(projectId)
           } catch (directError) {
             // If direct fetch fails, try to find project by UUID (projectId might be equipment UUID)
             console.log('Direct project fetch failed, trying getProjectByUuid:', directError)
-            projectData = await canisterService.getProjectByUuid(projectId)
+            projectData = await service.getProjectByUuid(projectId)
           }
         } else if (uuid) {
           // Route 2: /project/from-equipment/:uuid - Load by equipment UUID, find its containing project
-          projectData = await canisterService.getProjectByUuid(uuid)
+          projectData = await service.getProjectByUuid(uuid)
         } else {
           setError('No project ID or equipment UUID provided')
           return
@@ -89,13 +94,13 @@ const ProjectDashboard: FC = () => {
         // })
 
         // Add linked structures
-        projectData.linkedStructures.forEach(structure => {
+        projectData.linkedStructures.forEach((structure: { uuid: string; info?: Record<string, unknown> }) => {
           const info = structure.info // Now it's a single object or undefined
           if (info) {
             cards.push({
               uuid: structure.uuid,
-              identification: info.identification || 'Unknown',
-              subIdentification: info.subIdentification || '',
+              identification: (info.identification as string) || 'Unknown',
+              subIdentification: (info.subIdentification as string) || '',
               type: 'linkedStructure'
             })
           }
@@ -111,7 +116,7 @@ const ProjectDashboard: FC = () => {
     }
 
     loadProjectData()
-  }, [projectId, uuid])
+  }, [projectId, uuid, service])
 
   const handleEquipmentClick = (equipmentUuid: string) => {
     navigate(`/view/${equipmentUuid}`)

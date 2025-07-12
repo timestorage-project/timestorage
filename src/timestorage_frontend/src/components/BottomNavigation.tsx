@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Home, LogIn, LogOut, Building2, Package } from 'lucide-react'
+import { Home, LogIn, LogOut, Building2, Package, Wrench } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
 import { useAuthStore } from '@/store/auth.store'
@@ -14,7 +14,7 @@ const BottomNavigation: FC = () => {
 
   // Get the current equipment UUID from the project if available, otherwise use the context uuid
   const equipmentUuid = project?.uuid || uuid
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, isInstaller } = useAuthStore()
 
   const handleLogin = async () => {
     await loginWithAuth0()
@@ -27,6 +27,7 @@ const BottomNavigation: FC = () => {
   const isMainHomeActive = location.pathname === '/go'
   const isProductHomeActive = location.pathname === `/view/${equipmentUuid}`
   const isProjectActive = location.pathname.startsWith('/project/')
+  const isInstallerDashboardActive = location.pathname === '/installer-dashboard'
 
   return (
     <div className='dock dock-md bg-base-200 border-t border-base-300'>
@@ -55,6 +56,17 @@ const BottomNavigation: FC = () => {
         <Building2 className='size-[1.2em]' />
         <span className='dock-label'>{t('BOTTOM_NAV_PROJECT')}</span>
       </button>
+
+      {/* Installer Dashboard Button - Only show if user is authenticated and installer */}
+      {isAuthenticated && isInstaller && (
+        <button
+          className={isInstallerDashboardActive ? 'dock-active' : ''}
+          onClick={() => navigate('/installer-dashboard')}
+        >
+          <Wrench className='size-[1.2em]' />
+          <span className='dock-label'>{t('INSTALLER_DASHBOARD')}</span>
+        </button>
+      )}
 
       {/* Auth Button */}
       {isAuthenticated ? (

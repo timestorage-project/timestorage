@@ -17,10 +17,12 @@ import Header from '@/components/Header'
 import BottomNavigation from '@/components/BottomNavigation'
 import { useProjectsInstaller, InstallerProject } from '@/hooks/useProjectsInstaller'
 import { useAuthStore } from '@/store/auth.store'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const InstallerDashboard: FC = () => {
   const navigate = useNavigate()
-  const { user ,isInstaller} = useAuthStore()
+  const { user, isInstaller } = useAuthStore()
+  const { t } = useTranslation()
   const [currentPage, setCurrentPage] = useState(0)
   const [invitationsPage, setInvitationsPage] = useState(0)
 
@@ -34,7 +36,7 @@ const InstallerDashboard: FC = () => {
   useEffect(() => {
     // Redirect if user is not an installer
     if (user && !isInstaller) {
-      navigate('/dashboard')
+      navigate('/go')
       return
     }
 
@@ -82,15 +84,15 @@ const InstallerDashboard: FC = () => {
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
       if (diffHours === 0) {
         const diffMinutes = Math.floor(diffMs / (1000 * 60))
-        return diffMinutes <= 1 ? 'Just now' : `${diffMinutes} minutes ago`
+        return diffMinutes <= 1 ? t('TIME_JUST_NOW') : `${diffMinutes} ${t('TIME_MINUTES_AGO')}`
       }
-      return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`
+      return diffHours === 1 ? t('TIME_HOUR_AGO') : `${diffHours} ${t('TIME_HOURS_AGO')}`
     } else if (diffDays === 1) {
-      return 'Yesterday'
+      return t('TIME_YESTERDAY')
     } else if (diffDays < 7) {
-      return `${diffDays} days ago`
+      return `${diffDays} ${t('TIME_DAYS_AGO')}`
     } else if (diffDays < 30) {
-      return `${Math.floor(diffDays / 7)} weeks ago`
+      return `${Math.floor(diffDays / 7)} ${t('TIME_WEEKS_AGO')}`
     } else {
       return date.toLocaleDateString()
     }
@@ -106,6 +108,27 @@ const InstallerDashboard: FC = () => {
         return <AlertCircle className='h-4 w-4 text-yellow-500' />
       default:
         return <Clock className='h-4 w-4 text-gray-500' />
+    }
+  }
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return t('STATUS_ACCEPTED')
+      case 'rejected':
+        return t('STATUS_REJECTED')
+      case 'pending':
+        return t('STATUS_PENDING')
+      case 'completed':
+        return t('STATUS_COMPLETED')
+      case 'in_progress':
+        return t('STATUS_IN_PROGRESS')
+      case 'cancelled':
+        return t('STATUS_CANCELLED')
+      case 'delayed':
+        return t('STATUS_DELAYED')
+      default:
+        return status
     }
   }
 
@@ -140,12 +163,12 @@ const InstallerDashboard: FC = () => {
   if (loading) {
     return (
       <div className='min-h-screen bg-base-200 pb-20'>
-        <Header title='Installer Dashboard' />
+        <Header title={t('INSTALLER_DASHBOARD')} />
         <div className='container mx-auto px-4 py-6'>
           <div className='flex items-center justify-center py-12'>
             <div className='text-center'>
               <div className='loading loading-spinner loading-lg mb-4'></div>
-              <p>Loading your projects...</p>
+              <p>{t('INSTALLER_LOADING')}</p>
             </div>
           </div>
         </div>
@@ -157,16 +180,16 @@ const InstallerDashboard: FC = () => {
   if (error) {
     return (
       <div className='min-h-screen bg-base-200 pb-20'>
-        <Header title='Installer Dashboard' />
+        <Header title={t('INSTALLER_DASHBOARD')} />
         <div className='container mx-auto px-4 py-6'>
           <div className='card bg-base-100 shadow-sm'>
             <div className='card-body flex items-center justify-center py-12'>
               <div className='text-center'>
                 <XCircle className='mx-auto h-12 w-12 mb-4 text-red-500' />
-                <h4 className='text-xl mb-2'>Error Loading Projects</h4>
+                <h4 className='text-xl mb-2'>{t('INSTALLER_ERROR_TITLE')}</h4>
                 <p className='text-sm text-base-content/70 mb-4'>{error}</p>
                 <button className='btn btn-primary' onClick={refresh}>
-                  Try Again
+                  {t('INSTALLER_TRY_AGAIN')}
                 </button>
               </div>
             </div>
@@ -179,14 +202,14 @@ const InstallerDashboard: FC = () => {
 
   return (
     <div className='min-h-screen bg-base-200 pb-20'>
-      <Header title='Installer Dashboard' />
+      <Header title={t('INSTALLER_DASHBOARD')} />
       <div className='container mx-auto px-4 py-6'>
         <Motion variant='fadeIn' duration={500}>
           {/* Project Invitations Section */}
           {invitations.length > 0 && (
             <div className='mb-8'>
               <div className='flex items-center justify-between mb-4'>
-                <h2 className='text-2xl font-semibold'>Project Invitations</h2>
+                <h2 className='text-2xl font-semibold'>{t('INSTALLER_PROJECT_INVITATIONS')}</h2>
                 {invitations.length > invitationsPerPage && (
                   <div className='flex items-center gap-2'>
                     <button
@@ -219,14 +242,14 @@ const InstallerDashboard: FC = () => {
                           <div className='flex-1'>
                             <div className='flex items-center gap-2 mb-3'>
                               <Building2 className='h-5 w-5 text-primary' />
-                              <span className='text-sm font-medium'>New Project Invitation</span>
+                              <span className='text-sm font-medium'>{t('INSTALLER_NEW_PROJECT_INVITATION')}</span>
                               <span className='text-xs text-base-content/50'>
                                 • {formatDate(invitation.invitationDate || invitation.createdAt)}
                               </span>
                             </div>
 
                             <h4 className='text-lg font-semibold mb-2'>
-                              {invitation.project?.projectNumber || 'Project'}
+                              {invitation.project?.projectNumber || t('INSTALLER_PROJECT_DEFAULT')}
                             </h4>
 
                             {invitation.project?.businessName && (
@@ -252,13 +275,13 @@ const InstallerDashboard: FC = () => {
                             className='btn btn-success btn-sm flex-1'
                             onClick={() => handleAcceptInvitation(invitation.id)}
                           >
-                            Accept
+                            {t('INSTALLER_ACCEPT')}
                           </button>
                           <button
                             className='btn btn-error btn-sm flex-1'
                             onClick={() => handleRejectInvitation(invitation.id)}
                           >
-                            Reject
+                            {t('INSTALLER_REJECT')}
                           </button>
                         </div>
                       </div>
@@ -272,7 +295,7 @@ const InstallerDashboard: FC = () => {
           {/* Recent Projects Section */}
           <div>
             <div className='flex items-center justify-between mb-4'>
-              <h2 className='text-2xl font-semibold'>Recent Projects (Last 30 Days)</h2>
+              <h2 className='text-2xl font-semibold'>{t('INSTALLER_RECENT_PROJECTS')}</h2>
               {recentProjects.length > projectsPerPage && (
                 <div className='flex items-center gap-2'>
                   <button
@@ -301,10 +324,8 @@ const InstallerDashboard: FC = () => {
                 <div className='card-body flex items-center justify-center py-12'>
                   <div className='text-center'>
                     <Package className='mx-auto h-12 w-12 mb-4 text-base-content/50' />
-                    <h4 className='text-xl'>No Recent Projects</h4>
-                    <p className='text-sm mt-2 text-base-content/70'>
-                      Your recent projects will appear here once you start working on them.
-                    </p>
+                    <h4 className='text-xl'>{t('INSTALLER_NO_RECENT_PROJECTS')}</h4>
+                    <p className='text-sm mt-2 text-base-content/70'>{t('INSTALLER_PROJECTS_APPEAR_MESSAGE')}</p>
                   </div>
                 </div>
               </div>
@@ -321,13 +342,13 @@ const InstallerDashboard: FC = () => {
                           <div className='flex-1'>
                             <div className='flex items-center gap-2 mb-3'>
                               <Building2 className='h-5 w-5 text-primary' />
-                              <span className='text-sm capitalize'>{project.status}</span>
+                              <span className='text-sm'>{getStatusText(project.status)}</span>
                               {getStatusIcon(project.status)}
                               <span className='text-xs text-base-content/50'>• {formatDate(project.updatedAt)}</span>
                             </div>
 
                             <h4 className='text-lg font-semibold mb-2'>
-                              {project.project?.projectNumber || 'Project'}
+                              {project.project?.projectNumber || t('INSTALLER_PROJECT_DEFAULT')}
                             </h4>
 
                             {project.project?.businessName && (
@@ -340,11 +361,9 @@ const InstallerDashboard: FC = () => {
                             {project.project?.city && (
                               <p className='text-sm mb-2 flex items-center gap-1'>
                                 <MapPin className='h-3 w-3' />
-                                {project.project.city}
+                                {project.project.address}, {project.project.city} ({project.project.province})
                               </p>
                             )}
-
-                            <p className='text-xs text-base-content/70'>ID: {project.id}</p>
                           </div>
                         </div>
                       </div>

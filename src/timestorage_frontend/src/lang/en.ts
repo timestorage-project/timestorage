@@ -43,14 +43,42 @@ export const en = {
   // Installation Wizard Questions
   SCHEDULED_DATE_QUESTION: 'When is the installation scheduled for?',
   INSTALLER_QUESTION: 'Who is the assigned installer?',
+  INSTALLER_DASHBOARD: 'Installer Dashboard',
+  
+  // Installer Dashboard
+  INSTALLER_LOADING: 'Loading your projects...',
+  INSTALLER_ERROR_TITLE: 'Error Loading Projects',
+  INSTALLER_TRY_AGAIN: 'Try Again',
+  INSTALLER_PROJECT_INVITATIONS: 'Project Invitations',
+  INSTALLER_NEW_PROJECT_INVITATION: 'New Project Invitation',
+  INSTALLER_PROJECT_DEFAULT: 'Project',
+  INSTALLER_ACCEPT: 'Accept',
+  INSTALLER_REJECT: 'Reject',
+  INSTALLER_RECENT_PROJECTS: 'Recent Projects (Last 30 Days)',
+  INSTALLER_NO_RECENT_PROJECTS: 'No Recent Projects',
+  INSTALLER_PROJECTS_APPEAR_MESSAGE: 'Your recent projects will appear here once you start working on them.',
+  
+  // Time formatting
+  TIME_JUST_NOW: 'Just now',
+  TIME_MINUTES_AGO: 'minutes ago',
+  TIME_HOUR_AGO: '1 hour ago',
+  TIME_HOURS_AGO: 'hours ago',
+  TIME_YESTERDAY: 'Yesterday',
+  TIME_DAYS_AGO: 'days ago',
+  TIME_WEEKS_AGO: 'weeks ago',
+  
+  // Project Status
+  STATUS_ACCEPTED: 'Accepted',
+  STATUS_REJECTED: 'Rejected',
+  STATUS_PENDING: 'Pending',
+  STATUS_COMPLETED: 'Completed',
+  STATUS_IN_PROGRESS: 'In Progress',
+  STATUS_CANCELLED: 'Cancelled',
   DURATION_QUESTION: 'How long will the installation take?',
   STATUS_QUESTION: 'What is the current status of the installation?',
   TOOLS_REQUIRED_QUESTION: 'What tools are required?',
 
   // Status Options (for select)
-  STATUS_PENDING: 'Pending',
-  STATUS_IN_PROGRESS: 'In Progress',
-  STATUS_COMPLETED: 'Completed',
   STATUS_DELAYED: 'Delayed',
 
   // Tool Options (for multiselect)

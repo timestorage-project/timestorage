@@ -22,6 +22,10 @@ export interface InstallerProject {
     customerLastName?: string
     businessName?: string
     city?: string
+    address?: string
+    zip?: string
+    province?: string;
+    state?: string
     buildingType?: string
     status: string
   }
@@ -64,7 +68,7 @@ export interface UseProjectsInstallerResult {
   getProject: (id: string) => Promise<InstallerProject | null>
 }
 
-export function useProjectsInstaller(query: GetInstallerProjectsQuery = {}): UseProjectsInstallerResult {
+export function useProjectsInstaller(): UseProjectsInstallerResult {
   const [projects, setProjects] = useState<InstallerProject[]>([])
   const [invitations, setInvitations] = useState<InstallerProject[]>([])
   const [currentProjects, setCurrentProjects] = useState<InstallerProject[]>([])
@@ -72,28 +76,21 @@ export function useProjectsInstaller(query: GetInstallerProjectsQuery = {}): Use
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  
+
   const fetchProjects = useCallback(async () => {
     setLoading(true)
     setError(null)
-    
+
     try {
-      const searchParams = new URLSearchParams()
-      
-      Object.entries(query).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          searchParams.set(key, value.toString())
-        }
-      })
-      
-      const queryParams = searchParams.toString()
-      
+
+
+
       // Fetch all project types in parallel
       const [projectsRes, invitationsRes, currentRes, completedRes] = await Promise.all([
-        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-projects?${queryParams}`),
-        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-invitations?${queryParams}`),
-        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-current-projects?${queryParams}`),
-        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-completed-projects?${queryParams}`)
+        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-projects`),
+        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-invitations`),
+        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-current-projects`),
+        internalApiClient.get<GetInstallerProjectsResponse>(`/installer-projects/my-completed-projects`)
       ])
 
       setProjects(projectsRes.data.data)

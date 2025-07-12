@@ -43,14 +43,42 @@ export const it = {
   // Installation Wizard Questions
   SCHEDULED_DATE_QUESTION: "Qual è la data programmata per l'installazione?",
   INSTALLER_QUESTION: "Chi è l'installatore assegnato?",
+  INSTALLER_DASHBOARD: 'Dashboard Installatore',
+  
+  // Installer Dashboard
+  INSTALLER_LOADING: 'Caricamento dei tuoi progetti...',
+  INSTALLER_ERROR_TITLE: 'Errore nel Caricamento dei Progetti',
+  INSTALLER_TRY_AGAIN: 'Riprova',
+  INSTALLER_PROJECT_INVITATIONS: 'Inviti ai Progetti',
+  INSTALLER_NEW_PROJECT_INVITATION: 'Nuovo Invito al Progetto',
+  INSTALLER_PROJECT_DEFAULT: 'Progetto',
+  INSTALLER_ACCEPT: 'Accetta',
+  INSTALLER_REJECT: 'Rifiuta',
+  INSTALLER_RECENT_PROJECTS: 'Progetti Recenti (Ultimi 30 Giorni)',
+  INSTALLER_NO_RECENT_PROJECTS: 'Nessun Progetto Recente',
+  INSTALLER_PROJECTS_APPEAR_MESSAGE: 'I tuoi progetti recenti appariranno qui una volta che inizierai a lavorarci.',
+  
+  // Time formatting
+  TIME_JUST_NOW: 'Proprio ora',
+  TIME_MINUTES_AGO: 'minuti fa',
+  TIME_HOUR_AGO: '1 ora fa',
+  TIME_HOURS_AGO: 'ore fa',
+  TIME_YESTERDAY: 'Ieri',
+  TIME_DAYS_AGO: 'giorni fa',
+  TIME_WEEKS_AGO: 'settimane fa',
+  
+  // Project Status
+  STATUS_ACCEPTED: 'Accettato',
+  STATUS_REJECTED: 'Rifiutato',
+  STATUS_PENDING: 'In Attesa',
+  STATUS_COMPLETED: 'Completato',
+  STATUS_IN_PROGRESS: 'In Corso',
+  STATUS_CANCELLED: 'Annullato',
   DURATION_QUESTION: "Quanto tempo durerà l'installazione?",
   STATUS_QUESTION: "Qual è lo stato attuale dell'installazione?",
   TOOLS_REQUIRED_QUESTION: 'Quali strumenti sono necessari?',
 
   // Status Options (for select)
-  STATUS_PENDING: 'In Attesa',
-  STATUS_IN_PROGRESS: 'In Corso',
-  STATUS_COMPLETED: 'Completata',
   STATUS_DELAYED: 'Ritardata',
 
   // Tool Options (for multiselect)

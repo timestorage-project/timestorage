@@ -51,7 +51,9 @@ const AppRoutes: FC = () => {
       <Route path='/view/:uuid/profile' element={<div>Profile Page</div>} />
       <Route path='/auth/auth0/callback' element={<Auth0CallbackPage />} />
       <Route path='/login' element={<LoginPage />} />
-      <Route path='/linking/:uuid' element={<LinkingPage />} />
+      <Route path='/linking/:projectId' element={<LinkingPage />} />
+      <Route path='/linking/:projectId/:positionId' element={<LinkingPage />} />
+      <Route path='/linking/:projectId/:positionId/:qrTagId' element={<LinkingPage />} />
       
       {/* Protected routes - only installer dashboard requires authentication */}
       <Route path='/installer-dashboard' element={

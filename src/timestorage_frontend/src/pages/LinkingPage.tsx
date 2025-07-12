@@ -1,37 +1,223 @@
-import { FC, useState } from 'react'
-import { useData } from '@/context/DataContext'
+import { FC, useEffect, useState, useCallback } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useAuthStore } from '@/store/auth.store'
+import { internalApiClient } from '@/services/apiClient'
 import Header from '@/components/Header'
 import LoadingView from '@/components/LoadingView'
 import ErrorView from '@/components/ErrorView'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'lucide-react'
 
-import { useTranslation } from '@/hooks/useTranslation'
+interface ProjectPosition {
+  id: string
+  positionNumber: number
+  sequenceNumber: number
+  buildingFloor: string | null
+  description: string
+  assetModelId: string
+  width: number | null
+  height: number | null
+  notes: string | null
+  projectId: string
+  qrTagId: string | null
+  tenantId: string
+  createdAt: string
+  updatedAt: string
+  assetModel?: {
+    id: string
+    name: string
+    type: string
+    brand: string
+    model: string
+  }
+  qrTag?: {
+    id: string
+    serialNo: string
+    sequence: number
+    year: number
+    clientCode: string
+    status: string
+  }
+}
+
+interface QrTag {
+  id: string
+  serialNo: string
+  sequence: number
+  year: number
+  clientCode: string
+  status: string
+  issueDate: string
+  issuer: string
+  structure?: Record<string, unknown>
+  data?: Record<string, unknown>
+  projectId?: string | null
+  assetModelId?: string
+  tenantId: string
+  createdAt: string
+  updatedAt: string
+  assetModel?: {
+    id: string
+    name: string
+    type: string
+    brand: string
+    model: string
+  }
+}
+
+interface Project {
+  id: string
+  projectNumber: string
+  projectDate: string
+  customerLastName: string
+  customerFirstName: string
+  businessName: string
+  address: string
+  zip: string
+  city: string
+  province: string
+  country: string
+  buildingType: string
+  referenceFirstName: string | null
+  referenceLastName: string | null
+  email: string
+  phoneNumber: string | null
+  documents: unknown[]
+  status: string
+  tenantId: string
+  createdAt: string
+  updatedAt: string
+}
 
 const LinkingPage: FC = () => {
-  const { project, isLoading, error } = useData()
-  const [equipmentUuid, setEquipmentUuid] = useState('')
-  const [isLinking, setIsLinking] = useState(false)
-  const [linkingError, setLinkingError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { projectId, positionId: pathPositionId, qrTagId: pathQrTagId } = useParams<{ 
+    projectId: string
+    positionId?: string
+    qrTagId?: string 
+  }>()
+  const [searchParams] = useSearchParams()
+  const { user, isInstaller, isAuthenticated } = useAuthStore()
 
-  const handleLinkEquipment = async () => {
-    if (!project || !equipmentUuid) return
+  // Get optional parameters from either path or query parameters (path takes precedence)
+  const positionId = pathPositionId || searchParams.get('positionId')
+  const qrTagId = pathQrTagId || searchParams.get('qrTagId')
 
-    setIsLinking(true)
-    setLinkingError(null)
+  // State
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [project, setProject] = useState<Project | null>(null)
+  const [positions, setPositions] = useState<ProjectPosition[]>([])
+  const [qrTags, setQrTags] = useState<QrTag[]>([])
+  const [selectedPositionId, setSelectedPositionId] = useState<string | null>(positionId)
+  const [selectedQrTagId, setSelectedQrTagId] = useState<string | null>(qrTagId)
+  const [isLinking, setIsLinking] = useState(false)
+  const [isUnlinking, setIsUnlinking] = useState(false)
+  const [linkingError, setLinkingError] = useState<string | null>(null)
+
+  // Authentication check
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+
+    // Check if user has installer role (optional protection)
+    if (user && !isInstaller) {
+      navigate('/go')
+      return
+    }
+  }, [isAuthenticated, user, isInstaller, navigate])
+
+  // Define loadData with useCallback to avoid dependency warning
+  const loadData = useCallback(async () => {
+    if (!projectId) return
 
     try {
-      navigate(`/view/${equipmentUuid}`)
+      setLoading(true)
+      setError(null)
+
+      // Load project, positions, and QR tags in parallel
+      const [projectResponse, positionsResponse, qrTagsResponse] = await Promise.all([
+        internalApiClient.get<Project>(`/projects/${projectId}`),
+        internalApiClient.get<ProjectPosition[]>(`/project-positions/by-project/${projectId}`),
+        internalApiClient.get<QrTag[]>(`/qrtags`)
+      ])
+
+      setProject(projectResponse.data)
+      setPositions(positionsResponse.data)
+      setQrTags(qrTagsResponse.data)
     } catch (err) {
-      setLinkingError(err instanceof Error ? err.message : 'Failed to link equipment')
+      console.error('Failed to load data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load data')
+    } finally {
+      setLoading(false)
+    }
+  }, [projectId])
+
+  // Load data
+  useEffect(() => {
+    if (!projectId) {
+      setError('Project ID is required')
+      setLoading(false)
+      return
+    }
+
+    loadData()
+  }, [projectId, loadData])
+
+  const handleLink = async () => {
+    if (!selectedPositionId || !selectedQrTagId) {
+      setLinkingError('Please select both a position and a QR tag')
+      return
+    }
+
+    try {
+      setIsLinking(true)
+      setLinkingError(null)
+
+      // Link QR tag to the specific position using the new API
+      await internalApiClient.patch(`/project-positions/${selectedPositionId}/link-qrtag/${selectedQrTagId}`)
+
+      // Refresh data to show updated state
+      await loadData()
+      
+      // Clear selections after successful link
+      setSelectedPositionId(null)
+      setSelectedQrTagId(null)
+      
+      // Show success message (you can replace with toast notification)
+      alert('QR tag successfully linked to position!')
+    } catch (err) {
+      console.error('Failed to link QR tag:', err)
+      setLinkingError(err instanceof Error ? err.message : 'Failed to link QR tag')
     } finally {
       setIsLinking(false)
     }
   }
 
-  if (isLoading) {
-    return <LoadingView message={t('LOADING_PROJECT_DATA')} />
+  const handleUnlink = async (position: ProjectPosition) => {
+    try {
+      setIsUnlinking(true)
+      setLinkingError(null)
+
+      // Unlink QR tag from the specific position
+      await internalApiClient.patch(`/project-positions/${position.id}/unlink-qrtag`)
+
+      // Refresh data to show updated state
+      await loadData()
+      
+      // Show success message (you can replace with toast notification)
+      alert('QR tag successfully unlinked from position!')
+    } catch (err) {
+      console.error('Failed to unlink QR tag:', err)
+      setLinkingError(err instanceof Error ? err.message : 'Failed to unlink QR tag')
+    } finally {
+      setIsUnlinking(false)
+    }
+  }
+
+  if (loading) {
+    return <LoadingView message="Loading linking data..." />
   }
 
   if (error) {
@@ -39,45 +225,214 @@ const LinkingPage: FC = () => {
   }
 
   if (!project) {
-    return <ErrorView message='Project data not found.' />
+    return <ErrorView message="Project not found" />
   }
 
-  return (
-    <div className='min-h-screen bg-base-200'>
-      <Header title='Link Equipment' />
-      <div className='container mx-auto px-4 py-8'>
-        <h1 className='text-3xl font-bold mb-2'>{project.info.identification}</h1>
-        <p className='text-lg text-base-content/70 mb-8'>{project.info.subIdentification}</p>
+  // Filter QR tags - show unassigned ones (not linked to any position)
+  const positionsWithQrTags = positions.filter(position => position.qrTag)
+  const unassignedQrTags = qrTags.filter(tag => 
+    !positions.some(position => position.qrTagId === tag.id)
+  )
 
-        <div className='card bg-base-100 shadow-xl w-full max-w-lg mx-auto'>
-          <div className='card-body'>
-            <h2 className='card-title'>Link Equipment to Project</h2>
-            <p>Enter the UUID of the equipment you want to link to this project.</p>
-            <div className='form-control mt-4'>
-              <label className='label'>
-                <span className='label-text'>Equipment UUID</span>
-              </label>
-              <input
-                type='text'
-                placeholder='Enter equipment UUID'
-                className='input input-bordered w-full'
-                value={equipmentUuid}
-                onChange={(e) => setEquipmentUuid(e.target.value)}
-              />
+  const selectedPosition = positions.find(p => p.id === selectedPositionId)
+  const selectedQrTag = qrTags.find(q => q.id === selectedQrTagId)
+
+  return (
+    <div className="min-h-screen bg-base-200">
+      <Header title="Link Equipment" />
+      
+      <div className="container mx-auto px-4 py-8">
+        {/* Project Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">{project.projectNumber}</h1>
+          <p className="text-lg text-base-content/70 mb-2">{project.businessName}</p>
+          <p className="text-base-content/60">{project.address}, {project.city}</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Position Selection */}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title">
+                <span>Select Position</span>
+                {selectedPosition && (
+                  <div className="badge badge-primary">Selected</div>
+                )}
+              </h2>
+              
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Project Positions</span>
+                </label>
+                <select 
+                  className="select select-bordered w-full"
+                  value={selectedPositionId || ''}
+                  onChange={(e) => setSelectedPositionId(e.target.value || null)}
+                >
+                  <option value="">Choose a position...</option>
+                  {positions.map(position => (
+                    <option key={position.id} value={position.id}>
+                      #{position.positionNumber} - {position.description}
+                      {position.buildingFloor && ` (Floor: ${position.buildingFloor})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedPosition && (
+                <div className="mt-4 p-4 bg-base-200 rounded-lg">
+                  <h3 className="font-semibold mb-2">Position Details</h3>
+                  <div className="space-y-1 text-sm">
+                    <p><strong>Position #:</strong> {selectedPosition.positionNumber}</p>
+                    <p><strong>Sequence #:</strong> {selectedPosition.sequenceNumber}</p>
+                    {selectedPosition.buildingFloor && (
+                      <p><strong>Floor:</strong> {selectedPosition.buildingFloor}</p>
+                    )}
+                    <p><strong>Description:</strong> {selectedPosition.description}</p>
+                    {selectedPosition.assetModel && (
+                      <p><strong>Asset:</strong> {selectedPosition.assetModel.brand} {selectedPosition.assetModel.model}</p>
+                    )}
+                    {selectedPosition.width && selectedPosition.height && (
+                      <p><strong>Dimensions:</strong> {selectedPosition.width} x {selectedPosition.height}</p>
+                    )}
+                    {selectedPosition.notes && (
+                      <p><strong>Notes:</strong> {selectedPosition.notes}</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            {linkingError && <p className='text-error mt-2'>{linkingError}</p>}
-            <div className='card-actions justify-end mt-4'>
-              <button
-                className='btn btn-primary'
-                onClick={handleLinkEquipment}
-                disabled={isLinking || !equipmentUuid}
-              >
-                {isLinking && <span className='loading loading-spinner'></span>}
-                Link Equipment
-              </button>
+          </div>
+
+          {/* QR Tag Selection */}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title">
+                <span>Select QR Tag</span>
+                {selectedQrTag && (
+                  <div className="badge badge-primary">Selected</div>
+                )}
+              </h2>
+              
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Available QR Tags</span>
+                </label>
+                <select 
+                  className="select select-bordered w-full"
+                  value={selectedQrTagId || ''}
+                  onChange={(e) => setSelectedQrTagId(e.target.value || null)}
+                >
+                  <option value="">Choose a QR tag...</option>
+                  {unassignedQrTags.map(qrTag => (
+                    <option key={qrTag.id} value={qrTag.id}>
+                      {qrTag.serialNo} - {qrTag.status}
+                      {qrTag.assetModel && ` (${qrTag.assetModel.name})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedQrTag && (
+                <div className="mt-4 p-4 bg-base-200 rounded-lg">
+                  <h3 className="font-semibold mb-2">QR Tag Details</h3>
+                  <div className="space-y-1 text-sm">
+                    <p><strong>Serial No:</strong> {selectedQrTag.serialNo}</p>
+                    <p><strong>Status:</strong> 
+                      <span className={`ml-2 badge ${
+                        selectedQrTag.status === 'COMPLETED' ? 'badge-success' :
+                        selectedQrTag.status === 'PROCESSING' ? 'badge-warning' :
+                        'badge-neutral'
+                      }`}>
+                        {selectedQrTag.status}
+                      </span>
+                    </p>
+                    <p><strong>Sequence:</strong> {selectedQrTag.sequence}</p>
+                    <p><strong>Year:</strong> {selectedQrTag.year}</p>
+                    <p><strong>Client Code:</strong> {selectedQrTag.clientCode}</p>
+                    {selectedQrTag.assetModel && (
+                      <p><strong>Asset Model:</strong> {selectedQrTag.assetModel.brand} {selectedQrTag.assetModel.model}</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Action Buttons */}
+        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+          <button
+            className="btn btn-primary btn-lg"
+            onClick={handleLink}
+            disabled={!selectedPositionId || !selectedQrTagId || isLinking}
+          >
+            {isLinking && <span className="loading loading-spinner"></span>}
+            <Link className="w-5 h-5" />
+            Link QR Tag to Position
+          </button>
+        </div>
+
+        {linkingError && (
+          <div className="alert alert-error mt-4">
+            <span>{linkingError}</span>
+          </div>
+        )}
+
+        {/* Positions with Linked QR Tags */}
+        {positionsWithQrTags.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold mb-6">Positions with Linked QR Tags</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {positionsWithQrTags.map(position => (
+                <div key={position.id} className="card bg-base-100 shadow-lg">
+                  <div className="card-body">
+                    <h3 className="card-title text-lg">Position #{position.positionNumber}</h3>
+                    <div className="space-y-1 text-sm mb-4">
+                      <p><strong>Description:</strong> {position.description}</p>
+                      {position.buildingFloor && (
+                        <p><strong>Floor:</strong> {position.buildingFloor}</p>
+                      )}
+                      {position.assetModel && (
+                        <p><strong>Asset:</strong> {position.assetModel.brand} {position.assetModel.model}</p>
+                      )}
+                    </div>
+                    
+                    {position.qrTag && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold text-primary mb-2">Linked QR Tag</h4>
+                        <div className="space-y-1 text-sm">
+                          <p><strong>Serial No:</strong> {position.qrTag.serialNo}</p>
+                          <p><strong>Status:</strong> 
+                            <span className={`ml-2 badge badge-sm ${
+                              position.qrTag.status === 'COMPLETED' ? 'badge-success' :
+                              position.qrTag.status === 'PROCESSING' ? 'badge-warning' :
+                              'badge-neutral'
+                            }`}>
+                              {position.qrTag.status}
+                            </span>
+                          </p>
+                          <p><strong>Sequence:</strong> {position.qrTag.sequence}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="card-actions justify-end mt-4">
+                      <button
+                        className="btn btn-error btn-sm"
+                        onClick={() => handleUnlink(position)}
+                        disabled={isUnlinking}
+                      >
+                        {isUnlinking && <span className="loading loading-spinner loading-xs"></span>}
+                        Unlink QR Tag
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

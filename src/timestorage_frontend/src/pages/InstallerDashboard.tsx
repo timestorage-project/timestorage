@@ -53,7 +53,7 @@ const InstallerDashboard: FC = () => {
   }, [user, navigate, isInstaller])
 
   const handleProjectClick = (project: InstallerProject) => {
-    navigate(`/installer-project/${project.id}`)
+    navigate(`/projects/${project.id}`)
   }
 
   const handleAcceptInvitation = async (id: string) => {

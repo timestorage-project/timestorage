@@ -15,7 +15,10 @@ import { useTranslation } from './hooks/useTranslation'
 import GoPage from './pages/GoPage'
 import { DataProvider } from './context/DataContext'
 import './globals.css'
+import './styles/toast.css'
 import { authService } from './store/auth.store'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import { isInAuthCallback } from './services/auth0Service'
 import LoadingView from './components/LoadingView'
 import Auth0CallbackPage from './pages/Auth0CallbackPage'
@@ -107,6 +110,7 @@ const App: FC = () => {
       <ThemeProvider>
         <DataProvider>
           <AppRoutes />
+          <ToastContainer />
         </DataProvider>
       </ThemeProvider>
     </BrowserRouter>

@@ -5,6 +5,7 @@ import { internalApiClient } from '@/services/apiClient'
 import Header from '@/components/Header'
 import LoadingView from '@/components/LoadingView'
 import ErrorView from '@/components/ErrorView'
+import { toastService } from '@/services/toastService'
 import { Link } from 'lucide-react'
 
 interface ProjectPosition {
@@ -167,7 +168,9 @@ const LinkingPage: FC = () => {
 
   const handleLink = async () => {
     if (!selectedPositionId || !selectedQrTagId) {
-      setLinkingError('Please select both a position and a QR tag')
+      const errorMessage = 'Please select both a position and a QR tag'
+      setLinkingError(errorMessage)
+      toastService.warning(errorMessage)
       return
     }
 
@@ -178,18 +181,42 @@ const LinkingPage: FC = () => {
       // Link QR tag to the specific position using the new API
       await internalApiClient.patch(`/project-positions/${selectedPositionId}/link-qrtag/${selectedQrTagId}`)
 
-      // Refresh data to show updated state
-      await loadData()
+      // Update local state instead of refetching all data
+      const selectedQrTag = qrTags.find(tag => tag.id === selectedQrTagId)
+      if (selectedQrTag) {
+        // Update the position with the linked QR tag
+        setPositions(prevPositions => 
+          prevPositions.map(position => 
+            position.id === selectedPositionId 
+              ? { 
+                  ...position, 
+                  qrTagId: selectedQrTagId,
+                  qrTag: {
+                    id: selectedQrTag.id,
+                    serialNo: selectedQrTag.serialNo,
+                    sequence: selectedQrTag.sequence,
+                    year: selectedQrTag.year,
+                    clientCode: selectedQrTag.clientCode,
+                    status: selectedQrTag.status
+                  }
+                }
+              : position
+          )
+        )
+      }
       
-      // Clear selections after successful link
+      // Clear selections and error after successful link
       setSelectedPositionId(null)
       setSelectedQrTagId(null)
+      setLinkingError(null)
       
-      // Show success message (you can replace with toast notification)
-      alert('QR tag successfully linked to position!')
+      // Show success toast
+      toastService.success('QR tag successfully linked to position!')
     } catch (err) {
       console.error('Failed to link QR tag:', err)
-      setLinkingError(err instanceof Error ? err.message : 'Failed to link QR tag')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to link QR tag'
+      setLinkingError(errorMessage)
+      toastService.error(errorMessage)
     } finally {
       setIsLinking(false)
     }
@@ -203,14 +230,25 @@ const LinkingPage: FC = () => {
       // Unlink QR tag from the specific position
       await internalApiClient.patch(`/project-positions/${position.id}/unlink-qrtag`)
 
-      // Refresh data to show updated state
-      await loadData()
+      // Update local state instead of refetching all data
+      setPositions(prevPositions => 
+        prevPositions.map(pos => 
+          pos.id === position.id 
+            ? { ...pos, qrTagId: null, qrTag: undefined }
+            : pos
+        )
+      )
       
-      // Show success message (you can replace with toast notification)
-      alert('QR tag successfully unlinked from position!')
+      // Clear error after successful unlink
+      setLinkingError(null)
+      
+      // Show success toast
+      toastService.success('QR tag successfully unlinked from position!')
     } catch (err) {
       console.error('Failed to unlink QR tag:', err)
-      setLinkingError(err instanceof Error ? err.message : 'Failed to unlink QR tag')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to unlink QR tag'
+      setLinkingError(errorMessage)
+      toastService.error(errorMessage)
     } finally {
       setIsUnlinking(false)
     }

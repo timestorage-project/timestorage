@@ -215,6 +215,7 @@ export const en = {
   LINKING_ASSET: 'Asset',
   LINKING_DIMENSIONS: 'Dimensions',
   LINKING_NOTES: 'Notes',
+  LINKING_MANAGE: 'Gestisci',
   
   // QR Tag Selection
   LINKING_SELECT_QR_TAG: 'Select QR Tag',

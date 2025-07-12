@@ -1,9 +1,8 @@
-import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import * as canisterService from '../services/canisterService'
 import * as serverService from '../services/serverService'
 import { en } from '@/lang/en'
-import mockEquipmentData from '../mocks/mock-equipment.json'
 import { it } from '@/lang/it'
 import { AssetCore, FetchingStatus, IWizardQuestion } from '@/types/structures'
 import { DataStructure } from '@/types/DataStructure'
@@ -11,7 +10,7 @@ import { historyService } from '../services/historyService'
 
 type TransformedProjectAPIResponse = Awaited<ReturnType<typeof canisterService.getProject>>
 
-interface IDataContextType {
+interface IDataHookReturn {
   provider: 'canister' | 'server'
   uuid: string
   data: DataStructure | null
@@ -23,8 +22,6 @@ interface IDataContextType {
   reloadData: () => Promise<void>
   getWizardQuestions: (sectionId: string) => Promise<IWizardQuestion[]>
 }
-
-const DataContext = createContext<IDataContextType | undefined>(undefined)
 
 /**
  * ---------------------------------------------------------
@@ -125,15 +122,10 @@ async function fetchData(uuid: string, translations: { [key: string]: string }, 
 
 /**
  * ---------------------------------------------------------
- * 2) DataProvider & useData Hook
+ * Main data fetching hook - accepts UUID/projectId parameters
  * ---------------------------------------------------------
  */
-interface DataProviderProps {
-  children: ReactNode
-}
-
-export const DataProvider: FC<DataProviderProps> = ({ children }) => {
-  // The state now holds our new DataStructure class instance.
+export const useData = (uuid?: string, projectId?: string): IDataHookReturn => {
   const [data, setData] = useState<DataStructure | null>(null)
   const [project, setProject] = useState<TransformedProjectAPIResponse | null>(null)
   const [assetCore, setAssetCore] = useState<AssetCore | null>(null)
@@ -141,9 +133,8 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [provider, setProvider] = useState<'canister' | 'server'>('canister')
-  const location = useLocation()
   const navigate = useNavigate()
-  const [uuid, setUuid] = useState<string>('')
+  const [resolvedUuid, setResolvedUuid] = useState<string>('')
   const [locale] = useState<'en' | 'it'>('it')
 
   const translations = locale === 'en' ? en : it
@@ -152,68 +143,46 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     const loadData = async () => {
       setIsLoading(true)
       setError(null)
-      const currentPath = location.pathname
+      
+      const currentUuid = uuid || projectId || ''
 
-      if (currentPath === '/mock-sandbox') {
-        try {
-          // Use the class method to directly parse the mock JSON.
-          const mappedMockData = DataStructure.fromJSON(mockEquipmentData as never)
-          setData(mappedMockData)
-          setUuid('mock-sandbox')
-        } catch (err) {
-          console.error('Error loading or processing mock data:', err)
-          setError(err instanceof Error ? err.message : 'Failed to load mock data')
-          setData(null)
-        } finally {
-          setIsLoading(false)
-        }
-        return
-      }
-
-      const pathParts = currentPath.split('/')
-      const uuid = pathParts[2] || ''
-
-      if (!uuid) {
-        setError('No project ID found in URL for data loading.')
+      if (!currentUuid) {
+        setError('No UUID provided for data loading.')
         setData(null)
-        setUuid('')
+        setResolvedUuid('')
         setIsLoading(false)
         return
       }
 
-      setUuid(uuid)
+      setResolvedUuid(currentUuid)
 
       try {
-        // Determine which provider to use based on asset availability and status
-        const determinedProvider = await determineProvider(uuid).catch(() => 'canister' as const)
+        const determinedProvider = await determineProvider(currentUuid).catch(() => 'canister' as const)
         setProvider(determinedProvider)
-        console.log(`Using ${determinedProvider} service for UUID: ${uuid}`)
+        console.log(`Using ${determinedProvider} service for UUID: ${currentUuid}`)
 
-        // Use the appropriate service based on provider
         const service = determinedProvider === 'canister' ? canisterService : serverService
 
         setFetchingStatus('project')
-        const projectResult = await service.getProjectByUuid(uuid).catch(err => {
+        const projectResult = await service.getProjectByUuid(currentUuid).catch(err => {
           console.error('Failed to fetch project, proceeding without it.', err)
           return null
         })
         if (projectResult) {
           setProject(projectResult)
-          // Add project to history
-          historyService.addProject(uuid, projectResult.info.identification, projectResult.info.subIdentification)
+          historyService.addProject(currentUuid, projectResult.info.identification, projectResult.info.subIdentification)
         }
 
         setFetchingStatus('data')
-        const dataResult = await fetchData(uuid, translations, determinedProvider).catch(() => null)
+        const dataResult = await fetchData(currentUuid, translations, determinedProvider).catch(() => null)
         if (dataResult) {
           setData(dataResult)
-          // Add UUID to history
-          historyService.addUUID(uuid, dataResult.info?.identification, dataResult.info?.subIdentification)
+          historyService.addUUID(currentUuid, dataResult.info?.identification, dataResult.info?.subIdentification)
         } else if (projectResult) {
-          navigate(`/linking/${uuid}`)
+          navigate(`/linking/${currentUuid}`)
         }
 
-        const assetCoreResult = await service.getAssetCore(uuid).catch(() => null)
+        const assetCoreResult = await service.getAssetCore(currentUuid).catch(() => null)
         if (assetCoreResult) {
           setAssetCore(assetCoreResult)
         } else {
@@ -226,7 +195,7 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred while fetching data')
-        setData(null) // Ensure data is null on error
+        setData(null)
       } finally {
         setIsLoading(false)
         setFetchingStatus('completed')
@@ -234,12 +203,12 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     }
 
     loadData()
-  }, [location.pathname, translations, navigate])
+  }, [uuid, projectId, translations, navigate])
 
   const reloadData = async () => {
     try {
       setIsLoading(true)
-      const result = await fetchData(uuid, translations, provider)
+      const result = await fetchData(resolvedUuid, translations, provider)
       setData(result)
       setError(null)
     } catch (err) {
@@ -256,30 +225,16 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     return wizardNode.questions
   }
 
-  return (
-    <DataContext.Provider
-      value={{
-        data: data ?? null,
-        project,
-        assetCore,
-        fetchingStatus,
-        isLoading,
-        error,
-        uuid,
-        getWizardQuestions,
-        reloadData,
-        provider
-      }}
-    >
-      {children}
-    </DataContext.Provider>
-  )
-}
-
-export const useData = () => {
-  const context = useContext(DataContext)
-  if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider')
+  return {
+    data: data ?? null,
+    project,
+    assetCore,
+    fetchingStatus,
+    isLoading,
+    error,
+    uuid: resolvedUuid,
+    getWizardQuestions,
+    reloadData,
+    provider
   }
-  return context
 }

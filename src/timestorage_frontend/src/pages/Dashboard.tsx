@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { Info, PlayCircle, Download, Wrench, Construction, FileText, CheckCircle, Building2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
 import { Typography } from '@/components/ui/typography'
 import { Motion } from '@/components/ui/motion'
@@ -13,7 +13,8 @@ import { useTranslation } from '@/hooks/useTranslation'
 
 const Dashboard: FC = () => {
   const navigate = useNavigate()
-  const { data, isLoading, error, uuid, project } = useData()
+  const { uuid } = useParams<{ uuid: string }>()
+  const { data, isLoading, error, project, uuid: resolvedUuid } = useData(uuid)
   const { t } = useTranslation()
 
   if (isLoading && !data) {
@@ -71,7 +72,7 @@ const Dashboard: FC = () => {
             <Motion variant="slideUp" duration={300}>
               <div 
                 className='card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-40 border-2 border-primary/20 rounded-lg overflow-hidden'
-                onClick={() => navigate(`/project/from-equipment/${uuid}`)}
+                onClick={() => navigate(`/project/from-equipment/${resolvedUuid}`)}
               >
                 <div className='card-body p-4'>
                   <div className='text-primary mb-2'>

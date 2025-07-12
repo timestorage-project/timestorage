@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { Home, LogIn, LogOut, Building2, Package, Wrench } from 'lucide-react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
 import { useAuthStore } from '@/store/auth.store'
 import { loginWithAuth0, logoutWithAuth0 } from '@/services/auth0Service'
@@ -9,8 +9,23 @@ import { useTranslation } from '../hooks/useTranslation'
 const BottomNavigation: FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { uuid, project } = useData()
   const { t } = useTranslation()
+  
+  // Extract UUID from route params
+  const { uuid: routeUuid, projectId } = useParams<{ uuid?: string; projectId?: string }>()
+  
+  // For routes like /project/from-equipment/:uuid, extract the uuid
+  let extractedUuid = routeUuid || projectId
+  if (location.pathname.includes('/from-equipment/')) {
+    const pathParts = location.pathname.split('/')
+    const fromEquipmentIndex = pathParts.findIndex(part => part === 'from-equipment')
+    if (fromEquipmentIndex !== -1 && pathParts[fromEquipmentIndex + 1]) {
+      extractedUuid = pathParts[fromEquipmentIndex + 1]
+    }
+  }
+  
+  // Always call useData hook - it handles empty/undefined UUIDs gracefully
+  const { uuid, project } = useData(extractedUuid)
 
   // Get the current equipment UUID from the project if available, otherwise use the context uuid
   const equipmentUuid = project?.uuid || uuid

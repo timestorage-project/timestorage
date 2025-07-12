@@ -44,7 +44,7 @@ export const it = {
   SCHEDULED_DATE_QUESTION: "Qual è la data programmata per l'installazione?",
   INSTALLER_QUESTION: "Chi è l'installatore assegnato?",
   INSTALLER_DASHBOARD: 'Dashboard Installatore',
-  
+
   // Installer Dashboard
   INSTALLER_LOADING: 'Caricamento dei tuoi progetti...',
   INSTALLER_ERROR_TITLE: 'Errore nel Caricamento dei Progetti',
@@ -57,7 +57,7 @@ export const it = {
   INSTALLER_RECENT_PROJECTS: 'Progetti Recenti (Ultimi 30 Giorni)',
   INSTALLER_NO_RECENT_PROJECTS: 'Nessun Progetto Recente',
   INSTALLER_PROJECTS_APPEAR_MESSAGE: 'I tuoi progetti recenti appariranno qui una volta che inizierai a lavorarci.',
-  
+
   // Time formatting
   TIME_JUST_NOW: 'Proprio ora',
   TIME_MINUTES_AGO: 'minuti fa',
@@ -66,7 +66,7 @@ export const it = {
   TIME_YESTERDAY: 'Ieri',
   TIME_DAYS_AGO: 'giorni fa',
   TIME_WEEKS_AGO: 'settimane fa',
-  
+
   // Project Status
   STATUS_ACCEPTED: 'Accettato',
   STATUS_REJECTED: 'Rifiutato',
@@ -201,7 +201,7 @@ export const it = {
   LINKING_PROJECT_NOT_FOUND: 'Commessa non trovata',
   LINKING_PROJECT_ID_REQUIRED: 'ID commessa richiesto',
   LINKING_FAILED_TO_LOAD_DATA: 'Errore nel caricamento dei dati',
-  
+
   // Position Selection
   LINKING_SELECT_POSITION: 'Seleziona Posizione',
   LINKING_SELECTED: 'Selezionato',
@@ -215,7 +215,8 @@ export const it = {
   LINKING_ASSET: 'Serramento',
   LINKING_DIMENSIONS: 'Dimensioni',
   LINKING_NOTES: 'Note',
-  
+  LINKING_MANAGE: 'Gestisci',
+
   // QR Tag Selection
   LINKING_SELECT_QR_TAG: 'Seleziona QR Tag',
   LINKING_AVAILABLE_QR_TAGS: 'QR Tag Disponibili',
@@ -227,20 +228,20 @@ export const it = {
   LINKING_YEAR: 'Anno',
   LINKING_CLIENT_CODE: 'Codice Cliente',
   LINKING_ASSET_MODEL: 'Modello Serramento',
-  
+
   // Actions
   LINKING_LINK_QR_TAG_TO_POSITION: 'Collega QR Tag alla Posizione',
   LINKING_UNLINK_QR_TAG: 'Scollega QR Tag',
-  
+
   // Error Messages
   LINKING_SELECT_BOTH_POSITION_AND_QR_TAG: 'Seleziona sia una posizione che un QR tag',
   LINKING_FAILED_TO_LINK_QR_TAG: 'Errore nel collegamento del QR tag',
   LINKING_FAILED_TO_UNLINK_QR_TAG: 'Errore nello scollegamento del QR tag',
-  
+
   // Success Messages
   LINKING_QR_TAG_LINKED_SUCCESS: 'QR tag collegato alla posizione con successo!',
   LINKING_QR_TAG_UNLINKED_SUCCESS: 'QR tag scollegato dalla posizione con successo!',
-  
+
   // Linked QR Tags Section
   LINKING_POSITIONS_WITH_LINKED_QR_TAGS: 'Posizioni con QR Tag Collegati',
   LINKING_LINKED_QR_TAG: 'QR Tag Collegato',

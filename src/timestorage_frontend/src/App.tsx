@@ -14,7 +14,6 @@ import ProtectedRoute from './components/ProtectedRoute'
 import PublicRoute from './components/PublicRoute'
 import { useTranslation } from './hooks/useTranslation'
 import GoPage from './pages/GoPage'
-import { DataProvider } from './context/DataContext'
 import './globals.css'
 import './styles/toast.css'
 import { authService } from './store/auth.store'
@@ -60,6 +59,11 @@ const AppRoutes: FC = () => {
         </PublicRoute>
       } />
       <Route path='/project/:projectId' element={
+        <PublicRoute>
+          <ProjectDashboard />
+        </PublicRoute>
+      } />
+      <Route path='/projects/:projectId' element={
         <PublicRoute>
           <ProjectDashboard />
         </PublicRoute>
@@ -165,10 +169,8 @@ const App: FC = () => {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <DataProvider>
-          <AppRoutes />
-          <ToastContainer />
-        </DataProvider>
+        <AppRoutes />
+        <ToastContainer />
       </ThemeProvider>
     </BrowserRouter>
   )

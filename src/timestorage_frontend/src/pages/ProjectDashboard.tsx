@@ -41,10 +41,17 @@ const ProjectDashboard: FC = () => {
         let projectData: TransformedProjectAPIResponse | null = null
 
         if (projectId) {
-          // Route 1: Load by project ID
-          projectData = await canisterService.getProjectByUuid(projectId)
+          // Route 1: /project/:projectId or /projects/:projectId - Load by project ID
+          try {
+            // First try to get project directly by projectId
+            projectData = await canisterService.getProject(projectId)
+          } catch (directError) {
+            // If direct fetch fails, try to find project by UUID (projectId might be equipment UUID)
+            console.log('Direct project fetch failed, trying getProjectByUuid:', directError)
+            projectData = await canisterService.getProjectByUuid(projectId)
+          }
         } else if (uuid) {
-          // Route 2: Load by equipment UUID - first get the equipment data, then find its project
+          // Route 2: /project/from-equipment/:uuid - Load by equipment UUID, find its containing project
           projectData = await canisterService.getProjectByUuid(uuid)
         } else {
           setError('No project ID or equipment UUID provided')

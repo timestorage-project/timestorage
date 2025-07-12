@@ -16,8 +16,8 @@ import { useTranslation } from '@/hooks/useTranslation'
 // Types are now imported from @/components/detail-page/types
 
 const DetailPage = () => {
-  const { sectionId } = useParams<{ sectionId: string }>()
-  const { data, isLoading, error, uuid, reloadData } = useData()
+  const { uuid, sectionId } = useParams<{ uuid: string; sectionId: string }>()
+  const { data, isLoading, error, uuid: resolvedUuid, reloadData } = useData(uuid)
   const { t } = useTranslation()
   // Define the file cache state with proper typing
   const [fileCache, setFileCache] = useState<FileCache>({})
@@ -31,7 +31,7 @@ const DetailPage = () => {
 
       try {
         setLoadingFiles(prev => [...prev, fileId])
-        const metadata = await canisterService.getFileMetadataByUUIDAndId(uuid, fileId)
+        const metadata = await canisterService.getFileMetadataByUUIDAndId(resolvedUuid, fileId)
 
         setFileCache(prev => ({
           ...prev,
@@ -66,7 +66,7 @@ const DetailPage = () => {
         setLoadingFiles(prev => prev.filter(id => id !== fileId))
       }
     },
-    [uuid, loadingFiles]
+    [resolvedUuid, loadingFiles]
   )
 
   const downloadFileContent = useCallback(
@@ -99,13 +99,13 @@ const DetailPage = () => {
 
         // Only download if we don't already have the content and we have a valid uuid
         if (!file.content) {
-          if (!uuid) {
+          if (!resolvedUuid) {
             console.error('Cannot download file: No UUID available')
             return
           }
 
           try {
-            const fileData = await canisterService.downloadFileContent(uuid, fileId)
+            const fileData = await canisterService.downloadFileContent(resolvedUuid, fileId)
 
             if (!fileData || !fileData.dataUrl) {
               throw new Error('Invalid file data received from server')
@@ -155,7 +155,7 @@ const DetailPage = () => {
         setLoadingFiles(prev => prev.filter(id => id !== fileId))
       }
     },
-    [fileCache, loadingFiles, loadFileMetadata, uuid]
+    [fileCache, loadingFiles, loadFileMetadata, resolvedUuid]
   )
 
   const handleFileUpload = async (file: File, refId: string): Promise<void> => {
@@ -164,7 +164,7 @@ const DetailPage = () => {
       const base64Data = await fileToBase64(file)
       const partialMetadata = utilGetFileMetadata(file)
 
-      const result = await canisterService.uploadFile(uuid, base64Data, partialMetadata)
+      const result = await canisterService.uploadFile(resolvedUuid, base64Data, partialMetadata)
       const fileId = result.match(/ID: (file-\d+)/)?.[1]
 
       if (!fileId) {
@@ -173,7 +173,7 @@ const DetailPage = () => {
 
       const key = refId.replace('#/values/', '')
       console.log('Upload complete. Using key path:', key, 'for fileId:', fileId)
-      await canisterService.updateValue(uuid, key, fileId, true)
+      await canisterService.updateValue(resolvedUuid, key, fileId, true)
 
       await reloadData()
       loadFileMetadata(fileId)
@@ -288,7 +288,7 @@ const DetailPage = () => {
 
   return (
     <div className='min-h-screen bg-base-200'>
-      <Header title={pageData.title || (uuid ? `Details - ${uuid}` : 'Details')} />
+      <Header title={pageData.title || (resolvedUuid ? `Details - ${resolvedUuid}` : 'Details')} />
 
       <div className='container mx-auto px-4 py-6 pb-24'>
         <Motion variant='fadeIn' className='space-y-6'>

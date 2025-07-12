@@ -28,8 +28,9 @@ interface StagedFiles {
 
 const WizardPage = () => {
   const navigate = useNavigate()
-  const { uuid, getWizardQuestions, data } = useData()
-  const { sectionId } = useParams<{ sectionId: string }>()
+  const { uuid, sectionId } = useParams<{ uuid: string; sectionId: string }>()
+  const { uuid: resolvedUuid, getWizardQuestions, data } = useData(uuid)
+  const { t } = useTranslation()
   const [availableWizards, setAvailableWizards] = useState<{ id: string; title: string }[]>([])
   const [selectedWizard, setSelectedWizard] = useState<string | null>(sectionId || null)
   const [questions, setQuestions] = useState<IWizardQuestion[]>([])
@@ -37,8 +38,6 @@ const WizardPage = () => {
   const [error, setError] = useState<string | null>(null)
   const [stagedFiles, setStagedFiles] = useState<StagedFiles>({})
   const [previewUrls, setPreviewUrls] = useState<Record<string, string | string[]>>({})
-  const { t } = useTranslation()
-
   const [isUploading, setIsUploading] = useState(false)
 
   const [saving, setSaving] = useState(false)
@@ -81,7 +80,7 @@ const WizardPage = () => {
     try {
       const base64Data = await fileToBase64(file)
       const metadata = getFileMetadata(file)
-      const result = await canisterService.uploadFile(uuid, base64Data, metadata)
+      const result = await canisterService.uploadFile(resolvedUuid, base64Data, metadata)
       const fileId = result.match(/ID: (file-\d+)/)?.[1]
       if (!fileId) {
         throw new Error('Failed to extract file ID from response')
@@ -171,7 +170,7 @@ const WizardPage = () => {
       // Filter out null values and submit each answer
       for (const submission of submissions.filter(Boolean)) {
         if (submission) {
-          await canisterService.updateValue(uuid, submission.key, submission.value, true)
+          await canisterService.updateValue(resolvedUuid, submission.key, submission.value, true)
         }
       }
 

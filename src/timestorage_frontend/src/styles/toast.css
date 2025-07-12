@@ -2,15 +2,15 @@
 
 /* Override react-toastify default styles */
 .Toastify__toast-container {
-  /* Position using DaisyUI toast classes */
-  @apply toast toast-top toast-end;
-  /* Remove default styling */
+  /* Position in top-right corner like DaisyUI toast */
+  position: fixed;
   top: 1rem;
   right: 1rem;
   width: auto;
   max-width: 400px;
   padding: 0;
   box-sizing: border-box;
+  z-index: 9999;
 }
 
 .Toastify__toast {

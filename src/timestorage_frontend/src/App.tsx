@@ -11,6 +11,7 @@ import LinkingPage from './pages/LinkingPage'
 import HistoryDashboard from './pages/HistoryDashboard'
 import InstallerDashboard from './pages/InstallerDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
+import PublicRoute from './components/PublicRoute'
 import { useTranslation } from './hooks/useTranslation'
 import GoPage from './pages/GoPage'
 import { DataProvider } from './context/DataContext'
@@ -38,20 +39,76 @@ const AppRoutes: FC = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path='/' element={<MockDashboardRedirect />} />
-      <Route path='/go' element={<GoPage />} />
-      <Route path='/history' element={<HistoryDashboard />} />
-      <Route path='/view/mock-dashboard' element={<MockDashboard />} />
-      <Route path='/project/:projectId' element={<ProjectDashboard />} />
-      <Route path='/project/from-equipment/:uuid' element={<ProjectDashboard />} />
-      <Route path='/view/:uuid' element={<Dashboard />} />
-      <Route path='/view/mock-sandbox' element={<Dashboard />} />
-      <Route path='/view/:uuid/:sectionId' element={<DetailPage />} />
-      <Route path='/view/:uuid/wizard/:sectionId' element={<WizardPage />} />
-      <Route path='/view/:uuid/wizard' element={<WizardPage />} />
-      <Route path='/view/:uuid/forms' element={<div>Forms Page</div>} />
-      <Route path='/view/:uuid/gallery' element={<div>Gallery Page</div>} />
-      <Route path='/view/:uuid/profile' element={<div>Profile Page</div>} />
+      <Route path='/' element={
+        <PublicRoute>
+          <MockDashboardRedirect />
+        </PublicRoute>
+      } />
+      <Route path='/go' element={
+        <PublicRoute>
+          <GoPage />
+        </PublicRoute>
+      } />
+      <Route path='/history' element={
+        <PublicRoute>
+          <HistoryDashboard />
+        </PublicRoute>
+      } />
+      <Route path='/view/mock-dashboard' element={
+        <PublicRoute>
+          <MockDashboard />
+        </PublicRoute>
+      } />
+      <Route path='/project/:projectId' element={
+        <PublicRoute>
+          <ProjectDashboard />
+        </PublicRoute>
+      } />
+      <Route path='/project/from-equipment/:uuid' element={
+        <PublicRoute>
+          <ProjectDashboard />
+        </PublicRoute>
+      } />
+      <Route path='/view/:uuid' element={
+        <PublicRoute>
+          <Dashboard />
+        </PublicRoute>
+      } />
+      <Route path='/view/mock-sandbox' element={
+        <PublicRoute>
+          <Dashboard />
+        </PublicRoute>
+      } />
+      <Route path='/view/:uuid/:sectionId' element={
+        <PublicRoute>
+          <DetailPage />
+        </PublicRoute>
+      } />
+      <Route path='/view/:uuid/wizard/:sectionId' element={
+        <PublicRoute>
+          <WizardPage />
+        </PublicRoute>
+      } />
+      <Route path='/view/:uuid/wizard' element={
+        <PublicRoute>
+          <WizardPage />
+        </PublicRoute>
+      } />
+      <Route path='/view/:uuid/forms' element={
+        <PublicRoute>
+          <div>Forms Page</div>
+        </PublicRoute>
+      } />
+      <Route path='/view/:uuid/gallery' element={
+        <PublicRoute>
+          <div>Gallery Page</div>
+        </PublicRoute>
+      } />
+      <Route path='/view/:uuid/profile' element={
+        <PublicRoute>
+          <div>Profile Page</div>
+        </PublicRoute>
+      } />
       <Route path='/auth/auth0/callback' element={<Auth0CallbackPage />} />
       <Route path='/login' element={<LoginPage />} />
       <Route path='/linking/:projectId' element={<LinkingPage />} />

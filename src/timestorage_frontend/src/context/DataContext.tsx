@@ -47,13 +47,31 @@ async function determineProvider(uuid: string): Promise<'canister' | 'server'> {
     console.log('Asset not found in canister, trying server:', canisterError)
     
     try {
-      // Try to fetch from server to see if it exists there
+      // Try to fetch QR tag from server to see if it exists there
       await serverService.getAssetCore(uuid)
       return 'server'
-    } catch (serverError) {
-      console.log('Asset not found in server either:', serverError)
-      // If not found in either, default to canister for backwards compatibility
-      throw new Error('Asset does not exists')
+    } catch (serverAssetError) {
+      console.log('Asset not found in server either, checking for project:', serverAssetError)
+      
+      try {
+        // UUID might be a project UUID instead of QR tag, try to fetch project
+        await serverService.getProjectByUuid(uuid)
+        console.log('Found project with UUID in server, using server provider')
+        return 'server'
+      } catch (serverProjectError) {
+        console.log('Project not found in server either:', serverProjectError)
+        
+        try {
+          // Last attempt: try to fetch project from canister
+          await canisterService.getProjectByUuid(uuid)
+          console.log('Found project with UUID in canister, using canister provider')
+          return 'canister'
+        } catch (canisterProjectError) {
+          console.log('Project not found in canister either:', canisterProjectError)
+          // If not found anywhere, throw error
+          throw new Error('UUID not found as either asset or project in any service')
+        }
+      }
     }
   }
 }

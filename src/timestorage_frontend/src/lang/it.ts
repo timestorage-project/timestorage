@@ -194,4 +194,54 @@ export const it = {
   HISTORY_HOURS_AGO: 'ore fa',
   HISTORY_YESTERDAY: 'Ieri',
   HISTORY_DAYS_AGO: 'giorni fa',
+
+  // Linking Page
+  LINKING_PAGE_TITLE: 'Collega Serramento',
+  LINKING_LOADING_DATA: 'Caricamento dati collegamento...',
+  LINKING_PROJECT_NOT_FOUND: 'Commessa non trovata',
+  LINKING_PROJECT_ID_REQUIRED: 'ID commessa richiesto',
+  LINKING_FAILED_TO_LOAD_DATA: 'Errore nel caricamento dei dati',
+  
+  // Position Selection
+  LINKING_SELECT_POSITION: 'Seleziona Posizione',
+  LINKING_SELECTED: 'Selezionato',
+  LINKING_PROJECT_POSITIONS: 'Posizioni della Commessa',
+  LINKING_CHOOSE_POSITION: 'Scegli una posizione...',
+  LINKING_FLOOR: 'Piano',
+  LINKING_POSITION_DETAILS: 'Dettagli Posizione',
+  LINKING_POSITION_NUMBER: 'Posizione #',
+  LINKING_SEQUENCE_NUMBER: 'Sequenza #',
+  LINKING_DESCRIPTION: 'Descrizione',
+  LINKING_ASSET: 'Serramento',
+  LINKING_DIMENSIONS: 'Dimensioni',
+  LINKING_NOTES: 'Note',
+  
+  // QR Tag Selection
+  LINKING_SELECT_QR_TAG: 'Seleziona QR Tag',
+  LINKING_AVAILABLE_QR_TAGS: 'QR Tag Disponibili',
+  LINKING_CHOOSE_QR_TAG: 'Scegli un QR tag...',
+  LINKING_QR_TAG_DETAILS: 'Dettagli QR Tag',
+  LINKING_SERIAL_NO: 'Numero di Serie',
+  LINKING_STATUS: 'Stato',
+  LINKING_SEQUENCE: 'Sequenza',
+  LINKING_YEAR: 'Anno',
+  LINKING_CLIENT_CODE: 'Codice Cliente',
+  LINKING_ASSET_MODEL: 'Modello Serramento',
+  
+  // Actions
+  LINKING_LINK_QR_TAG_TO_POSITION: 'Collega QR Tag alla Posizione',
+  LINKING_UNLINK_QR_TAG: 'Scollega QR Tag',
+  
+  // Error Messages
+  LINKING_SELECT_BOTH_POSITION_AND_QR_TAG: 'Seleziona sia una posizione che un QR tag',
+  LINKING_FAILED_TO_LINK_QR_TAG: 'Errore nel collegamento del QR tag',
+  LINKING_FAILED_TO_UNLINK_QR_TAG: 'Errore nello scollegamento del QR tag',
+  
+  // Success Messages
+  LINKING_QR_TAG_LINKED_SUCCESS: 'QR tag collegato alla posizione con successo!',
+  LINKING_QR_TAG_UNLINKED_SUCCESS: 'QR tag scollegato dalla posizione con successo!',
+  
+  // Linked QR Tags Section
+  LINKING_POSITIONS_WITH_LINKED_QR_TAGS: 'Posizioni con QR Tag Collegati',
+  LINKING_LINKED_QR_TAG: 'QR Tag Collegato',
 }

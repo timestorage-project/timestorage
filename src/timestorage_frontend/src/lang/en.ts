@@ -194,4 +194,54 @@ export const en = {
   HISTORY_HOURS_AGO: 'hours ago',
   HISTORY_YESTERDAY: 'Yesterday',
   HISTORY_DAYS_AGO: 'days ago',
+
+  // Linking Page
+  LINKING_PAGE_TITLE: 'Link Equipment',
+  LINKING_LOADING_DATA: 'Loading linking data...',
+  LINKING_PROJECT_NOT_FOUND: 'Project not found',
+  LINKING_PROJECT_ID_REQUIRED: 'Project ID is required',
+  LINKING_FAILED_TO_LOAD_DATA: 'Failed to load data',
+  
+  // Position Selection
+  LINKING_SELECT_POSITION: 'Select Position',
+  LINKING_SELECTED: 'Selected',
+  LINKING_PROJECT_POSITIONS: 'Project Positions',
+  LINKING_CHOOSE_POSITION: 'Choose a position...',
+  LINKING_FLOOR: 'Floor',
+  LINKING_POSITION_DETAILS: 'Position Details',
+  LINKING_POSITION_NUMBER: 'Position #',
+  LINKING_SEQUENCE_NUMBER: 'Sequence #',
+  LINKING_DESCRIPTION: 'Description',
+  LINKING_ASSET: 'Asset',
+  LINKING_DIMENSIONS: 'Dimensions',
+  LINKING_NOTES: 'Notes',
+  
+  // QR Tag Selection
+  LINKING_SELECT_QR_TAG: 'Select QR Tag',
+  LINKING_AVAILABLE_QR_TAGS: 'Available QR Tags',
+  LINKING_CHOOSE_QR_TAG: 'Choose a QR tag...',
+  LINKING_QR_TAG_DETAILS: 'QR Tag Details',
+  LINKING_SERIAL_NO: 'Serial No',
+  LINKING_STATUS: 'Status',
+  LINKING_SEQUENCE: 'Sequence',
+  LINKING_YEAR: 'Year',
+  LINKING_CLIENT_CODE: 'Client Code',
+  LINKING_ASSET_MODEL: 'Asset Model',
+  
+  // Actions
+  LINKING_LINK_QR_TAG_TO_POSITION: 'Link QR Tag to Position',
+  LINKING_UNLINK_QR_TAG: 'Unlink QR Tag',
+  
+  // Error Messages
+  LINKING_SELECT_BOTH_POSITION_AND_QR_TAG: 'Please select both a position and a QR tag',
+  LINKING_FAILED_TO_LINK_QR_TAG: 'Failed to link QR tag',
+  LINKING_FAILED_TO_UNLINK_QR_TAG: 'Failed to unlink QR tag',
+  
+  // Success Messages
+  LINKING_QR_TAG_LINKED_SUCCESS: 'QR tag successfully linked to position!',
+  LINKING_QR_TAG_UNLINKED_SUCCESS: 'QR tag successfully unlinked from position!',
+  
+  // Linked QR Tags Section
+  LINKING_POSITIONS_WITH_LINKED_QR_TAGS: 'Positions with Linked QR Tags',
+  LINKING_LINKED_QR_TAG: 'Linked QR Tag',
 }

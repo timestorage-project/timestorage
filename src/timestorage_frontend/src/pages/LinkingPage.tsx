@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import LoadingView from '@/components/LoadingView'
 import ErrorView from '@/components/ErrorView'
 import { toastService } from '@/services/toastService'
+import { useTranslation } from '@/hooks/useTranslation'
 import { Link } from 'lucide-react'
 
 interface ProjectPosition {
@@ -98,6 +99,7 @@ const LinkingPage: FC = () => {
   }>()
   const [searchParams] = useSearchParams()
   const { user, isInstaller, isAuthenticated } = useAuthStore()
+  const { t } = useTranslation()
 
   // Get optional parameters from either path or query parameters (path takes precedence)
   const positionId = pathPositionId || searchParams.get('positionId')
@@ -149,7 +151,7 @@ const LinkingPage: FC = () => {
       setQrTags(qrTagsResponse.data)
     } catch (err) {
       console.error('Failed to load data:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load data')
+      setError(err instanceof Error ? err.message : t('LINKING_FAILED_TO_LOAD_DATA'))
     } finally {
       setLoading(false)
     }
@@ -158,7 +160,7 @@ const LinkingPage: FC = () => {
   // Load data
   useEffect(() => {
     if (!projectId) {
-      setError('Project ID is required')
+      setError(t('LINKING_PROJECT_ID_REQUIRED'))
       setLoading(false)
       return
     }
@@ -168,7 +170,7 @@ const LinkingPage: FC = () => {
 
   const handleLink = async () => {
     if (!selectedPositionId || !selectedQrTagId) {
-      const errorMessage = 'Please select both a position and a QR tag'
+      const errorMessage = t('LINKING_SELECT_BOTH_POSITION_AND_QR_TAG')
       setLinkingError(errorMessage)
       toastService.warning(errorMessage)
       return
@@ -211,10 +213,10 @@ const LinkingPage: FC = () => {
       setLinkingError(null)
       
       // Show success toast
-      toastService.success('QR tag successfully linked to position!')
+      toastService.success(t('LINKING_QR_TAG_LINKED_SUCCESS'))
     } catch (err) {
       console.error('Failed to link QR tag:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to link QR tag'
+      const errorMessage = err instanceof Error ? err.message : t('LINKING_FAILED_TO_LINK_QR_TAG')
       setLinkingError(errorMessage)
       toastService.error(errorMessage)
     } finally {
@@ -243,10 +245,10 @@ const LinkingPage: FC = () => {
       setLinkingError(null)
       
       // Show success toast
-      toastService.success('QR tag successfully unlinked from position!')
+      toastService.success(t('LINKING_QR_TAG_UNLINKED_SUCCESS'))
     } catch (err) {
       console.error('Failed to unlink QR tag:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to unlink QR tag'
+      const errorMessage = err instanceof Error ? err.message : t('LINKING_FAILED_TO_UNLINK_QR_TAG')
       setLinkingError(errorMessage)
       toastService.error(errorMessage)
     } finally {
@@ -255,7 +257,7 @@ const LinkingPage: FC = () => {
   }
 
   if (loading) {
-    return <LoadingView message="Loading linking data..." />
+    return <LoadingView message={t('LINKING_LOADING_DATA')} />
   }
 
   if (error) {
@@ -263,7 +265,7 @@ const LinkingPage: FC = () => {
   }
 
   if (!project) {
-    return <ErrorView message="Project not found" />
+    return <ErrorView message={t('LINKING_PROJECT_NOT_FOUND')} />
   }
 
   // Filter QR tags - show unassigned ones (not linked to any position)
@@ -277,7 +279,7 @@ const LinkingPage: FC = () => {
 
   return (
     <div className="min-h-screen bg-base-200">
-      <Header title="Link Equipment" />
+      <Header title={t('LINKING_PAGE_TITLE')} />
       
       <div className="container mx-auto px-4 py-8">
         {/* Project Header */}
@@ -292,26 +294,26 @@ const LinkingPage: FC = () => {
           <div className="card bg-base-100 shadow-xl">
             <div className="card-body">
               <h2 className="card-title">
-                <span>Select Position</span>
+                <span>{t('LINKING_SELECT_POSITION')}</span>
                 {selectedPosition && (
-                  <div className="badge badge-primary">Selected</div>
+                  <div className="badge badge-primary">{t('LINKING_SELECTED')}</div>
                 )}
               </h2>
               
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Project Positions</span>
+                  <span className="label-text">{t('LINKING_PROJECT_POSITIONS')}</span>
                 </label>
                 <select 
                   className="select select-bordered w-full"
                   value={selectedPositionId || ''}
                   onChange={(e) => setSelectedPositionId(e.target.value || null)}
                 >
-                  <option value="">Choose a position...</option>
+                  <option value="">{t('LINKING_CHOOSE_POSITION')}</option>
                   {positions.map(position => (
                     <option key={position.id} value={position.id}>
                       #{position.positionNumber} - {position.description}
-                      {position.buildingFloor && ` (Floor: ${position.buildingFloor})`}
+                      {position.buildingFloor && ` (${t('LINKING_FLOOR')}: ${position.buildingFloor})`}
                     </option>
                   ))}
                 </select>
@@ -319,22 +321,22 @@ const LinkingPage: FC = () => {
 
               {selectedPosition && (
                 <div className="mt-4 p-4 bg-base-200 rounded-lg">
-                  <h3 className="font-semibold mb-2">Position Details</h3>
+                  <h3 className="font-semibold mb-2">{t('LINKING_POSITION_DETAILS')}</h3>
                   <div className="space-y-1 text-sm">
-                    <p><strong>Position #:</strong> {selectedPosition.positionNumber}</p>
-                    <p><strong>Sequence #:</strong> {selectedPosition.sequenceNumber}</p>
+                    <p><strong>{t('LINKING_POSITION_NUMBER')}:</strong> {selectedPosition.positionNumber}</p>
+                    <p><strong>{t('LINKING_SEQUENCE_NUMBER')}:</strong> {selectedPosition.sequenceNumber}</p>
                     {selectedPosition.buildingFloor && (
-                      <p><strong>Floor:</strong> {selectedPosition.buildingFloor}</p>
+                      <p><strong>{t('LINKING_FLOOR')}:</strong> {selectedPosition.buildingFloor}</p>
                     )}
-                    <p><strong>Description:</strong> {selectedPosition.description}</p>
+                    <p><strong>{t('LINKING_DESCRIPTION')}:</strong> {selectedPosition.description}</p>
                     {selectedPosition.assetModel && (
-                      <p><strong>Asset:</strong> {selectedPosition.assetModel.brand} {selectedPosition.assetModel.model}</p>
+                      <p><strong>{t('LINKING_ASSET')}:</strong> {selectedPosition.assetModel.brand} {selectedPosition.assetModel.model}</p>
                     )}
                     {selectedPosition.width && selectedPosition.height && (
-                      <p><strong>Dimensions:</strong> {selectedPosition.width} x {selectedPosition.height}</p>
+                      <p><strong>{t('LINKING_DIMENSIONS')}:</strong> {selectedPosition.width} x {selectedPosition.height}</p>
                     )}
                     {selectedPosition.notes && (
-                      <p><strong>Notes:</strong> {selectedPosition.notes}</p>
+                      <p><strong>{t('LINKING_NOTES')}:</strong> {selectedPosition.notes}</p>
                     )}
                   </div>
                 </div>
@@ -346,22 +348,22 @@ const LinkingPage: FC = () => {
           <div className="card bg-base-100 shadow-xl">
             <div className="card-body">
               <h2 className="card-title">
-                <span>Select QR Tag</span>
+                <span>{t('LINKING_SELECT_QR_TAG')}</span>
                 {selectedQrTag && (
-                  <div className="badge badge-primary">Selected</div>
+                  <div className="badge badge-primary">{t('LINKING_SELECTED')}</div>
                 )}
               </h2>
               
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Available QR Tags</span>
+                  <span className="label-text">{t('LINKING_AVAILABLE_QR_TAGS')}</span>
                 </label>
                 <select 
                   className="select select-bordered w-full"
                   value={selectedQrTagId || ''}
                   onChange={(e) => setSelectedQrTagId(e.target.value || null)}
                 >
-                  <option value="">Choose a QR tag...</option>
+                  <option value="">{t('LINKING_CHOOSE_QR_TAG')}</option>
                   {unassignedQrTags.map(qrTag => (
                     <option key={qrTag.id} value={qrTag.id}>
                       {qrTag.serialNo} - {qrTag.status}
@@ -373,10 +375,10 @@ const LinkingPage: FC = () => {
 
               {selectedQrTag && (
                 <div className="mt-4 p-4 bg-base-200 rounded-lg">
-                  <h3 className="font-semibold mb-2">QR Tag Details</h3>
+                  <h3 className="font-semibold mb-2">{t('LINKING_QR_TAG_DETAILS')}</h3>
                   <div className="space-y-1 text-sm">
-                    <p><strong>Serial No:</strong> {selectedQrTag.serialNo}</p>
-                    <p><strong>Status:</strong> 
+                    <p><strong>{t('LINKING_SERIAL_NO')}:</strong> {selectedQrTag.serialNo}</p>
+                    <p><strong>{t('LINKING_STATUS')}:</strong> 
                       <span className={`ml-2 badge ${
                         selectedQrTag.status === 'COMPLETED' ? 'badge-success' :
                         selectedQrTag.status === 'PROCESSING' ? 'badge-warning' :
@@ -385,11 +387,11 @@ const LinkingPage: FC = () => {
                         {selectedQrTag.status}
                       </span>
                     </p>
-                    <p><strong>Sequence:</strong> {selectedQrTag.sequence}</p>
-                    <p><strong>Year:</strong> {selectedQrTag.year}</p>
-                    <p><strong>Client Code:</strong> {selectedQrTag.clientCode}</p>
+                    <p><strong>{t('LINKING_SEQUENCE')}:</strong> {selectedQrTag.sequence}</p>
+                    <p><strong>{t('LINKING_YEAR')}:</strong> {selectedQrTag.year}</p>
+                    <p><strong>{t('LINKING_CLIENT_CODE')}:</strong> {selectedQrTag.clientCode}</p>
                     {selectedQrTag.assetModel && (
-                      <p><strong>Asset Model:</strong> {selectedQrTag.assetModel.brand} {selectedQrTag.assetModel.model}</p>
+                      <p><strong>{t('LINKING_ASSET_MODEL')}:</strong> {selectedQrTag.assetModel.brand} {selectedQrTag.assetModel.model}</p>
                     )}
                   </div>
                 </div>
@@ -407,7 +409,7 @@ const LinkingPage: FC = () => {
           >
             {isLinking && <span className="loading loading-spinner"></span>}
             <Link className="w-5 h-5" />
-            Link QR Tag to Position
+{t('LINKING_LINK_QR_TAG_TO_POSITION')}
           </button>
         </div>
 
@@ -420,28 +422,28 @@ const LinkingPage: FC = () => {
         {/* Positions with Linked QR Tags */}
         {positionsWithQrTags.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">Positions with Linked QR Tags</h2>
+            <h2 className="text-2xl font-bold mb-6">{t('LINKING_POSITIONS_WITH_LINKED_QR_TAGS')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {positionsWithQrTags.map(position => (
                 <div key={position.id} className="card bg-base-100 shadow-lg">
                   <div className="card-body">
-                    <h3 className="card-title text-lg">Position #{position.positionNumber}</h3>
+                    <h3 className="card-title text-lg">{t('LINKING_POSITION_NUMBER')} {position.positionNumber}</h3>
                     <div className="space-y-1 text-sm mb-4">
-                      <p><strong>Description:</strong> {position.description}</p>
+                      <p><strong>{t('LINKING_DESCRIPTION')}:</strong> {position.description}</p>
                       {position.buildingFloor && (
-                        <p><strong>Floor:</strong> {position.buildingFloor}</p>
+                        <p><strong>{t('LINKING_FLOOR')}:</strong> {position.buildingFloor}</p>
                       )}
                       {position.assetModel && (
-                        <p><strong>Asset:</strong> {position.assetModel.brand} {position.assetModel.model}</p>
+                        <p><strong>{t('LINKING_ASSET')}:</strong> {position.assetModel.brand} {position.assetModel.model}</p>
                       )}
                     </div>
                     
                     {position.qrTag && (
                       <div className="border-t pt-4">
-                        <h4 className="font-semibold text-primary mb-2">Linked QR Tag</h4>
+                        <h4 className="font-semibold text-primary mb-2">{t('LINKING_LINKED_QR_TAG')}</h4>
                         <div className="space-y-1 text-sm">
-                          <p><strong>Serial No:</strong> {position.qrTag.serialNo}</p>
-                          <p><strong>Status:</strong> 
+                          <p><strong>{t('LINKING_SERIAL_NO')}:</strong> {position.qrTag.serialNo}</p>
+                          <p><strong>{t('LINKING_STATUS')}:</strong> 
                             <span className={`ml-2 badge badge-sm ${
                               position.qrTag.status === 'COMPLETED' ? 'badge-success' :
                               position.qrTag.status === 'PROCESSING' ? 'badge-warning' :
@@ -450,7 +452,7 @@ const LinkingPage: FC = () => {
                               {position.qrTag.status}
                             </span>
                           </p>
-                          <p><strong>Sequence:</strong> {position.qrTag.sequence}</p>
+                          <p><strong>{t('LINKING_SEQUENCE')}:</strong> {position.qrTag.sequence}</p>
                         </div>
                       </div>
                     )}
@@ -462,7 +464,7 @@ const LinkingPage: FC = () => {
                         disabled={isUnlinking}
                       >
                         {isUnlinking && <span className="loading loading-spinner loading-xs"></span>}
-                        Unlink QR Tag
+                        {t('LINKING_UNLINK_QR_TAG')}
                       </button>
                     </div>
                   </div>

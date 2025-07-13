@@ -494,20 +494,6 @@ const LinkingPage: FC = () => {
                             <strong>{t('LINKING_SERIAL_NO')}:</strong> {position.qrTag.serialNo}
                           </p>
                           <p>
-                            <strong>{t('LINKING_STATUS')}:</strong>
-                            <span
-                              className={`ml-2 badge badge-sm ${
-                                position.qrTag.status === 'COMPLETED'
-                                  ? 'badge-success'
-                                  : position.qrTag.status === 'PROCESSING'
-                                  ? 'badge-warning'
-                                  : 'badge-neutral'
-                              }`}
-                            >
-                              {position.qrTag.status}
-                            </span>
-                          </p>
-                          <p>
                             <strong>{t('LINKING_SEQUENCE')}:</strong> {position.qrTag.sequence}
                           </p>
                         </div>

@@ -29,12 +29,11 @@ interface StagedFiles {
 const WizardPage = () => {
   const navigate = useNavigate()
   const { uuid, sectionId } = useParams<{ uuid: string; sectionId: string }>()
-  const { uuid: resolvedUuid, getWizardQuestions, data, service } = useData(uuid)
+  const { data, isLoading, error: hookError, uuid: resolvedUuid, service } = useData(uuid)
   const { t } = useTranslation()
   const [availableWizards, setAvailableWizards] = useState<{ id: string; title: string }[]>([])
   const [selectedWizard, setSelectedWizard] = useState<string | null>(sectionId || null)
   const [questions, setQuestions] = useState<IWizardQuestion[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [stagedFiles, setStagedFiles] = useState<StagedFiles>({})
   const [previewUrls, setPreviewUrls] = useState<Record<string, string | string[]>>({})
@@ -42,9 +41,9 @@ const WizardPage = () => {
 
   const [saving, setSaving] = useState(false)
 
-  // Effect to find all available wizard sections when data is loaded
+  // Effect to find all available wizard sections and load questions when data is loaded
   useEffect(() => {
-    if (data) {
+    if (data && data.nodes) {
       const wizards = Object.entries(data.nodes)
         .filter(([_, section]) => section.isWizard)
         .map(([key, section]) => ({ id: key, title: section.title }))
@@ -54,6 +53,13 @@ const WizardPage = () => {
       // If no wizard is selected and we have wizards available, select the first one
       if (!selectedWizard && wizards.length > 0) {
         setSelectedWizard(wizards[0].id)
+      }
+
+      // Load questions for the selected wizard
+      if (selectedWizard && data.nodes[selectedWizard]?.isWizard) {
+        const wizardNode = data.nodes[selectedWizard]
+        setQuestions(wizardNode.questions || [])
+        setError(null)
       }
     }
   }, [data, selectedWizard])
@@ -144,7 +150,6 @@ const WizardPage = () => {
   const handleWizardCompletion = async () => {
     try {
       setSaving(true) // Start saving
-      setLoading(true)
 
       // Process each answer and submit it
       const submissions = Object.entries(state.answers).map(([questionId, answer]) => {
@@ -179,30 +184,10 @@ const WizardPage = () => {
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to submit answers')
     } finally {
-      setLoading(false)
       setSaving(false)
     }
   }
 
-  // Changed to use selectedWizard for fetching questions
-  useEffect(() => {
-    const loadQuestions = async () => {
-      if (!selectedWizard) return
-
-      try {
-        setLoading(true)
-        const questionData = await getWizardQuestions(selectedWizard)
-        setQuestions(questionData)
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load questions')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadQuestions()
-  }, [getWizardQuestions, selectedWizard])
 
   // Reset state when changing wizards
   useEffect(() => {
@@ -233,8 +218,12 @@ const WizardPage = () => {
     return <LoadingView message={t('WIZARD_SAVING_ANSWERS')} />
   }
 
-  if (loading && questions.length === 0) {
+  if (isLoading && !data) {
     return <LoadingView message={t('WIZARD_LOADING')} />
+  }
+
+  if (hookError) {
+    return <ErrorView message={hookError} />
   }
 
   if (error) {
@@ -515,7 +504,7 @@ const WizardPage = () => {
       <Header title={t(wizardTitle)} />
 
       <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center pb-24">
-        {!loading && !error && selectedWizard && questions.length > 0 && (
+        {!isLoading && !error && selectedWizard && questions.length > 0 && (
           <>
             <div className="w-full max-w-4xl flex justify-center mb-8">
               <progress

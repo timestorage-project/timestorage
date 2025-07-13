@@ -245,4 +245,52 @@ export const it = {
   // Linked QR Tags Section
   LINKING_POSITIONS_WITH_LINKED_QR_TAGS: 'Posizioni con QR Tag Collegati',
   LINKING_LINKED_QR_TAG: 'QR Tag Collegato',
+
+  
+  "PRODUCT_DETAIL_TITLE": "Dettagli Prodotto",
+  "PRODUCT_DETAIL_DESCRIPTION": "Informazioni generali riguardo al prodotto.",
+  "BRAND_LABEL": "Marca",
+  "MODEL_LABEL": "Modello",
+  "DESCRIPTION_LABEL": "Descrizione",
+  "NOTES_LABEL": "Note",
+
+  "DOCUMENT_DETAIL_TITLE": "Documenti Prodotto",
+  "DOCUMENT_DETAIL_DESCRIPTION": "Tutti i documenti relativi al prodotto.",
+  "TECHNICAL_SHEET_LABEL": "Scheda Tecnica",
+  "INSTRUCTION_MANUAL_LABEL": "Manuale di Istruzioni",
+  "PRODUCT_PICTURE_LABEL": "Foto del Prodotto",
+  "INSTALLATION_DOCUMENT_LABEL": "Documento di Installazione",
+  "CE_CERTIFICATION_LABEL": "Certificazione CE",
+  "DOP_LABEL": "Dichiarazione di Prestazione (DOP)",
+  "HAZARDOUS_SUBSTANCES_DECLARATION_LABEL": "Dichiarazione Sostanze Pericolose",
+
+  "POSITION_INFO_TITLE": "Informazioni Posizione",
+  "POSITION_INFO_DESCRIPTION": "Dettagli sulla posizione di installazione del prodotto.",
+  "POSITION_NUMBER_LABEL": "Numero Posizione",
+  "POSITION_SEQUENCE_LABEL": "Sequenza Posizione",
+  "FLOOR_LABEL": "Piano",
+  "WIDTH_LABEL": "Larghezza (mm)",
+  "HEIGHT_LABEL": "Altezza (mm)",
+
+  "PROJECT_INFO_TITLE": "Informazioni Progetto",
+  "PROJECT_INFO_DESCRIPTION": "Dettagli sul progetto generale.",
+  "PROJECT_NUMBER_LABEL": "Numero Progetto",
+  "PROJECT_DATE_LABEL": "Data Progetto",
+  "INSTALLER_INFO_LABEL": "Nome Installatore",
+
+  "INSTALLATION_GALLERY_TITLE": "Galleria Installazione",
+  "INSTALLATION_GALLERY_DESCRIPTION": "Foto scattate durante il processo di installazione.",
+  "INSTALLATION_PHOTO_1_LABEL": "Foto Installazione 1",
+  "INSTALLATION_PHOTO_2_LABEL": "Foto Installazione 2",
+  "INSTALLATION_PHOTO_3_LABEL": "Foto Installazione 3",
+  "INSTALLATION_PHOTO_4_LABEL": "Foto Installazione 4",
+
+  "INSTALLATION_WIZARD_TITLE": "Avvia Acquisizione Foto",
+  "INSTALLATION_WIZARD_DESCRIPTION": "Scatta 4 foto del processo di installazione.",
+  "INSTALLATION_PHOTO_1_QUESTION": "Scatta la prima foto dell'installazione.",
+  "INSTALLATION_PHOTO_2_QUESTION": "Scatta la seconda foto dell'installazione.",
+  "INSTALLATION_PHOTO_3_QUESTION": "Scatta la terza foto dell'installazione.",
+  "INSTALLATION_PHOTO_4_QUESTION": "Scatta la foto finale dell'installazione."
+
+
 }

@@ -61,3 +61,5 @@ dfx canister call timestorage_backend updateValue '(record { uuid = "equipment-v
 dfx canister call timestorage_backend updateValue '(record { uuid = "equipment-v6-mock"; key = "productInfo.installationStatus"; newValue = "Pending" })'
 
 dfx canister call timestorage_backend updateValue '(record { uuid = "equipment-v6-mock"; key = "productInfo.windowType"; newValue = "Double Hung" })'
+
+dfx canister call timestorage_backend updateAssetStatus '("equipment-v6-mock", (variant { completed }))'

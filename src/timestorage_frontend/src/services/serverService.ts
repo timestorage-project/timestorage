@@ -103,28 +103,116 @@ export const uploadFile = async (
     uploadTimestamp: bigint
   }
 ) => {
-  // TODO: Implement API call
-  throw new Error('Server service not implemented yet')
+  try {
+    const response = await publicApiClient.post<{ message: string }>(`/assets/${uuid}/files`, {
+      fileData,
+      metadata: {
+        fileName: metadata.fileName,
+        mimeType: metadata.mimeType,
+        uploadTimestamp: metadata.uploadTimestamp.toString(),
+      },
+    })
+    return response.data.message
+  } catch (error) {
+    console.error('Error uploading file to server:', error)
+    throw error
+  }
 }
 
 export const getFileMetadataByUUIDAndId = async (uuid: string, fileId: string) => {
-  // TODO: Implement API call
-  throw new Error('Server service not implemented yet')
+  try {
+    const response = await publicApiClient.get<{
+      fileId: string
+      mimeType: string
+      fileName: string
+      uploadTimestamp: string
+      isImage: boolean
+    }>(`/assets/${uuid}/files/${fileId}/metadata`)
+    
+    return {
+      fileId: response.data.fileId,
+      mimeType: response.data.mimeType,
+      fileName: response.data.fileName,
+      uploadTimestamp: BigInt(response.data.uploadTimestamp),
+      isImage: response.data.isImage
+    }
+  } catch (error) {
+    console.error('Error fetching file metadata from server:', error)
+    throw error
+  }
 }
 
 export const getFileMetadataByUUID = async (uuid: string) => {
-  // TODO: Implement API call
-  throw new Error('Server service not implemented yet')
+  try {
+    const response = await publicApiClient.get<Array<{
+      fileId: string
+      mimeType: string
+      fileName: string
+      uploadTimestamp: string
+      isImage: boolean
+    }>>(`/assets/${uuid}/files/metadata`)
+    
+    return response.data.map((item) => ({
+      fileId: item.fileId,
+      mimeType: item.mimeType,
+      fileName: item.fileName,
+      uploadTimestamp: BigInt(item.uploadTimestamp),
+      isImage: item.isImage
+    }))
+  } catch (error) {
+    console.error('Error fetching files metadata from server:', error)
+    throw error
+  }
 }
 
 export const getFileByUUIDAndId = async (uuid: string, fileId: string) => {
-  // TODO: Implement API call
-  throw new Error('Server service not implemented yet')
+  try {
+    const response = await publicApiClient.get<{
+      fileId: string
+      mimeType: string
+      fileName: string
+      uploadTimestamp: string
+      isImage: boolean
+      dataUrl: string
+    }>(`/assets/${uuid}/files/${fileId}`)
+    
+    return {
+      fileId: response.data.fileId,
+      mimeType: response.data.mimeType,
+      fileName: response.data.fileName,
+      uploadTimestamp: BigInt(response.data.uploadTimestamp),
+      isImage: response.data.isImage,
+      dataUrl: response.data.dataUrl
+    }
+  } catch (error) {
+    console.error('Error fetching file content from server:', error)
+    throw error
+  }
 }
 
 export const downloadFileContent = async (uuid: string, fileId: string) => {
-  // TODO: Implement API call
-  throw new Error('Server service not implemented yet')
+  try {
+    const response = await publicApiClient.get<{
+      fileId: string
+      mimeType: string
+      fileName: string
+      uploadTimestamp: string
+      isImage: boolean
+      dataUrl: string
+    }>(`/assets/${uuid}/files/${fileId}/download`)
+    
+    return {
+      fileId: response.data.fileId,
+      mimeType: response.data.mimeType,
+      fileName: response.data.fileName,
+      uploadTimestamp: BigInt(response.data.uploadTimestamp),
+      isImage: response.data.isImage,
+      dataUrl: response.data.dataUrl
+    }
+  } catch (error) {
+    console.error('Error downloading file content from server:', error)
+    throw error
+  }
 }
 
 // Utility functions that match canisterService

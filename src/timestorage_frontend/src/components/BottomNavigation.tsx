@@ -28,7 +28,7 @@ const BottomNavigation: FC = () => {
   const { uuid, project } = useData(extractedUuid)
 
   // Get the current equipment UUID from the project if available, otherwise use the context uuid
-  const equipmentUuid = project?.uuid || uuid
+  const equipmentUuid = uuid
   const { isAuthenticated, isInstaller } = useAuthStore()
 
   const handleLogin = async () => {
@@ -65,7 +65,18 @@ const BottomNavigation: FC = () => {
       {/* Project Button - Goes to project view */}
       <button
         className={isProjectActive ? 'dock-active' : ''}
-        onClick={() => project && equipmentUuid && navigate(`/project/from-equipment/${equipmentUuid}`)}
+        onClick={() => {
+          if (!project) return
+          
+          // Check if we have a projectId in the route params or if the project.uuid is the projectId
+          if (projectId) {
+            // We're in project context, use direct project route
+            navigate(`/project/${project.uuid}`)
+          } else if (equipmentUuid) {
+            // We're in equipment context, use from-equipment route
+            navigate(`/project/from-equipment/${equipmentUuid}`)
+          }
+        }}
         disabled={!project || isProjectActive}
       >
         <Building2 className='size-[1.2em]' />

@@ -44,7 +44,7 @@ export const en = {
   SCHEDULED_DATE_QUESTION: 'When is the installation scheduled for?',
   INSTALLER_QUESTION: 'Who is the assigned installer?',
   INSTALLER_DASHBOARD: 'Installer Dashboard',
-  
+
   // Installer Dashboard
   INSTALLER_LOADING: 'Loading your projects...',
   INSTALLER_ERROR_TITLE: 'Error Loading Projects',
@@ -57,7 +57,7 @@ export const en = {
   INSTALLER_RECENT_PROJECTS: 'Recent Projects (Last 30 Days)',
   INSTALLER_NO_RECENT_PROJECTS: 'No Recent Projects',
   INSTALLER_PROJECTS_APPEAR_MESSAGE: 'Your recent projects will appear here once you start working on them.',
-  
+
   // Time formatting
   TIME_JUST_NOW: 'Just now',
   TIME_MINUTES_AGO: 'minutes ago',
@@ -66,7 +66,7 @@ export const en = {
   TIME_YESTERDAY: 'Yesterday',
   TIME_DAYS_AGO: 'days ago',
   TIME_WEEKS_AGO: 'weeks ago',
-  
+
   // Project Status
   STATUS_ACCEPTED: 'Accepted',
   STATUS_REJECTED: 'Rejected',
@@ -201,7 +201,7 @@ export const en = {
   LINKING_PROJECT_NOT_FOUND: 'Project not found',
   LINKING_PROJECT_ID_REQUIRED: 'Project ID is required',
   LINKING_FAILED_TO_LOAD_DATA: 'Failed to load data',
-  
+
   // Position Selection
   LINKING_SELECT_POSITION: 'Select Position',
   LINKING_SELECTED: 'Selected',
@@ -216,7 +216,7 @@ export const en = {
   LINKING_DIMENSIONS: 'Dimensions',
   LINKING_NOTES: 'Notes',
   LINKING_MANAGE: 'Gestisci',
-  
+
   // QR Tag Selection
   LINKING_SELECT_QR_TAG: 'Select QR Tag',
   LINKING_AVAILABLE_QR_TAGS: 'Available QR Tags',
@@ -228,21 +228,67 @@ export const en = {
   LINKING_YEAR: 'Year',
   LINKING_CLIENT_CODE: 'Client Code',
   LINKING_ASSET_MODEL: 'Asset Model',
-  
+
   // Actions
   LINKING_LINK_QR_TAG_TO_POSITION: 'Link QR Tag to Position',
   LINKING_UNLINK_QR_TAG: 'Unlink QR Tag',
-  
+
   // Error Messages
   LINKING_SELECT_BOTH_POSITION_AND_QR_TAG: 'Please select both a position and a QR tag',
   LINKING_FAILED_TO_LINK_QR_TAG: 'Failed to link QR tag',
   LINKING_FAILED_TO_UNLINK_QR_TAG: 'Failed to unlink QR tag',
-  
+
   // Success Messages
   LINKING_QR_TAG_LINKED_SUCCESS: 'QR tag successfully linked to position!',
   LINKING_QR_TAG_UNLINKED_SUCCESS: 'QR tag successfully unlinked from position!',
-  
+
   // Linked QR Tags Section
   LINKING_POSITIONS_WITH_LINKED_QR_TAGS: 'Positions with Linked QR Tags',
   LINKING_LINKED_QR_TAG: 'Linked QR Tag',
+
+
+  "PRODUCT_DETAIL_TITLE": "Product Details",
+  "PRODUCT_DETAIL_DESCRIPTION": "General information about the product.",
+  "BRAND_LABEL": "Brand",
+  "MODEL_LABEL": "Model",
+  "DESCRIPTION_LABEL": "Description",
+  "NOTES_LABEL": "Notes",
+
+  "DOCUMENT_DETAIL_TITLE": "Product Documents",
+  "DOCUMENT_DETAIL_DESCRIPTION": "All documents related to the product.",
+  "TECHNICAL_SHEET_LABEL": "Technical Sheet",
+  "INSTRUCTION_MANUAL_LABEL": "Instruction Manual",
+  "PRODUCT_PICTURE_LABEL": "Product Picture",
+  "INSTALLATION_DOCUMENT_LABEL": "Installation Document",
+  "CE_CERTIFICATION_LABEL": "CE Certification",
+  "DOP_LABEL": "Declaration of Performance (DOP)",
+  "HAZARDOUS_SUBSTANCES_DECLARATION_LABEL": "Hazardous Substances Declaration",
+
+  "POSITION_INFO_TITLE": "Position Information",
+  "POSITION_INFO_DESCRIPTION": "Details about the product's installation position.",
+  "POSITION_NUMBER_LABEL": "Position Number",
+  "POSITION_SEQUENCE_LABEL": "Position Sequence",
+  "FLOOR_LABEL": "Floor",
+  "WIDTH_LABEL": "Width (mm)",
+  "HEIGHT_LABEL": "Height (mm)",
+
+  "PROJECT_INFO_TITLE": "Project Information",
+  "PROJECT_INFO_DESCRIPTION": "Details about the overall project.",
+  "PROJECT_NUMBER_LABEL": "Project Number",
+  "PROJECT_DATE_LABEL": "Project Date",
+  "INSTALLER_INFO_LABEL": "Installer Name",
+
+  "INSTALLATION_GALLERY_TITLE": "Installation Gallery",
+  "INSTALLATION_GALLERY_DESCRIPTION": "Photos taken during the installation process.",
+  "INSTALLATION_PHOTO_1_LABEL": "Installation Photo 1",
+  "INSTALLATION_PHOTO_2_LABEL": "Installation Photo 2",
+  "INSTALLATION_PHOTO_3_LABEL": "Installation Photo 3",
+  "INSTALLATION_PHOTO_4_LABEL": "Installation Photo 4",
+
+  "INSTALLATION_WIZARD_TITLE": "Start Installation Photos",
+  "INSTALLATION_WIZARD_DESCRIPTION": "Take 4 photos of the installation process.",
+  "INSTALLATION_PHOTO_1_QUESTION": "Take the first photo of the installation.",
+  "INSTALLATION_PHOTO_2_QUESTION": "Take the second photo of the installation.",
+  "INSTALLATION_PHOTO_3_QUESTION": "Take the third photo of the installation.",
+  "INSTALLATION_PHOTO_4_QUESTION": "Take the final photo of the installation."
 }

@@ -115,11 +115,23 @@ const AppRoutes: FC = () => {
       } />
       <Route path='/auth/auth0/callback' element={<Auth0CallbackPage />} />
       <Route path='/login' element={<LoginPage />} />
-      <Route path='/linking/:projectId' element={<LinkingPage />} />
-      <Route path='/linking/:projectId/:positionId' element={<LinkingPage />} />
-      <Route path='/linking/:projectId/:positionId/:qrTagId' element={<LinkingPage />} />
+      <Route path='/linking/:projectId' element={
+        <ProtectedRoute>
+          <LinkingPage />
+        </ProtectedRoute>
+      } />
+      <Route path='/linking/:projectId/:positionId' element={
+        <ProtectedRoute>
+          <LinkingPage />
+        </ProtectedRoute>
+      } />
+      <Route path='/linking/:projectId/:positionId/:qrTagId' element={
+        <ProtectedRoute>
+          <LinkingPage />
+        </ProtectedRoute>
+      } />
       
-      {/* Protected routes - only installer dashboard requires authentication */}
+      {/* Protected routes - installer dashboard and linking pages require authentication */}
       <Route path='/installer-dashboard' element={
         <ProtectedRoute>
           <InstallerDashboard />

@@ -32,10 +32,9 @@ const ProjectDashboard: FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [equipmentCards, setEquipmentCards] = useState<EquipmentCard[]>([])
   const { t } = useTranslation()
-  
+
   // Get the service methods from useData hook - pass the UUID/projectId so provider is determined correctly
-  const currentUuid = projectId || uuid
-  const { service } = useData(currentUuid)
+  const { service } = useData()
 
   useEffect(() => {
     const loadProjectData = async () => {
@@ -69,29 +68,12 @@ const ProjectDashboard: FC = () => {
         }
 
         setProject(projectData)
-        
+
         // Add project to history
-        historyService.addProject(
-          projectData.uuid,
-          projectData.info.identification,
-          projectData.info.subIdentification
-        )
+        historyService.addProject(projectData.uuid, projectData.info.identification, projectData.info.subIdentification)
 
         // Process equipment cards from placements and linkedStructures
         const cards: EquipmentCard[] = []
-
-        // Add placements
-        // projectData.placements.forEach(placement => {
-        //   const info = placement.info[0] // Optional array, take first element if exists
-        //   if (info) {
-        //     cards.push({
-        //       uuid: placement.uuid,
-        //       identification: info.identification[0] || 'Unknown',
-        //       subIdentification: info.subIdentification[0] || '',
-        //       type: 'placement'
-        //     })
-        //   }
-        // })
 
         // Add linked structures
         projectData.linkedStructures.forEach((structure: { uuid: string; info?: Record<string, unknown> }) => {

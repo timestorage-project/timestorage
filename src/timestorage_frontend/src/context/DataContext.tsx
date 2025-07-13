@@ -32,7 +32,11 @@ interface IDataHookReturn {
     getFileIcon: (mimeType: string) => string
     // Methods only available in canister service (will throw error if using server)
     updateValue: (uuid: string, key: string, value: string, lock?: boolean) => Promise<unknown>
-    uploadFile: (uuid: string, fileData: string, metadata: { fileName: string; mimeType: string; uploadTimestamp: bigint }) => Promise<unknown>
+    uploadFile: (
+      uuid: string,
+      fileData: string,
+      metadata: { fileName: string; mimeType: string; uploadTimestamp: bigint }
+    ) => Promise<unknown>
     getImage: (uuid: string, imageId: string) => Promise<boolean>
     getFileMetadataByUUIDAndId: (uuid: string, fileId: string) => Promise<unknown>
     getFileMetadataByUUID: (uuid: string) => Promise<unknown[]>
@@ -50,24 +54,24 @@ async function determineProvider(uuid: string): Promise<'canister' | 'server'> {
   try {
     // First try to get asset from canister
     const assetCore = await canisterService.getAssetCore(uuid)
-    
+
     // If asset exists and status is completed, use canister
     if (assetCore && assetCore.status === 'completed') {
       return 'canister'
     }
-    
+
     // If asset doesn't exist or status is not completed, try server
     return 'server'
   } catch (canisterError) {
     console.log('Asset not found in canister, trying server:', canisterError)
-    
+
     try {
       // Try to fetch QR tag from server to see if it exists there
       await serverService.getAssetCore(uuid)
       return 'server'
     } catch (serverAssetError) {
       console.log('Asset not found in server either, checking for project:', serverAssetError)
-      
+
       try {
         // UUID might be a project UUID instead of QR tag, try to fetch project
         await serverService.getProjectByUuid(uuid)
@@ -75,7 +79,7 @@ async function determineProvider(uuid: string): Promise<'canister' | 'server'> {
         return 'server'
       } catch (serverProjectError) {
         console.log('Project not found in server either:', serverProjectError)
-        
+
         try {
           // Last attempt: try to fetch project from canister
           await canisterService.getProjectByUuid(uuid)
@@ -83,8 +87,17 @@ async function determineProvider(uuid: string): Promise<'canister' | 'server'> {
           return 'canister'
         } catch (canisterProjectError) {
           console.log('Project not found in canister either:', canisterProjectError)
-          // If not found anywhere, throw error
-          throw new Error('UUID not found as either asset or project in any service')
+
+          // Last last attempt: try to fetch project documents from canister
+          try {
+            await serverService.getProject(uuid)
+            console.log('Found project with UUID in canister, using canister provider')
+            return 'server'
+          } catch (canisterProjectDocumentsError) {
+            console.log('Project documents not found in canister either:', canisterProjectDocumentsError)
+            // If not found anywhere, throw error
+            throw new Error('UUID not found as either asset or project in any service')
+          }
         }
       }
     }
@@ -97,7 +110,11 @@ async function determineProvider(uuid: string): Promise<'canister' | 'server'> {
  * ---------------------------------------------------------
  * This now returns a DataStructure instance directly.
  */
-async function fetchData(uuid: string, translations: { [key: string]: string }, provider: 'canister' | 'server'): Promise<DataStructure> {
+async function fetchData(
+  uuid: string,
+  translations: { [key: string]: string },
+  provider: 'canister' | 'server'
+): Promise<DataStructure> {
   try {
     const service = provider === 'canister' ? canisterService : serverService
     const [schemaText, valuesAndLockJson] = await service.getUUIDInfo(uuid)
@@ -161,7 +178,7 @@ export const useData = (uuid?: string, projectId?: string): IDataHookReturn => {
     const loadData = async () => {
       setIsLoading(true)
       setError(null)
-      
+
       const currentUuid = uuid || projectId || ''
 
       if (!currentUuid) {
@@ -188,7 +205,11 @@ export const useData = (uuid?: string, projectId?: string): IDataHookReturn => {
         })
         if (projectResult) {
           setProject(projectResult)
-          historyService.addProject(currentUuid, projectResult.info.identification, projectResult.info.subIdentification)
+          historyService.addProject(
+            currentUuid,
+            projectResult.info.identification,
+            projectResult.info.subIdentification
+          )
         }
 
         setFetchingStatus('data')
@@ -245,41 +266,91 @@ export const useData = (uuid?: string, projectId?: string): IDataHookReturn => {
 
   // Create the service object that abstracts provider calls using useMemo to keep it stable
   const service = useMemo(() => {
-    const currentService = provider === 'canister' ? canisterService : serverService
-    
     return {
       // Methods available in both services
-      getUUIDInfo: currentService.getUUIDInfo,
-      getProjectByUuid: currentService.getProjectByUuid,
-      getProject: currentService.getProject,
-      getAssetCore: currentService.getAssetCore,
-      isFileId: currentService.isFileId,
-      getFileIcon: currentService.getFileIcon,
-      
+      getUUIDInfo: async (uuid: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getUUIDInfo(uuid)
+      },
+      getProjectByUuid: async (uuid: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getProjectByUuid(uuid)
+      },
+      getProject: async (projectUuid: string) => {
+        const determinedProvider = await determineProvider(projectUuid).catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getProject(projectUuid)
+      },
+      getAssetCore: async (uuid: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getAssetCore(uuid)
+      },
+      isFileId: async (value: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.isFileId(value)
+      },
+      getFileIcon: async (mimeType: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getFileIcon(mimeType)
+      },
+
       // Methods only available in canister service
-      updateValue: provider === 'canister' 
-        ? canisterService.updateValue 
-        : () => { throw new Error('updateValue is not available in server provider') },
-      uploadFile: provider === 'canister' 
-        ? canisterService.uploadFile 
-        : () => { throw new Error('uploadFile is not available in server provider') },
-      getImage: provider === 'canister' 
-        ? canisterService.getImage 
-        : () => { throw new Error('getImage is not available in server provider') },
-      getFileMetadataByUUIDAndId: provider === 'canister' 
-        ? canisterService.getFileMetadataByUUIDAndId 
-        : () => { throw new Error('getFileMetadataByUUIDAndId is not available in server provider') },
-      getFileMetadataByUUID: provider === 'canister' 
-        ? canisterService.getFileMetadataByUUID 
-        : () => { throw new Error('getFileMetadataByUUID is not available in server provider') },
-      getFileByUUIDAndId: provider === 'canister' 
-        ? canisterService.getFileByUUIDAndId 
-        : () => { throw new Error('getFileByUUIDAndId is not available in server provider') },
-      downloadFileContent: provider === 'canister' 
-        ? canisterService.downloadFileContent 
-        : () => { throw new Error('downloadFileContent is not available in server provider') }
+      updateValue: async (uuid: string, key: string, value: string, lock?: boolean) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('updateValue is not available in server provider')
+        }
+        return await canisterService.updateValue(uuid, key, value, lock)
+      },
+      uploadFile: async (uuid: string, fileData: string, metadata: { fileName: string; mimeType: string; uploadTimestamp: bigint }) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('uploadFile is not available in server provider')
+        }
+        return await canisterService.uploadFile(uuid, fileData, metadata)
+      },
+      getImage: async (uuid: string, imageId: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('getImage is not available in server provider')
+        }
+        return await canisterService.getImage(uuid, imageId)
+      },
+      getFileMetadataByUUIDAndId: async (uuid: string, fileId: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('getFileMetadataByUUIDAndId is not available in server provider')
+        }
+        return await canisterService.getFileMetadataByUUIDAndId(uuid, fileId)
+      },
+      getFileMetadataByUUID: async (uuid: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('getFileMetadataByUUID is not available in server provider')
+        }
+        return await canisterService.getFileMetadataByUUID(uuid)
+      },
+      getFileByUUIDAndId: async (uuid: string, fileId: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('getFileByUUIDAndId is not available in server provider')
+        }
+        return await canisterService.getFileByUUIDAndId(uuid, fileId)
+      },
+      downloadFileContent: async (uuid: string, fileId: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('downloadFileContent is not available in server provider')
+        }
+        return await canisterService.downloadFileContent(uuid, fileId)
+      }
     }
-  }, [provider])
+  }, [uuid, projectId])
 
   return {
     data: data ?? null,
@@ -292,6 +363,6 @@ export const useData = (uuid?: string, projectId?: string): IDataHookReturn => {
     getWizardQuestions,
     reloadData,
     provider,
-    service
+    service: service as unknown as IDataHookReturn['service']
   }
 }

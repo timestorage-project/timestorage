@@ -172,6 +172,22 @@ const LinkingPage: FC = () => {
     loadData()
   }, [projectId, loadData])
 
+  // Effect to auto-select QR tag when data is loaded (if qrTagId is a serialNo)
+  useEffect(() => {
+    if (qrTags.length > 0 && qrTagId) {
+      // Try to find QR tag by ID first, then by serialNo
+      let targetQrTag = qrTags.find(tag => tag.id === qrTagId)
+      if (!targetQrTag) {
+        // If not found by ID, try to find by serialNo
+        targetQrTag = qrTags.find(tag => tag.serialNo === qrTagId)
+      }
+
+      if (targetQrTag) {
+        setSelectedQrTagId(targetQrTag.id)
+      }
+    }
+  }, [qrTags, qrTagId, selectedQrTagId])
+
   const handleLink = async () => {
     if (!selectedPositionId || !selectedQrTagId) {
       const errorMessage = t('LINKING_SELECT_BOTH_POSITION_AND_QR_TAG')
@@ -271,7 +287,7 @@ const LinkingPage: FC = () => {
   // Filter QR tags - show unassigned ones (not linked to any position)
   const positionsWithQrTags = positions.filter(position => position.qrTag)
   const unassignedQrTags = qrTags.filter(tag => !positions.some(position => position.qrTagId === tag.id))
-  
+
   // Filter positions - show unassigned ones (not linked to any QR tag)
   const unassignedPositions = positions.filter(position => !position.qrTagId)
 
@@ -349,7 +365,8 @@ const LinkingPage: FC = () => {
                         )}
                         {selectedPosition.width && selectedPosition.height && (
                           <p>
-                            <strong>{t('LINKING_DIMENSIONS')}:</strong> {selectedPosition.width} x {selectedPosition.height}
+                            <strong>{t('LINKING_DIMENSIONS')}:</strong> {selectedPosition.width} x{' '}
+                            {selectedPosition.height}
                           </p>
                         )}
                         {selectedPosition.notes && (
@@ -436,7 +453,6 @@ const LinkingPage: FC = () => {
             )}
           </div>
         )}
-
 
         {/* Action Buttons - only show if both unassigned positions and QR tags are available */}
         {unassignedPositions.length > 0 && unassignedQrTags.length > 0 && (

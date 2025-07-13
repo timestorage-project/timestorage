@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Info, PlayCircle, Download, Wrench, Construction, FileText, CheckCircle, Building2 } from 'lucide-react'
+import { Info, PlayCircle, Download, Wrench, Construction, FileText, CheckCircle, Building2, Link2 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
 import { Typography } from '@/components/ui/typography'
@@ -8,14 +8,16 @@ import BottomNavigation from '@/components/BottomNavigation'
 import Header from '@/components/Header'
 import ErrorView from '@/components/ErrorView'
 import LoadingView from '@/components/LoadingView'
+import { useAuthStore } from '@/store/auth.store'
 
 import { useTranslation } from '@/hooks/useTranslation'
 
 const Dashboard: FC = () => {
   const navigate = useNavigate()
   const { uuid } = useParams<{ uuid: string }>()
-  const { data, isLoading, error, project, uuid: resolvedUuid } = useData(uuid)
+  const { data, isLoading, error, project, uuid: resolvedUuid, assetCore } = useData(uuid)
   const { t } = useTranslation()
+  const { isInstaller } = useAuthStore()
 
   if (isLoading && !data) {
     return <LoadingView message={t('LOADING_DASHBOARD')} />
@@ -57,6 +59,16 @@ const Dashboard: FC = () => {
   const regularItems = Object.entries(data.nodes).filter(([_, item]) => !item.isWizard)
   const wizardItems = Object.entries(data.nodes).filter(([_, item]) => item.isWizard)
 
+  // Check if asset is not linked to a project position (for installer linking button)
+  const isAssetNotLinkedToPosition = project && (assetCore?.status === 'empty' || assetCore?.status === 'initialized')
+
+  const handleLinkingClick = () => {
+    if (project?.uuid && resolvedUuid) {
+      // Navigate to /linking/projectId with equipment UUID as query parameter
+      navigate(`/linking/${project.uuid}?qrTagId=${resolvedUuid}`)
+    }
+  }
+
   return (
     <div className='min-h-screen bg-base-200'>
       <Header title='Dashboard' />
@@ -65,6 +77,28 @@ const Dashboard: FC = () => {
         <Motion variant='slideDown'>
           <h1 className='text-3xl font-bold mb-6'>{`PosaCheck - ${data.getIdentifier()}`}</h1>
         </Motion>
+
+        {/* Manage Linkings Button - Only visible to installers when asset is not linked to a position */}
+        {isInstaller && isAssetNotLinkedToPosition && (
+          <Motion variant='slideUp' duration={300} delay={100}>
+            <div className='mb-6'>
+              <div
+                className='card bg-primary text-primary-content shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer'
+                onClick={handleLinkingClick}
+              >
+                <div className='card-body p-6'>
+                  <div className='flex items-center gap-4'>
+                    <Link2 className='h-8 w-8' />
+                    <div>
+                      <h3 className='text-xl font-semibold'>{t('MANAGE_LINKINGS_TITLE')}</h3>
+                      <p className='text-sm opacity-90'>{t('MANAGE_LINKINGS_DESCRIPTION')}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Motion>
+        )}
 
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10'>
           {/* Project Dashboard Card - only show if project data exists */}

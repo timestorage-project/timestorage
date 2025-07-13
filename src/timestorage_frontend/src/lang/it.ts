@@ -290,7 +290,9 @@ export const it = {
   "INSTALLATION_PHOTO_1_QUESTION": "Scatta la prima foto dell'installazione.",
   "INSTALLATION_PHOTO_2_QUESTION": "Scatta la seconda foto dell'installazione.",
   "INSTALLATION_PHOTO_3_QUESTION": "Scatta la terza foto dell'installazione.",
-  "INSTALLATION_PHOTO_4_QUESTION": "Scatta la foto finale dell'installazione."
+  "INSTALLATION_PHOTO_4_QUESTION": "Scatta la foto finale dell'installazione.",
 
-
+  // Project Dashboard
+  "MANAGE_LINKINGS_TITLE": "Gestisci Collegamenti",
+  "MANAGE_LINKINGS_DESCRIPTION": "Configura assegnazioni e connessioni delle attrezzature"
 }

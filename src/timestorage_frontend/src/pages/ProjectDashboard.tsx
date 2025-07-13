@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Building2, Package } from 'lucide-react'
+import { Building2, Package, Link2 } from 'lucide-react'
 // Using DaisyUI classes directly instead of custom components
 import { Typography } from '@/components/ui/typography'
 import { Motion } from '@/components/ui/motion'
@@ -11,6 +11,7 @@ import BottomNavigation from '@/components/BottomNavigation'
 import { useData } from '@/context/DataContext'
 import { historyService } from '@/services/historyService'
 import * as canisterService from '@/services/canisterService'
+import { useAuthStore } from '@/store/auth.store'
 
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -32,6 +33,7 @@ const ProjectDashboard: FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [equipmentCards, setEquipmentCards] = useState<EquipmentCard[]>([])
   const { t } = useTranslation()
+  const { isInstaller } = useAuthStore()
 
   // Get the service methods from useData hook - pass the UUID/projectId so provider is determined correctly
   const { service } = useData()
@@ -104,6 +106,14 @@ const ProjectDashboard: FC = () => {
     navigate(`/view/${equipmentUuid}`)
   }
 
+  const handleManageLinkings = () => {
+    // Navigate to linking page with the project UUID
+    const targetUuid = projectId || uuid || project?.uuid
+    if (targetUuid) {
+      navigate(`/linking/${targetUuid}`)
+    }
+  }
+
   if (isLoading) {
     return <LoadingView message={t('LOADING_PROJECT_DASHBOARD')} />
   }
@@ -134,6 +144,28 @@ const ProjectDashboard: FC = () => {
             <h1 className='text-3xl font-bold mb-2'>{projectTitle}</h1>
             {projectSubtitle && <h3 className='text-xl'>{projectSubtitle}</h3>}
           </div>
+
+          {/* Manage Linkings Card - Only visible to installers */}
+          {isInstaller && (
+            <div className='mb-6'>
+              <Motion variant='slideUp' duration={300}>
+                <div
+                  className='card bg-primary text-primary-content shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer'
+                  onClick={handleManageLinkings}
+                >
+                  <div className='card-body p-6'>
+                    <div className='flex items-center gap-4'>
+                      <Link2 className='h-8 w-8' />
+                      <div>
+                        <h3 className='text-xl font-semibold'>{t('MANAGE_LINKINGS_TITLE')}</h3>
+                        <p className='text-sm opacity-90'>{t('MANAGE_LINKINGS_DESCRIPTION')}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Motion>
+            </div>
+          )}
 
           <div className='mb-6'>
             <h2 className='text-2xl font-semibold mb-4'>Elementi ({equipmentCards.length})</h2>

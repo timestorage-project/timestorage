@@ -290,5 +290,9 @@ export const en = {
   "INSTALLATION_PHOTO_1_QUESTION": "Take the first photo of the installation.",
   "INSTALLATION_PHOTO_2_QUESTION": "Take the second photo of the installation.",
   "INSTALLATION_PHOTO_3_QUESTION": "Take the third photo of the installation.",
-  "INSTALLATION_PHOTO_4_QUESTION": "Take the final photo of the installation."
+  "INSTALLATION_PHOTO_4_QUESTION": "Take the final photo of the installation.",
+
+  // Project Dashboard
+  "MANAGE_LINKINGS_TITLE": "Manage Linkings",
+  "MANAGE_LINKINGS_DESCRIPTION": "Configure equipment assignments and connections"
 }

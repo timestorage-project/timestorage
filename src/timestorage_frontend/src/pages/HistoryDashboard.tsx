@@ -14,7 +14,7 @@ const HistoryDashboard: FC = () => {
   const [uuids, setUuids] = useState<HistoryItem[]>([])
   const [projectPage, setProjectPage] = useState(0)
   const [uuidPage, setUuidPage] = useState(0)
-  
+
   // Responsive items per page
   const [projectsPerPage, setProjectsPerPage] = useState(4)
   const [uuidsPerPage, setUuidsPerPage] = useState(6)
@@ -49,7 +49,7 @@ const HistoryDashboard: FC = () => {
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays === 0) {
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
       if (diffHours === 0) {
@@ -69,16 +69,10 @@ const HistoryDashboard: FC = () => {
   // Pagination calculations
   const totalProjectPages = Math.ceil(projects.length / projectsPerPage)
   const totalUuidPages = Math.ceil(uuids.length / uuidsPerPage)
-  
-  const paginatedProjects = projects.slice(
-    projectPage * projectsPerPage,
-    (projectPage + 1) * projectsPerPage
-  )
-  
-  const paginatedUuids = uuids.slice(
-    uuidPage * uuidsPerPage,
-    (uuidPage + 1) * uuidsPerPage
-  )
+
+  const paginatedProjects = projects.slice(projectPage * projectsPerPage, (projectPage + 1) * projectsPerPage)
+
+  const paginatedUuids = uuids.slice(uuidPage * uuidsPerPage, (uuidPage + 1) * uuidsPerPage)
 
   return (
     <div className='min-h-screen bg-base-200 pb-20'>
@@ -87,81 +81,75 @@ const HistoryDashboard: FC = () => {
         <Motion variant='fadeIn' duration={500}>
           {/* Projects Section - Only show if there are 2 or more projects */}
           {projects.length > 1 && (
-          <div className='mb-8'>
-            <div className='flex items-center justify-between mb-4'>
-              <h2 className='text-2xl font-semibold'>{t('HISTORY_RECENT_PROJECTS')}</h2>
-              {projects.length > projectsPerPage && (
-                <div className='flex items-center gap-2'>
-                  <button
-                    className='btn btn-sm btn-circle'
-                    onClick={() => setProjectPage(Math.max(0, projectPage - 1))}
-                    disabled={projectPage === 0}
-                  >
-                    <ChevronLeft className='h-4 w-4' />
-                  </button>
-                  <span className='text-sm'>
-                    {projectPage + 1} / {totalProjectPages}
-                  </span>
-                  <button
-                    className='btn btn-sm btn-circle'
-                    onClick={() => setProjectPage(Math.min(totalProjectPages - 1, projectPage + 1))}
-                    disabled={projectPage === totalProjectPages - 1}
-                  >
-                    <ChevronRight className='h-4 w-4' />
-                  </button>
-                </div>
-              )}
-            </div>
+            <div className='mb-8'>
+              <div className='flex items-center justify-between mb-4'>
+                <h2 className='text-2xl font-semibold'>{t('HISTORY_RECENT_PROJECTS')}</h2>
+                {projects.length > projectsPerPage && (
+                  <div className='flex items-center gap-2'>
+                    <button
+                      className='btn btn-sm btn-circle'
+                      onClick={() => setProjectPage(Math.max(0, projectPage - 1))}
+                      disabled={projectPage === 0}
+                    >
+                      <ChevronLeft className='h-4 w-4' />
+                    </button>
+                    <span className='text-sm'>
+                      {projectPage + 1} / {totalProjectPages}
+                    </span>
+                    <button
+                      className='btn btn-sm btn-circle'
+                      onClick={() => setProjectPage(Math.min(totalProjectPages - 1, projectPage + 1))}
+                      disabled={projectPage === totalProjectPages - 1}
+                    >
+                      <ChevronRight className='h-4 w-4' />
+                    </button>
+                  </div>
+                )}
+              </div>
 
-            {projects.length === 0 ? (
-              <div className='card bg-base-100 shadow-sm'>
-                <div className='card-body flex items-center justify-center py-12'>
-                  <div className='text-center'>
-                    <Building2 className='mx-auto h-12 w-12 mb-4 text-base-content/50' />
-                    <h4 className='text-xl'>{t('HISTORY_NO_RECENT_PROJECTS')}</h4>
-                    <p className='text-sm mt-2 text-base-content/70'>
-                      {t('HISTORY_PROJECTS_APPEAR_HERE')}
-                    </p>
+              {projects.length === 0 ? (
+                <div className='card bg-base-100 shadow-sm'>
+                  <div className='card-body flex items-center justify-center py-12'>
+                    <div className='text-center'>
+                      <Building2 className='mx-auto h-12 w-12 mb-4 text-base-content/50' />
+                      <h4 className='text-xl'>{t('HISTORY_NO_RECENT_PROJECTS')}</h4>
+                      <p className='text-sm mt-2 text-base-content/70'>{t('HISTORY_PROJECTS_APPEAR_HERE')}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4'>
-                {paginatedProjects.map((project, index) => (
-                  <Motion key={project.uuid} variant='slideUp' duration={300} delay={index * 100}>
-                    <div
-                      className='card bg-base-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer'
-                      onClick={() => handleProjectClick(project.uuid)}
-                    >
-                      <div className='card-body p-6'>
-                        <div className='flex items-start justify-between'>
-                          <div className='flex-1'>
-                            <div className='flex items-center gap-2 mb-3'>
-                              <Building2 className='h-5 w-5 text-primary' />
-                              <span className='text-sm capitalize'>{t('HISTORY_PROJECT_TYPE')}</span>
-                              <span className='text-xs text-base-content/50'>
-                                • {formatDate(project.timestamp)}
-                              </span>
+              ) : (
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4'>
+                  {paginatedProjects.map((project, index) => (
+                    <Motion key={project.uuid} variant='slideUp' duration={300} delay={index * 100}>
+                      <div
+                        className='card bg-base-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer'
+                        onClick={() => handleProjectClick(project.uuid)}
+                      >
+                        <div className='card-body p-6'>
+                          <div className='flex items-start justify-between'>
+                            <div className='flex-1'>
+                              <div className='flex items-center gap-2 mb-3'>
+                                <Building2 className='h-5 w-5 text-primary' />
+                                <span className='text-sm capitalize'>{t('HISTORY_PROJECT_TYPE')}</span>
+                                <span className='text-xs text-base-content/50'>• {formatDate(project.timestamp)}</span>
+                              </div>
+
+                              <h4 className='text-lg font-semibold mb-2'>
+                                {project.identification || t('HISTORY_UNTITLED_PROJECT')}
+                              </h4>
+
+                              {project.subIdentification && <p className='text-sm mb-3'>{project.subIdentification}</p>}
+
+                              <p className='text-xs text-base-content/70'>ID: {project.uuid}</p>
                             </div>
-
-                            <h4 className='text-lg font-semibold mb-2'>
-                              {project.identification || t('HISTORY_UNTITLED_PROJECT')}
-                            </h4>
-
-                            {project.subIdentification && (
-                              <p className='text-sm mb-3'>{project.subIdentification}</p>
-                            )}
-
-                            <p className='text-xs text-base-content/70'>ID: {project.uuid}</p>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </Motion>
-                ))}
-              </div>
-            )}
-          </div>
+                    </Motion>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* UUIDs Section */}
@@ -197,9 +185,7 @@ const HistoryDashboard: FC = () => {
                   <div className='text-center'>
                     <Package className='mx-auto h-12 w-12 mb-4 text-base-content/50' />
                     <h4 className='text-xl'>{t('HISTORY_NO_RECENT_EQUIPMENT')}</h4>
-                    <p className='text-sm mt-2 text-base-content/70'>
-                      {t('HISTORY_EQUIPMENT_APPEAR_HERE')}
-                    </p>
+                    <p className='text-sm mt-2 text-base-content/70'>{t('HISTORY_EQUIPMENT_APPEAR_HERE')}</p>
                   </div>
                 </div>
               </div>
@@ -215,20 +201,14 @@ const HistoryDashboard: FC = () => {
                         <div className='flex items-center gap-2 mb-2'>
                           <Package className='h-4 w-4 text-primary' />
                           <Clock className='h-3 w-3 text-base-content/50' />
-                          <span className='text-xs text-base-content/50'>
-                            {formatDate(uuid.timestamp)}
-                          </span>
+                          <span className='text-xs text-base-content/50'>{formatDate(uuid.timestamp)}</span>
                         </div>
 
-                        <h4 className='text-base font-semibold mb-1'>
-                          {uuid.identification || t('HISTORY_EQUIPMENT_DEFAULT')}
-                        </h4>
+                        <h4 className='text-base font-semibold mb-1'>{uuid.uuid}</h4>
 
                         {uuid.subIdentification && (
                           <p className='text-sm text-base-content/70 mb-2'>{uuid.subIdentification}</p>
                         )}
-
-                        <p className='text-xs text-base-content/60 truncate'>ID: {uuid.uuid}</p>
                       </div>
                     </div>
                   </Motion>

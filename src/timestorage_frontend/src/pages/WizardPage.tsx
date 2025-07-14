@@ -1,61 +1,50 @@
-import { FC, useState, useEffect } from 'react'
-import {
-  Box,
-  Container,
-  Typography,
-  styled,
-  IconButton,
-  Button,
-  TextField,
-  FormControlLabel,
-  Checkbox,
-  Radio,
-  RadioGroup,
-  LinearProgress,
-  Fade,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl
-} from '@mui/material'
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Motion } from '../components/ui/motion'
 
-import PhotoCamera from '@mui/icons-material/PhotoCamera'
-import DeleteIcon from '@mui/icons-material/Delete'
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
-import BottomNavigation from '@/components/BottomNavigation'
-import Header from '../components/Header'
-import { useData, WizardQuestion } from '@/context/DataContext'
-import ErrorView from '@/components/ErrorView'
-import LoadingView from '@/components/LoadingView'
+// Icons
+import { ArrowRight, ArrowLeft, Camera, Trash, ImagePlus } from 'lucide-react'
 
-import * as canisterService from '../services/canisterService'
-import { fileToBase64, getFileMetadata } from '@/utils/fileUtils'
+// Custom components
+import BottomNavigation from '../components/BottomNavigation'
+import { useData } from '../context/DataContext'
+import ErrorView from '../components/ErrorView'
+import LoadingView from '../components/LoadingView'
+import { fileToBase64, getFileMetadata } from '../utils/fileUtils'
+
+import { IWizardQuestion } from '@/types/structures'
+import Header from '@/components/Header'
+import { useTranslation } from '../hooks/useTranslation'
 
 interface WizardState {
-  currentQuestionIndex: number
-  answers: Record<string, string | string[]>
-  isCompleted: boolean
+  currentQuestionIndex: number;
+  answers: Record<string, string | string[]>;
+  isCompleted: boolean;
 }
 
-const WizardPage: FC = () => {
+interface StagedFiles {
+  [questionId: string]: File | File[];
+}
+
+const WizardPage = () => {
   const navigate = useNavigate()
-  const { projectId, getWizardQuestions, data } = useData()
-  const { sectionId } = useParams<{ sectionId: string }>()
+  const { uuid, sectionId } = useParams<{ uuid: string; sectionId: string }>()
+  const { data, isLoading, error: hookError, uuid: resolvedUuid, service } = useData(uuid)
+  const { t } = useTranslation()
   const [availableWizards, setAvailableWizards] = useState<{ id: string; title: string }[]>([])
   const [selectedWizard, setSelectedWizard] = useState<string | null>(sectionId || null)
-  const [questions, setQuestions] = useState<WizardQuestion[]>([])
-  const [loading, setLoading] = useState(true)
+  const [questions, setQuestions] = useState<IWizardQuestion[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [stagedFiles, setStagedFiles] = useState<StagedFiles>({})
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string | string[]>>({})
+  const [isUploading, setIsUploading] = useState(false)
 
   const [saving, setSaving] = useState(false)
 
-  // Effect to find all available wizard sections when data is loaded
+  // Effect to find all available wizard sections and load questions when data is loaded
   useEffect(() => {
-    if (data) {
-      const wizards = Object.entries(data)
+    if (data && data.nodes) {
+      const wizards = Object.entries(data.nodes)
         .filter(([_, section]) => section.isWizard)
         .map(([key, section]) => ({ id: key, title: section.title }))
 
@@ -65,10 +54,17 @@ const WizardPage: FC = () => {
       if (!selectedWizard && wizards.length > 0) {
         setSelectedWizard(wizards[0].id)
       }
+
+      // Load questions for the selected wizard
+      if (selectedWizard && data.nodes[selectedWizard]?.isWizard) {
+        const wizardNode = data.nodes[selectedWizard]
+        setQuestions(wizardNode.questions || [])
+        setError(null)
+      }
     }
   }, [data, selectedWizard])
 
-  const storageKey = `window_installation_wizard_${projectId}_${selectedWizard}`
+  const storageKey = `window_installation_wizard_${uuid}_${selectedWizard}`
 
   const [state, setState] = useState<WizardState>(() => {
     const saved = localStorage.getItem(storageKey)
@@ -77,7 +73,7 @@ const WizardPage: FC = () => {
       : {
           currentQuestionIndex: 0,
           answers: {},
-          isCompleted: false
+          isCompleted: false,
         }
   })
 
@@ -90,8 +86,8 @@ const WizardPage: FC = () => {
     try {
       const base64Data = await fileToBase64(file)
       const metadata = getFileMetadata(file)
-      const result = await canisterService.uploadFile(projectId, base64Data, metadata)
-      const fileId = result.match(/ID: (file-\d+)/)?.[1]
+      const result = await service.uploadFile(resolvedUuid, base64Data, metadata)
+      const fileId = (result as string).match(/ID: (file-\d+)/)?.[1]
       if (!fileId) {
         throw new Error('Failed to extract file ID from response')
       }
@@ -107,35 +103,58 @@ const WizardPage: FC = () => {
     const files = event.target.files
     if (!files) return
 
-    try {
-      const fileIds = await Promise.all(
-        Array.from(files).map(async file => {
-          return await handleFileUpload(file)
-        })
-      )
+    const newFiles = Array.from(files)
+    setStagedFiles((prev) => ({
+      ...prev,
+      [currentQuestion.id]: multiple ? newFiles : newFiles[0],
+    }))
 
-      setState(prev => ({
-        ...prev,
-        answers: {
-          ...prev.answers,
-          [currentQuestion.id]: multiple ? fileIds : fileIds[0]
+    const urls = newFiles.map((file) => URL.createObjectURL(file))
+    setPreviewUrls((prev) => ({
+      ...prev,
+      [currentQuestion.id]: multiple ? urls : urls[0],
+    }))
+  }
+
+  const handleNextClick = async () => {
+    if (stagedFiles[currentQuestion.id]) {
+      const filesToUpload = stagedFiles[currentQuestion.id]
+      try {
+        setIsUploading(true)
+        if (Array.isArray(filesToUpload)) {
+          const fileIds = await Promise.all(filesToUpload.map((file) => handleFileUpload(file)))
+          handleAnswer(fileIds)
+        } else {
+          const fileId = await handleFileUpload(filesToUpload)
+          handleAnswer(fileId)
         }
-      }))
-    } catch (error) {
-      console.error('Error processing photos:', error)
-      setError(error instanceof Error ? error.message : 'Failed to upload photos')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to upload file')
+        setIsUploading(false)
+        return
+      } finally {
+        setIsUploading(false)
+      }
     }
+
+    if (state.currentQuestionIndex === questions.length - 1) {
+      handleWizardCompletion()
+      return
+    }
+    setState((prev) => ({
+      ...prev,
+      currentQuestionIndex: Math.min(prev.currentQuestionIndex + 1, questions.length - 1),
+    }))
   }
 
   const handleWizardCompletion = async () => {
     try {
       setSaving(true) // Start saving
-      setLoading(true)
 
       // Process each answer and submit it
       const submissions = Object.entries(state.answers).map(([questionId, answer]) => {
         // Find the corresponding question to get the refId
-        const question = questions.find(q => q.id === questionId)
+        const question = questions.find((q) => q.id === questionId)
         if (!question?.refId) return null
 
         // Process the key
@@ -156,39 +175,19 @@ const WizardPage: FC = () => {
       // Filter out null values and submit each answer
       for (const submission of submissions.filter(Boolean)) {
         if (submission) {
-          await canisterService.updateValue(projectId, submission.key, submission.value, true)
+          await service.updateValue(resolvedUuid, submission.key, submission.value, true)
         }
       }
 
       // Set completion state and navigate
-      setState(prev => ({ ...prev, isCompleted: true }))
+      setState((prev) => ({ ...prev, isCompleted: true }))
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to submit answers')
     } finally {
-      setLoading(false)
       setSaving(false)
     }
   }
 
-  // Changed to use selectedWizard for fetching questions
-  useEffect(() => {
-    const loadQuestions = async () => {
-      if (!selectedWizard) return
-
-      try {
-        setLoading(true)
-        const questionData = await getWizardQuestions(selectedWizard)
-        setQuestions(questionData)
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load questions')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadQuestions()
-  }, [getWizardQuestions, selectedWizard])
 
   // Reset state when changing wizards
   useEffect(() => {
@@ -200,361 +199,377 @@ const WizardPage: FC = () => {
           : {
               currentQuestionIndex: 0,
               answers: {},
-              isCompleted: false
-            }
+              isCompleted: false,
+            },
       )
     }
   }, [selectedWizard, storageKey])
 
   useEffect(() => {
     if (state.isCompleted) {
-      navigate(`/${projectId}`)
+      navigate(`/${uuid}`)
     }
     if (selectedWizard) {
       localStorage.setItem(storageKey, JSON.stringify(state))
     }
-  }, [state, navigate, storageKey, projectId, selectedWizard])
+  }, [state, navigate, storageKey, uuid, selectedWizard])
 
   if (saving) {
-    return <LoadingView message='Saving your answers...' />
+    return <LoadingView message={t('WIZARD_SAVING_ANSWERS')} />
   }
 
-  if (loading && questions.length === 0) {
-    return <LoadingView message='Loading installation wizard...' />
+  if (isLoading && !data) {
+    return <LoadingView message={t('WIZARD_LOADING')} />
+  }
+
+  if (hookError) {
+    return <ErrorView message={hookError} />
   }
 
   if (error) {
     return <ErrorView message={error} />
   }
 
-  if (!selectedWizard) {
-    return (
-      <Root>
-        <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
-        <Container maxWidth='sm' sx={{ mt: 8, textAlign: 'center' }}>
-          <Typography variant='h5' gutterBottom>
-            Select a Wizard
-          </Typography>
-
-          {availableWizards.length === 0 ? (
-            <Typography>No wizards available</Typography>
-          ) : (
-            <Box sx={{ mt: 4 }}>
-              {availableWizards.map(wizard => (
-                <Button
-                  key={wizard.id}
-                  variant='contained'
-                  fullWidth
-                  sx={{ mb: 2 }}
-                  onClick={() => setSelectedWizard(wizard.id)}
-                >
-                  {wizard.title}
-                </Button>
-              ))}
-            </Box>
-          )}
-        </Container>
-        <BottomNavigation />
-      </Root>
-    )
-  }
-
-  if (questions.length === 0) {
-    return <ErrorView message='No questions available' />
-  }
-
   const currentQuestion = questions[state.currentQuestionIndex]
-  const progress = ((state.currentQuestionIndex + 1) / questions.length) * 100
-
-  const handleNext = () => {
-    if (state.currentQuestionIndex === questions.length - 1) {
-      handleWizardCompletion()
-      return
-    }
-    setState(prev => ({
-      ...prev,
-      currentQuestionIndex: prev.currentQuestionIndex + 1
-    }))
-  }
 
   const handlePrevious = () => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      currentQuestionIndex: Math.max(0, prev.currentQuestionIndex - 1)
+      currentQuestionIndex: Math.max(0, prev.currentQuestionIndex - 1),
     }))
   }
 
   const handleAnswer = (value: string | string[]) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       answers: {
         ...prev.answers,
-        [currentQuestion.id]: value
-      }
+        [currentQuestion.id]: value,
+      },
     }))
   }
 
-  const handleRemovePhoto = (indexToRemove: number) => {
-    setState(prev => ({
-      ...prev,
-      answers: {
-        ...prev.answers,
-        [currentQuestion.id]: (prev.answers[currentQuestion.id] as string[]).filter(
-          (_, index) => index !== indexToRemove
-        )
-      }
-    }))
-  }
   const renderQuestion = () => {
-    const currentAnswer = state.answers[currentQuestion.id]
-
-    switch (currentQuestion.type) {
-      case 'text':
-        return (
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            variant='outlined'
-            value={currentAnswer || ''}
-            onChange={e => handleAnswer(e.target.value)}
-            sx={{ mt: 3 }}
-          />
-        )
-
-      case 'select':
-        return (
-          <RadioGroup value={currentAnswer || ''} onChange={e => handleAnswer(e.target.value)} sx={{ mt: 3 }}>
-            {currentQuestion.options?.map(option => (
-              <FormControlLabel key={option} value={option} control={<Radio />} label={option} sx={{ mb: 1 }} />
-            ))}
-          </RadioGroup>
-        )
-
-      case 'multiselect':
-        return (
-          <Box sx={{ mt: 3 }}>
-            {currentQuestion.options?.map(option => (
-              <FormControlLabel
-                key={option}
-                control={
-                  <Checkbox
-                    checked={((currentAnswer as string[]) || []).includes(option)}
-                    onChange={e => {
-                      const current = (currentAnswer as string[]) || []
-                      const newValue = e.target.checked ? [...current, option] : current.filter(item => item !== option)
-                      handleAnswer(newValue)
-                    }}
-                  />
-                }
-                label={option}
-                sx={{ display: 'block', mb: 1 }}
-              />
-            ))}
-          </Box>
-        )
-
-      case 'photo':
-        return (
-          <Box sx={{ mt: 3 }}>
-            <input
-              accept='image/*'
-              style={{ display: 'none' }}
-              id='photo-input'
-              type='file'
-              capture='environment'
-              onChange={e => handlePhotoCapture(e, false)}
-            />
-            {currentAnswer ? (
-              <Box sx={{ position: 'relative', width: 'fit-content' }}>
-                <img
-                  src={currentAnswer as string}
-                  alt='Taken'
-                  style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px' }}
-                />
-                <IconButton
-                  sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' }
-                  }}
-                  onClick={() => handleAnswer('')}
-                >
-                  <DeleteIcon sx={{ color: 'white' }} />
-                </IconButton>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <label htmlFor='photo-input'>
-                  <Button variant='contained' component='span' startIcon={<PhotoCamera />}>
-                    Take Photo
-                  </Button>
-                </label>
-                <label htmlFor='photo-input'>
-                  <Button variant='outlined' component='span' startIcon={<AddPhotoAlternateIcon />}>
-                    Upload Photo
-                  </Button>
-                </label>
-              </Box>
-            )}
-          </Box>
-        )
-
-      case 'multiphoto':
-        return (
-          <Box sx={{ mt: 3 }}>
-            <input
-              accept='image/*'
-              style={{ display: 'none' }}
-              id='multi-photo-input'
-              type='file'
-              multiple
-              capture='environment'
-              onChange={e => handlePhotoCapture(e, true)}
-            />
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <label htmlFor='multi-photo-input'>
-                <Button variant='contained' component='span' startIcon={<PhotoCamera />}>
-                  Take Photos
-                </Button>
-              </label>
-              <label htmlFor='multi-photo-input'>
-                <Button variant='outlined' component='span' startIcon={<AddPhotoAlternateIcon />}>
-                  Upload Photos
-                </Button>
-              </label>
-            </Box>
-            <ImageGrid>
-              {((currentAnswer as string[]) || []).map((photo, index) => (
-                <Box key={index} sx={{ position: 'relative' }}>
-                  <img
-                    src={photo}
-                    alt={`${index + 1}`}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
-                  />
-                  <IconButton
-                    sx={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      backgroundColor: 'rgba(0,0,0,0.5)',
-                      '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' },
-                      padding: '4px'
-                    }}
-                    onClick={() => handleRemovePhoto(index)}
-                  >
-                    <DeleteIcon sx={{ color: 'white', fontSize: '1.2rem' }} />
-                  </IconButton>
-                </Box>
-              ))}
-            </ImageGrid>
-          </Box>
-        )
-      default:
-        return null
-    }
-  }
-
-  const renderWizardSelector = () => {
-    if (availableWizards.length <= 1) return null
+    if (!currentQuestion) return null
 
     return (
-      <FormControl sx={{ minWidth: 200, mb: 3 }}>
-        <InputLabel id='wizard-selector-label'>Select Wizard</InputLabel>
-        <Select
-          labelId='wizard-selector-label'
-          value={selectedWizard}
-          label='Select Wizard'
-          onChange={e => setSelectedWizard(e.target.value)}
-        >
-          {availableWizards.map(wizard => (
-            <MenuItem key={wizard.id} value={wizard.id}>
-              {wizard.title}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <div className="card bg-base-100 shadow-xl w-full max-w-lg">
+        <div className="card-body">
+          <h2 className="card-title text-2xl font-bold mb-4">{t(currentQuestion.question) || t('WIZARD_ANSWER_QUESTION')}</h2>
+          {(() => {
+            switch (currentQuestion.type) {
+              case 'text':
+                return (
+                  <div className="form-control w-full">
+                    <label className="label mb-2">
+                      <span className="label-text">{t(currentQuestion.question) || t('WIZARD_YOUR_ANSWER')}</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={t('WIZARD_ENTER_ANSWER')}
+                      className="input input-bordered w-full input-persistent-border"
+                      value={state.answers[currentQuestion.id] || ''}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAnswer(e.target.value)}
+                    />
+                  </div>
+                )
+
+              case 'select':
+                return (
+                  <div className="form-control w-full">
+                    <label className="label mb-2">
+                      <span className="label-text">{t(currentQuestion.question) || t('WIZARD_SELECT_OPTION')}</span>
+                    </label>
+                    <select
+                      className="select select-bordered select-lg w-full select-persistent-border"
+                      value={
+                        typeof state.answers[currentQuestion.id] === 'string'
+                          ? (state.answers[currentQuestion.id] as string)
+                          : ''
+                      }
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleAnswer(e.target.value)}
+                    >
+                      <option disabled value="">
+                        {t('WIZARD_SELECT_OPTION')}
+                      </option>
+                      {currentQuestion.options?.map((option) => (
+                        <option key={option} value={option}>
+                          {t(option)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )
+
+              case 'multiselect':
+                return (
+                  <div className="form-control w-full">
+                    <label className="label mb-2">
+                      <span className="label-text">{t(currentQuestion.question) || t('WIZARD_SELECT_OPTIONS')}</span>
+                    </label>
+                    <div className="flex flex-col space-y-2">
+                      {currentQuestion.options?.map((option) => (
+                        <label key={option} className="label cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-primary"
+                            checked={
+                              Array.isArray(state.answers[currentQuestion.id]) &&
+                              (state.answers[currentQuestion.id] as string[]).includes(option)
+                            }
+                            onChange={(e) => {
+                              const currentAnswers = (state.answers[currentQuestion.id] as string[]) || []
+                              if (e.target.checked) {
+                                handleAnswer([...currentAnswers, option])
+                              } else {
+                                handleAnswer(currentAnswers.filter((ans) => ans !== option))
+                              }
+                            }}
+                          />
+                          <span className="label-text">{t(option)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )
+
+              case 'photo':
+                return (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="photo-upload"
+                      className="hidden"
+                      onChange={(e) => handlePhotoCapture(e, false)}
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      id="camera-upload"
+                      className="hidden"
+                      onChange={(e) => handlePhotoCapture(e, false)}
+                    />
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => document.getElementById('camera-upload')?.click()}
+                      >
+                        <Camera className="h-4 w-4" />
+                        {t('WIZARD_TAKE_PHOTO')}
+                      </button>
+                      <label htmlFor="photo-upload">
+                        <button
+                          className="btn btn-info"
+                          onClick={() => document.getElementById('photo-upload')?.click()}
+                        >
+                          <ImagePlus className="h-4 w-4" />
+                          {t('WIZARD_CHOOSE_PHOTO')}
+                        </button>
+                      </label>
+                    </div>
+
+                    {previewUrls[currentQuestion.id] && (
+                      <div className="mt-2 p-2 bg-muted rounded">
+                        <img
+                          src={previewUrls[currentQuestion.id] as string}
+                          alt="Preview"
+                          className="max-w-full h-auto rounded"
+                        />
+                        <button
+                          className="btn btn-xs btn-error mt-2"
+                          onClick={() => {
+                            const newStagedFiles = { ...stagedFiles }
+                            delete newStagedFiles[currentQuestion.id]
+                            setStagedFiles(newStagedFiles)
+
+                            const newPreviewUrls = { ...previewUrls }
+                            delete newPreviewUrls[currentQuestion.id]
+                            setPreviewUrls(newPreviewUrls)
+                          }}
+                        >
+                          <Trash className="h-3 w-3" />
+                          {t('WIZARD_REMOVE')}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+
+              case 'multiphoto':
+                return (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      id="multi-photo-upload"
+                      className="hidden"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoCapture(e, true)}
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      capture="environment"
+                      id="multi-camera-upload"
+                      className="hidden"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoCapture(e, true)}
+                    />
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => document.getElementById('multi-camera-upload')?.click()}
+                      >
+                        <Camera className="h-4 w-4" />
+                        {t('WIZARD_TAKE_PHOTOS')}
+                      </button>
+                      <label htmlFor="multi-photo-upload">
+                        <button
+                          className="btn btn-info"
+                          onClick={() => document.getElementById('multi-photo-upload')?.click()}
+                        >
+                          <ImagePlus className="h-4 w-4" />
+                          {t('WIZARD_CHOOSE_PHOTOS')}
+                        </button>
+                      </label>
+                    </div>
+
+                    {Array.isArray(previewUrls[currentQuestion.id]) &&
+                      (previewUrls[currentQuestion.id] as string[]).length > 0 && (
+                        <div className="mt-3 p-3 bg-base-200 rounded-lg">
+                          <p className="text-sm text-muted-foreground">
+                            {(previewUrls[currentQuestion.id] as string[]).length} {t('WIZARD_PHOTOS_STAGED')}
+                          </p>
+                          <div className="mt-2 flex overflow-x-auto gap-2">
+                            {(previewUrls[currentQuestion.id] as string[]).map((url: string, index: number) => (
+                              <div key={url} className="relative flex-shrink-0">
+                                <img src={url} alt={`Preview ${index + 1}`} className="w-32 h-32 object-cover rounded" />
+                                <button
+                                  className="btn btn-xs btn-error absolute top-1 right-1"
+                                  onClick={() => {
+                                    const newStagedFiles = [...(stagedFiles[currentQuestion.id] as File[])]
+                                    newStagedFiles.splice(index, 1)
+                                    setStagedFiles((prev) => ({
+                                      ...prev,
+                                      [currentQuestion.id]: newStagedFiles,
+                                    }))
+
+                                    const newPreviewUrls = [...(previewUrls[currentQuestion.id] as string[])]
+                                    newPreviewUrls.splice(index, 1)
+                                    setPreviewUrls((prev) => ({
+                                      ...prev,
+                                      [currentQuestion.id]: newPreviewUrls,
+                                    }))
+                                  }}
+                                >
+                                  <Trash className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            className="btn btn-outline mt-2"
+                            onClick={() => {
+                              const newStagedFiles = { ...stagedFiles }
+                              delete newStagedFiles[currentQuestion.id]
+                              setStagedFiles(newStagedFiles)
+
+                              const newPreviewUrls = { ...previewUrls }
+                              delete newPreviewUrls[currentQuestion.id]
+                              setPreviewUrls(newPreviewUrls)
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                            {t('WIZARD_CLEAR_ALL')}
+                          </button>
+                        </div>
+                      )}
+                  </div>
+                )
+              default:
+                return null
+            }
+          })()}
+        </div>
+      </div>
     )
   }
 
-  const wizardTitle = data?.[selectedWizard]?.title || 'Wizard'
+  const wizardTitle = (selectedWizard && data?.nodes?.[selectedWizard]?.title) || 'Guida alla posa'
 
   return (
-    <Root>
-      <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
+    <div className="min-h-screen bg-base-200">
+      <Header title={t(wizardTitle)} />
 
-      <LinearProgress
-        variant='determinate'
-        value={progress}
-        sx={{ position: 'fixed', top: '64px', left: 0, right: 0 }}
-      />
+      <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center pb-24">
+        {!isLoading && !error && selectedWizard && questions.length > 0 && (
+          <>
+            <div className="w-full max-w-4xl flex justify-center mb-8">
+              <progress
+                className="progress progress-primary w-56"
+                value={(state.currentQuestionIndex / (questions.length - 1)) * 100}
+                max="100"
+              ></progress>
+            </div>
 
-      <Container maxWidth='sm' sx={{ mt: 4, mb: 10 }}>
-        {renderWizardSelector()}
-
-        <Typography variant='h5' sx={{ mb: 3 }}>
-          {wizardTitle}
-        </Typography>
-
-        <QuestionContainer>
-          <Fade key={currentQuestion.id} in timeout={400}>
-            <Box>
-              <Typography variant='h4' sx={{ mb: 2 }}>
-                {currentQuestion.question}
-              </Typography>
+            <Motion
+              key={state.currentQuestionIndex}
+              variant="fadeIn"
+              className="w-full flex items-center justify-center"
+            >
               {renderQuestion()}
+            </Motion>
 
-              <NavigationButtons>
-                <Button
-                  variant='outlined'
-                  startIcon={<ArrowBackIcon />}
-                  onClick={handlePrevious}
-                  disabled={state.currentQuestionIndex === 0}
-                >
-                  Previous
-                </Button>
-                <Button variant='contained' endIcon={<ArrowForwardIcon />} onClick={handleNext}>
-                  {state.currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next'}
-                </Button>
-              </NavigationButtons>
-            </Box>
-          </Fade>
-        </QuestionContainer>
-      </Container>
+            <div className="flex justify-between mt-6 w-full max-w-lg">
+              <button
+                className="btn btn-neutral"
+                disabled={state.currentQuestionIndex === 0}
+                onClick={handlePrevious}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {t('WIZARD_BACK')}
+              </button>
+
+              <button
+                className={`btn ${
+                  state.currentQuestionIndex === questions.length - 1 ? 'btn-success' : 'btn-primary'
+                }`}
+                onClick={handleNextClick}
+                disabled={isUploading}
+              >
+                {isUploading && <span className="loading loading-spinner"></span>}
+                {state.currentQuestionIndex === questions.length - 1 ? t('WIZARD_COMPLETE') : t('WIZARD_NEXT')}
+                {state.currentQuestionIndex !== questions.length - 1 && <ArrowRight className="h-4 w-4" />}
+              </button>
+            </div>
+          </>
+        )}
+
+        {!selectedWizard && availableWizards.length > 0 && (
+          <div className="card bg-base-100 shadow-xl w-full max-w-lg">
+            <div className="card-body">
+              <h2 className="card-title text-2xl font-bold mb-4">{t('WIZARD_SELECT_WIZARD')}</h2>
+              <div className="space-y-2">
+                {availableWizards.map((wizard) => (
+                  <button
+                    key={wizard.id}
+                    className="btn btn-outline w-full"
+                    onClick={() => setSelectedWizard(wizard.id)}
+                  >
+                    {t(wizard.title)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       <BottomNavigation />
-    </Root>
+    </div>
   )
 }
-
-const Root = styled('div')`
-  min-height: 100vh;
-  background-color: #f9fafb;
-`
-
-const QuestionContainer = styled(Box)`
-  min-height: calc(100vh - 220px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-`
-
-const NavigationButtons = styled(Box)`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 2rem;
-`
-
-const ImageGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
-
-  & img {
-    aspect-ratio: 1;
-  }
-`
 
 export default WizardPage

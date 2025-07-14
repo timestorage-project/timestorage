@@ -17,6 +17,7 @@ import {
   insertUUIDStructure,
   updateValue,
 } from 'src/services/canisterService';
+import { equipmentV1 } from 'src/constants/equipment-base-structure.constants';
 
 import { authService } from '../auth/auth';
 import { EquipmentTable } from './equipment-table';
@@ -24,7 +25,6 @@ import type { EquipmentProps } from './equipment-table-row';
 import { NewEquipmentModal } from './modals/new-equipment-modal';
 import DetailModal from './modals/detail-modal';
 import { BatchGenerationModal } from './modals/batch-generation-modal';
-import { equipmentV1 } from 'src/constants/equipment-base-structure.constants';
 
 export interface ProductInfo {
   serialNumber: string;

@@ -1,26 +1,26 @@
 import { FC } from 'react'
-import { Box, Container, Grid, Typography, styled, Paper } from '@mui/material'
-import InfoIcon from '@mui/icons-material/Info'
-import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import DownloadIcon from '@mui/icons-material/Download'
-import BuildIcon from '@mui/icons-material/Build'
-import ConstructionIcon from '@mui/icons-material/Construction'
-import DescriptionIcon from '@mui/icons-material/Description'
-import VerifiedIcon from '@mui/icons-material/Verified'
-
-import { useNavigate } from 'react-router-dom/dist'
-import BottomNavigation from '@/components/BottomNavigation'
+import { Info, PlayCircle, Download, Wrench, Construction, FileText, CheckCircle, Building2, Link2 } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useData } from '@/context/DataContext'
-import Header from '../components/Header'
+import { Typography } from '@/components/ui/typography'
+import { Motion } from '@/components/ui/motion'
+import BottomNavigation from '@/components/BottomNavigation'
+import Header from '@/components/Header'
 import ErrorView from '@/components/ErrorView'
 import LoadingView from '@/components/LoadingView'
+import { useAuthStore } from '@/store/auth.store'
+
+import { useTranslation } from '@/hooks/useTranslation'
 
 const Dashboard: FC = () => {
   const navigate = useNavigate()
-  const { data, isLoading, error, projectId } = useData()
+  const { uuid } = useParams<{ uuid: string }>()
+  const { data, isLoading, error, project, uuid: resolvedUuid, assetCore } = useData(uuid)
+  const { t } = useTranslation()
+  const { isInstaller } = useAuthStore()
 
   if (isLoading && !data) {
-    return <LoadingView message='Loading dashboard...' />
+    return <LoadingView message={t('LOADING_DASHBOARD')} />
   }
 
   if (error) {
@@ -28,125 +28,161 @@ const Dashboard: FC = () => {
   }
 
   if (!data) {
-    return <div>No data available</div>
+    return (
+      <div className='flex h-screen items-center justify-center'>
+        <Typography variant='h4'>No data found</Typography>
+      </div>
+    )
   }
 
   const getIconComponent = (iconName: string, isWizard?: boolean) => {
-    if (isWizard) return <PlayArrowIcon />
+    if (isWizard) return <PlayCircle className='h-6 w-6 text-primary' />
+
     switch (iconName) {
       case 'info':
-        return <InfoIcon />
+        return <Info className='h-6 w-6 text-primary' />
       case 'download':
-        return <DownloadIcon />
+        return <Download className='h-6 w-6 text-primary' />
       case 'build':
-        return <BuildIcon />
+        return <Wrench className='h-6 w-6 text-primary' />
       case 'construction':
-        return <ConstructionIcon />
+        return <Construction className='h-6 w-6 text-primary' />
       case 'description':
-        return <DescriptionIcon />
+        return <FileText className='h-6 w-6 text-primary' />
       case 'verified':
-        return <VerifiedIcon />
+        return <CheckCircle className='h-6 w-6 text-primary' />
       default:
-        return <InfoIcon />
+        return <PlayCircle className='h-6 w-6 text-primary' />
     }
   }
-  const regularItems = Object.entries(data).filter(([_, item]) => !item.isWizard)
-  const wizardItems = Object.entries(data).filter(([_, item]) => item.isWizard)
+
+  const regularItems = Object.entries(data.nodes).filter(([_, item]) => !item.isWizard)
+  const wizardItems = Object.entries(data.nodes).filter(([_, item]) => item.isWizard)
+
+  // Check if asset is not linked to a project position (for installer linking button)
+  const isAssetNotLinkedToPosition = project && (assetCore?.status === 'empty' || assetCore?.status === 'initialized')
+
+  const handleLinkingClick = () => {
+    if (project?.uuid && resolvedUuid) {
+      // Navigate to /linking/projectId with equipment UUID as query parameter
+      navigate(`/linking/${project.uuid}?qrTagId=${resolvedUuid}`)
+    }
+  }
 
   return (
-    <Root>
-      <Header title={`PosaCheck - ${projectId}`} showMenu={true} />
+    <div className='min-h-screen bg-base-200'>
+      <Header title='Dashboard' />
 
-      <Container maxWidth='sm' sx={{ mt: 4, mb: 10 }}>
-        <Typography variant='h5' sx={{ mb: 3 }}>
-          Dashboard Overview
-        </Typography>
+      <div className='container mx-auto px-4 py-8'>
+        <Motion variant='slideDown'>
+          <h1 className='text-3xl font-bold mb-6'>{`PosaCheck - ${data.getIdentifier()}`}</h1>
+        </Motion>
 
-        <Grid container spacing={2}>
-          {regularItems.map(([key, item]) => (
-            <Grid item xs={6} key={key}>
-              <StyledCard onClick={() => navigate(`/${projectId}/${key}`)}>
-                <Box sx={{ color: '#95bcf9', mb: 1 }}>{getIconComponent(item.icon)}</Box>
-                <Typography variant='h6'>{item.title}</Typography>
-                <Typography variant='body2' color='text.secondary'>
-                  {item.description}
-                </Typography>
-              </StyledCard>
-            </Grid>
+        {/* Manage Linkings Button - Only visible to installers when asset is not linked to a position */}
+        {isInstaller && isAssetNotLinkedToPosition && (
+          <Motion variant='slideUp' duration={300} delay={100}>
+            <div className='mb-6'>
+              <div
+                className='card bg-primary text-primary-content shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer'
+                onClick={handleLinkingClick}
+              >
+                <div className='card-body p-6'>
+                  <div className='flex items-center gap-4'>
+                    <Link2 className='h-8 w-8' />
+                    <div>
+                      <h3 className='text-xl font-semibold'>{t('MANAGE_LINKINGS_TITLE')}</h3>
+                      <p className='text-sm opacity-90'>{t('MANAGE_LINKINGS_DESCRIPTION')}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Motion>
+        )}
+
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10'>
+          {/* Project Dashboard Card - only show if project data exists */}
+          {project && (
+            <Motion variant="slideUp" duration={300}>
+              <div 
+                className='card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-40 border-2 border-primary/20 rounded-lg overflow-hidden'
+                onClick={() => navigate(`/project/from-equipment/${resolvedUuid}`)}
+              >
+                <div className='card-body p-4'>
+                  <div className='text-primary mb-2'>
+                    <Building2 className='h-6 w-6' />
+                  </div>
+                  <h2 className='card-title text-lg font-semibold'>
+                    Project Dashboard
+                  </h2>
+                  <p className='text-sm text-base-content/70'>
+                    View all equipment in this project
+                  </p>
+                </div>
+              </div>
+            </Motion>
+          )}
+          
+          {regularItems.map(([key, item], index) => (
+            <Motion 
+              key={key}
+              variant="slideUp" 
+              duration={300} 
+              delay={(project ? index + 1 : index) * 100}
+            >
+              <div
+                className='card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-40 rounded-lg overflow-hidden'
+                onClick={() => navigate(`/view/${uuid}/${key}`)}
+              >
+                <div className='card-body p-4'>
+                  <div className='text-primary mb-2'>{getIconComponent(item.icon)}</div>
+                  <h2 className='card-title text-lg font-semibold'>
+                    {item.title}
+                  </h2>
+                  <p className='text-sm text-base-content/70'>
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+            </Motion>
           ))}
-        </Grid>
+        </div>
 
         {wizardItems.length > 0 && (
-          <>
-            <Typography variant='h5' sx={{ mt: 4, mb: 2 }}>
+          <Motion variant='slideDown' duration={500} delay={100}>
+            <h2 className='text-2xl font-bold mt-10 mb-4'>
               Installation Wizards
-            </Typography>
+            </h2>
 
-            <Grid container spacing={2}>
-              {wizardItems.map(([key, item]) => (
-                <Grid item xs={12} key={key}>
-                  <WizardCard onClick={() => navigate(`/${projectId}/wizard/${key}`)}>
-                    <Box sx={{ mb: 1 }}>{getIconComponent(item.icon, true)}</Box>
-                    <Typography variant='h6'>{item.title}</Typography>
-                    <Typography variant='body2'>{item.description}</Typography>
-                  </WizardCard>
-                </Grid>
+            <div className='space-y-4'>
+              {wizardItems.map(([key, item], index) => (
+                <Motion 
+                  key={key}
+                  variant="slideInLeft" 
+                  duration={300} 
+                  delay={400 + index * 100}
+                >
+                  <div
+                    className='card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-32 rounded-lg overflow-hidden'
+                    onClick={() => navigate(`/view/${uuid}/wizard/${key}`)}
+                  >
+                    <div className='card-body p-4 flex flex-row items-center'>
+                      <div className='p-2 mr-4'>{getIconComponent(item.icon, true)}</div>
+                      <h3 className='card-title text-lg font-semibold'>
+                        {item.title}
+                      </h3>
+                    </div>
+                  </div>
+                </Motion>
               ))}
-            </Grid>
-          </>
+            </div>
+          </Motion>
         )}
-      </Container>
+      </div>
 
       <BottomNavigation />
-    </Root>
+    </div>
   )
 }
-
-const Root = styled('div')`
-  min-height: 100vh;
-  background-color: #f9fafb;
-`
-
-const StyledCard = styled(Paper)`
-  padding: 1rem;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 12px;
-  background-color: #f6f7f8;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  flex-direction: column;
-  height: 160px;
-  justify-content: flex-start;
-
-  &:hover {
-    background-color: #dde9fd;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-`
-
-const WizardCard = styled(Paper)`
-  padding: 1.5rem;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 12px;
-  background-color: #eef4fe;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  flex-direction: column;
-  height: 160px;
-  justify-content: flex-start;
-
-  &:hover {
-    background-color: #dde9fd;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-
-  & .MuiSvgIcon-root {
-    font-size: 2rem;
-  }
-`
 
 export default Dashboard

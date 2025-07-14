@@ -18,7 +18,7 @@ module {
         removeAdmin: (Principal) -> async Result.Result<Text, Text>;
         getAllUUIDs: () -> async Result.Result<[Text], Text>;
     } {
-        let backend_id = Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai");
+        let backend_id = Principal.fromText("umunu-kh777-77774-qaaca-cai");
         actor(Principal.toText(backend_id));
     };
 

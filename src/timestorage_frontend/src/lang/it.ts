@@ -43,14 +43,42 @@ export const it = {
   // Installation Wizard Questions
   SCHEDULED_DATE_QUESTION: "Qual è la data programmata per l'installazione?",
   INSTALLER_QUESTION: "Chi è l'installatore assegnato?",
+  INSTALLER_DASHBOARD: 'Dashboard Installatore',
+
+  // Installer Dashboard
+  INSTALLER_LOADING: 'Caricamento dei tuoi progetti...',
+  INSTALLER_ERROR_TITLE: 'Errore nel Caricamento dei Progetti',
+  INSTALLER_TRY_AGAIN: 'Riprova',
+  INSTALLER_PROJECT_INVITATIONS: 'Inviti ai Progetti',
+  INSTALLER_NEW_PROJECT_INVITATION: 'Nuovo Invito al Progetto',
+  INSTALLER_PROJECT_DEFAULT: 'Progetto',
+  INSTALLER_ACCEPT: 'Accetta',
+  INSTALLER_REJECT: 'Rifiuta',
+  INSTALLER_RECENT_PROJECTS: 'Progetti Recenti (Ultimi 30 Giorni)',
+  INSTALLER_NO_RECENT_PROJECTS: 'Nessun Progetto Recente',
+  INSTALLER_PROJECTS_APPEAR_MESSAGE: 'I tuoi progetti recenti appariranno qui una volta che inizierai a lavorarci.',
+
+  // Time formatting
+  TIME_JUST_NOW: 'Proprio ora',
+  TIME_MINUTES_AGO: 'minuti fa',
+  TIME_HOUR_AGO: '1 ora fa',
+  TIME_HOURS_AGO: 'ore fa',
+  TIME_YESTERDAY: 'Ieri',
+  TIME_DAYS_AGO: 'giorni fa',
+  TIME_WEEKS_AGO: 'settimane fa',
+
+  // Project Status
+  STATUS_ACCEPTED: 'Accettato',
+  STATUS_REJECTED: 'Rifiutato',
+  STATUS_PENDING: 'In Attesa',
+  STATUS_COMPLETED: 'Completato',
+  STATUS_IN_PROGRESS: 'In Corso',
+  STATUS_CANCELLED: 'Annullato',
   DURATION_QUESTION: "Quanto tempo durerà l'installazione?",
   STATUS_QUESTION: "Qual è lo stato attuale dell'installazione?",
   TOOLS_REQUIRED_QUESTION: 'Quali strumenti sono necessari?',
 
   // Status Options (for select)
-  STATUS_PENDING: 'In Attesa',
-  STATUS_IN_PROGRESS: 'In Corso',
-  STATUS_COMPLETED: 'Completata',
   STATUS_DELAYED: 'Ritardata',
 
   // Tool Options (for multiselect)
@@ -102,5 +130,169 @@ export const it = {
   GIUNTO_SECONDARIO_LATERALE_BASSO_SX_QUESTION: 'Carica una foto del giunto secondario laterale basso sinistro.',
   GIUNTO_SECONDARIO_LATERALE_ALTO_DX_QUESTION: 'Carica una foto del giunto secondario laterale alto destro.',
   GIUNTO_SECONDARIO_LATERALE_BASSO_DX_QUESTION: 'Carica una foto del giunto secondario laterale basso destro.',
-  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Carica una foto generale del giunto secondario laterale.'
+  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Carica una foto generale del giunto secondario laterale.',
+
+  // Bottom Navigation
+  BOTTOM_NAV_HOME: 'Home',
+  BOTTOM_NAV_PRODUCT_HOME: 'Prodotto',
+  BOTTOM_NAV_PROJECT: 'Commessa',
+  BOTTOM_NAV_LOGOUT: 'Logout',
+  BOTTOM_NAV_LOGIN: 'Login',
+
+  // Wizard Page
+  WIZARD_SAVING_ANSWERS: 'Salvataggio delle risposte...',
+  WIZARD_LOADING: 'Caricamento della procedura guidata...',
+  WIZARD_ANSWER_QUESTION: 'Rispondi alla domanda',
+  WIZARD_YOUR_ANSWER: 'La tua risposta',
+  WIZARD_ENTER_ANSWER: 'Inserisci la tua risposta',
+  WIZARD_SELECT_OPTION: 'Seleziona un\'opzione',
+  WIZARD_SELECT_OPTIONS: 'Seleziona opzioni',
+  WIZARD_TAKE_PHOTO: 'Scatta Foto',
+  WIZARD_CHOOSE_PHOTO: 'Scegli Foto',
+  WIZARD_REMOVE: 'Rimuovi',
+  WIZARD_TAKE_PHOTOS: 'Scatta Foto',
+  WIZARD_CHOOSE_PHOTOS: 'Scegli Foto',
+  WIZARD_PHOTOS_STAGED: 'foto in coda per il caricamento',
+  WIZARD_CLEAR_ALL: 'Cancella Tutto',
+  WIZARD_BACK: 'Indietro',
+  WIZARD_NEXT: 'Avanti',
+  WIZARD_COMPLETE: 'Completa',
+  WIZARD_SELECT_WIZARD: 'Seleziona una procedura guidata',
+
+  // Language Switcher
+  LANGUAGE: 'Lingua',
+  ENGLISH: 'Inglese',
+  ITALIAN: 'Italiano',
+
+  // Loading Messages
+  LOADING_INITIALIZING: 'Inizializzazione...',
+  LOADING_REDIRECTING: 'Reindirizzamento alla dashboard di mock...',
+  LOADING_DASHBOARD: 'Caricamento dashboard...',
+  LOADING_PROJECT_DASHBOARD: 'Caricamento dashboard progetto...',
+  LOADING_COMPLETING_LOGIN: 'Completamento login...',
+  LOADING_PAGE: 'Caricamento pagina...',
+  LOADING_PROJECT_DATA: 'Caricamento dati progetto...',
+  LOADING_INSTALLER_DATA: 'Caricamento dati installatore...',
+
+  // History Dashboard
+  HISTORY_TITLE: 'Cronologia',
+  HISTORY_RECENT_PROJECTS: 'Commesse Recenti',
+  HISTORY_RECENT_EQUIPMENT: 'Serramenti Recenti',
+  HISTORY_NO_RECENT_PROJECTS: 'Nessuna commessa recente',
+  HISTORY_NO_RECENT_EQUIPMENT: 'Nessun serramento recente',
+  HISTORY_PROJECTS_APPEAR_HERE: 'Le commesse che visiti appariranno qui',
+  HISTORY_EQUIPMENT_APPEAR_HERE: 'Gli equipaggiamenti che visualizzi appariranno qui',
+  HISTORY_CLEAR_HISTORY: 'Cancella Cronologia',
+  HISTORY_CLEAR_CONFIRM: 'Sei sicuro di voler cancellare la cronologia?',
+  HISTORY_PROJECT_TYPE: 'Commesse',
+  HISTORY_EQUIPMENT_TYPE: 'Serramenti',
+  HISTORY_UNTITLED_PROJECT: 'Commesse Senza Titolo',
+  HISTORY_EQUIPMENT_DEFAULT: 'Serramento',
+  HISTORY_JUST_NOW: 'Proprio ora',
+  HISTORY_MINUTES_AGO: 'minuti fa',
+  HISTORY_HOUR_AGO: '1 ora fa',
+  HISTORY_HOURS_AGO: 'ore fa',
+  HISTORY_YESTERDAY: 'Ieri',
+  HISTORY_DAYS_AGO: 'giorni fa',
+
+  // Linking Page
+  LINKING_PAGE_TITLE: 'Collega Serramento',
+  LINKING_LOADING_DATA: 'Caricamento dati collegamento...',
+  LINKING_PROJECT_NOT_FOUND: 'Commessa non trovata',
+  LINKING_PROJECT_ID_REQUIRED: 'ID commessa richiesto',
+  LINKING_FAILED_TO_LOAD_DATA: 'Errore nel caricamento dei dati',
+
+  // Position Selection
+  LINKING_SELECT_POSITION: 'Seleziona Posizione',
+  LINKING_SELECTED: 'Selezionato',
+  LINKING_PROJECT_POSITIONS: 'Posizioni della Commessa',
+  LINKING_CHOOSE_POSITION: 'Scegli una posizione...',
+  LINKING_FLOOR: 'Piano',
+  LINKING_POSITION_DETAILS: 'Dettagli Posizione',
+  LINKING_POSITION_NUMBER: 'Posizione #',
+  LINKING_SEQUENCE_NUMBER: 'Sequenza #',
+  LINKING_DESCRIPTION: 'Descrizione',
+  LINKING_ASSET: 'Serramento',
+  LINKING_DIMENSIONS: 'Dimensioni',
+  LINKING_NOTES: 'Note',
+  LINKING_MANAGE: 'Gestisci',
+
+  // QR Tag Selection
+  LINKING_SELECT_QR_TAG: 'Seleziona QR Tag',
+  LINKING_AVAILABLE_QR_TAGS: 'QR Tag Disponibili',
+  LINKING_CHOOSE_QR_TAG: 'Scegli un QR tag...',
+  LINKING_QR_TAG_DETAILS: 'Dettagli QR Tag',
+  LINKING_SERIAL_NO: 'Numero di Serie',
+  LINKING_STATUS: 'Stato',
+  LINKING_SEQUENCE: 'Sequenza',
+  LINKING_YEAR: 'Anno',
+  LINKING_CLIENT_CODE: 'Codice Cliente',
+  LINKING_ASSET_MODEL: 'Modello Serramento',
+
+  // Actions
+  LINKING_LINK_QR_TAG_TO_POSITION: 'Collega QR Tag alla Posizione',
+  LINKING_UNLINK_QR_TAG: 'Scollega QR Tag',
+
+  // Error Messages
+  LINKING_SELECT_BOTH_POSITION_AND_QR_TAG: 'Seleziona sia una posizione che un QR tag',
+  LINKING_FAILED_TO_LINK_QR_TAG: 'Errore nel collegamento del QR tag',
+  LINKING_FAILED_TO_UNLINK_QR_TAG: 'Errore nello scollegamento del QR tag',
+
+  // Success Messages
+  LINKING_QR_TAG_LINKED_SUCCESS: 'QR tag collegato alla posizione con successo!',
+  LINKING_QR_TAG_UNLINKED_SUCCESS: 'QR tag scollegato dalla posizione con successo!',
+
+  // Linked QR Tags Section
+  LINKING_POSITIONS_WITH_LINKED_QR_TAGS: 'Posizioni con QR Tag Collegati',
+  LINKING_LINKED_QR_TAG: 'QR Tag Collegato',
+
+  
+  "PRODUCT_DETAIL_TITLE": "Dettagli Prodotto",
+  "PRODUCT_DETAIL_DESCRIPTION": "Informazioni generali riguardo al prodotto.",
+  "BRAND_LABEL": "Marca",
+  "MODEL_LABEL": "Modello",
+  "DESCRIPTION_LABEL": "Descrizione",
+  "NOTES_LABEL": "Note",
+
+  "DOCUMENT_DETAIL_TITLE": "Documenti Prodotto",
+  "DOCUMENT_DETAIL_DESCRIPTION": "Tutti i documenti relativi al prodotto.",
+  "TECHNICAL_SHEET_LABEL": "Scheda Tecnica",
+  "INSTRUCTION_MANUAL_LABEL": "Manuale di Istruzioni",
+  "PRODUCT_PICTURE_LABEL": "Foto del Prodotto",
+  "INSTALLATION_DOCUMENT_LABEL": "Documento di Installazione",
+  "CE_CERTIFICATION_LABEL": "Certificazione CE",
+  "DOP_LABEL": "Dichiarazione di Prestazione (DOP)",
+  "HAZARDOUS_SUBSTANCES_DECLARATION_LABEL": "Dichiarazione Sostanze Pericolose",
+
+  "POSITION_INFO_TITLE": "Informazioni Posizione",
+  "POSITION_INFO_DESCRIPTION": "Dettagli sulla posizione di installazione del prodotto.",
+  "POSITION_NUMBER_LABEL": "Numero Posizione",
+  "POSITION_SEQUENCE_LABEL": "Sequenza Posizione",
+  "FLOOR_LABEL": "Piano",
+  "WIDTH_LABEL": "Larghezza (mm)",
+  "HEIGHT_LABEL": "Altezza (mm)",
+
+  "PROJECT_INFO_TITLE": "Informazioni Progetto",
+  "PROJECT_INFO_DESCRIPTION": "Dettagli sul progetto generale.",
+  "PROJECT_NUMBER_LABEL": "Numero Progetto",
+  "PROJECT_DATE_LABEL": "Data Progetto",
+  "INSTALLER_INFO_LABEL": "Nome Installatore",
+
+  "INSTALLATION_GALLERY_TITLE": "Galleria Installazione",
+  "INSTALLATION_GALLERY_DESCRIPTION": "Foto scattate durante il processo di installazione.",
+  "INSTALLATION_PHOTO_1_LABEL": "Foto Installazione 1",
+  "INSTALLATION_PHOTO_2_LABEL": "Foto Installazione 2",
+  "INSTALLATION_PHOTO_3_LABEL": "Foto Installazione 3",
+  "INSTALLATION_PHOTO_4_LABEL": "Foto Installazione 4",
+
+  "INSTALLATION_WIZARD_TITLE": "Avvia Acquisizione Foto",
+  "INSTALLATION_WIZARD_DESCRIPTION": "Scatta 4 foto del processo di installazione.",
+  "INSTALLATION_PHOTO_1_QUESTION": "Scatta la prima foto dell'installazione.",
+  "INSTALLATION_PHOTO_2_QUESTION": "Scatta la seconda foto dell'installazione.",
+  "INSTALLATION_PHOTO_3_QUESTION": "Scatta la terza foto dell'installazione.",
+  "INSTALLATION_PHOTO_4_QUESTION": "Scatta la foto finale dell'installazione.",
+
+  // Project Dashboard
+  "MANAGE_LINKINGS_TITLE": "Gestisci Collegamenti",
+  "MANAGE_LINKINGS_DESCRIPTION": "Configura assegnazioni e connessioni delle attrezzature"
 }

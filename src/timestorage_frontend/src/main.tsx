@@ -1,16 +1,23 @@
 import { StrictMode } from 'react'
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
+import { HelmetProvider } from 'react-helmet-async'
+import './globals.css'
 
-import { ChosenThemeProvider, ThemeProvider } from '@/providers'
+import { ThemeProvider } from '@/providers'
 import App from './App'
 
-ReactDOM.render(
+// Get the root element
+const container = document.getElementById('root')
+// Create a root
+const root = createRoot(container!)
+
+// Render your app
+root.render(
   <StrictMode>
-    <ChosenThemeProvider>
+    <HelmetProvider>
       <ThemeProvider>
         <App />
       </ThemeProvider>
-    </ChosenThemeProvider>
-  </StrictMode>,
-  document.getElementById('root')
+    </HelmetProvider>
+  </StrictMode>
 )

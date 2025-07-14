@@ -11,13 +11,35 @@
       "dependencies": ["timestorage_backend"],
       "source": ["src/timestorage_frontend/dist"],
       "type": "assets",
-      "workspace": "timestorage_frontend"
+      "workspace": "timestorage_frontend",
+      "build": ["pnpm --filter timestorage_frontend build"]
     },
-    "timestorage_admin": {
-      "dependencies": ["timestorage_backend", "timestorage_frontend"],
-      "source": ["src/timestorage_admin/dist"],
-      "type": "assets",
-      "workspace": "timestorage_admin"
+    "timestorage_session_manager": {
+      "type": "custom",
+      "wasm": "./target/wasm32-unknown-unknown/release/timestorage_session_manager.wasm",
+      "candid": "src/timestorage_session_manager/timestorage_session_manager.did",
+      "package": "timestorage_session_manager",
+      "build": ["./scripts/build-canister.sh"],
+      "declarations": {
+        "bindings": ["js", "ts"],
+        "output": "./src/app/src/declarations"
+      },
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ]
+    },
+    "internet_identity": {
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "frontend": {},
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
     }
   },
   "networks": {

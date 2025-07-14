@@ -1,35 +1,52 @@
-# React + TypeScript + MUI
+# TimeStorage Frontend
 
-A Vite template for React, TypeScript and the latest major version of MUI.
+This directory contains the source code for the TimeStorage application's frontend.
 
-## Highlights
+## Technology Stack
 
-- React w/ TypeScript
-- Takes 8-10 seconds to build prod bundle at 198kb
-- v5 ( latest ) version of Material UI, `@mui/material`
-- Enables the `@emotion/babel-plugin` to work with MUI (see [features](https://github.com/emotion-js/emotion/tree/main/packages/babel-plugin#features))
-- Dark mode toggle
-- Aliased imports
+-   **Framework/Library**: [React](https://reactjs.org/)
+-   **Language**: [TypeScript](https://www.typescriptlang.org/)
+-   **Build Tool**: [Vite](https://vitejs.dev/)
+-   **Styling**:
+    -   [Tailwind CSS](https://tailwindcss.com/)
+    -   [Emotion](https://emotion.sh/)
+    -   [Material UI (MUI)](https://mui.com/)
+-   **Routing**: [React Router](https://reactrouter.com/)
+-   **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
+-   **Internet Computer Interaction**:
+    -   `@dfinity/agent`
+    -   `@dfinity/candid`
+    -   `@dfinity/identity`
+    -   `@dfinity/principal`
+-   **Authentication**: [Auth0](https://auth0.com/) (via `@auth0/auth0-react` and `@auth0/auth0-spa-js`)
+-   **Linting & Formatting**:
+    -   [ESLint](https://eslint.org/)
+    -   [Prettier](https://prettier.io/)
 
-## Demo
+## Project Structure
 
-<img src='./screen-shots/demo.png' />
+(Based on common React project structure and observed files/directories)
 
-## Getting Started
+-   **`src/main.tsx`**: The main entry point of the application.
+-   **`src/App.tsx`**: The root application component, typically handling routing and global layout.
+-   **`src/components/`**: Reusable UI components.
+-   **`src/pages/`**: Top-level page components corresponding to different application views/routes.
+-   **`src/store/`**: Zustand store(s) for global state management.
+-   **`src/services/`**: Modules for interacting with backend canisters or external APIs.
+-   **`src/context/`**: React context providers for sharing state or functions.
+-   **`src/hooks/`**: Custom React hooks (e.g., from `@caldwell619/react-hooks` if used extensively).
+-   **`src/utils/`**: Utility functions and helpers.
+-   **`src/assets/` or `public/`**: Static assets like images, fonts, etc.
+-   **`src/globals.css`**: Global styles or Tailwind CSS base styles.
+-   **`src/timestorage_backend/` & `src/timestorage_session_manager/`**: These appear to be auto-generated client code or type definitions for interacting with the respective canisters.
 
-- Clone the repo, `git clone https://github.com/christopher-caldwell/vite-material-ui.git`, or use the "Use this template" button at the top of this page.
-- Install dependencies using `yarn`
-- Start the server with `yarn dev`
+## Available Scripts
 
-## MUI
+(Refer to `package.json` for the most up-to-date scripts and their exact commands)
 
-To learn more about the newest ways to use MUI, checkout [the docs](https://mui.com/getting-started/usage/).
-
-### What's Included
-
-- Custom theming
-- Using that theme from within a `styled` component
-- Dark mode toggle with React Context
-- Aliased imports with `@/` mapping to the `src/`
-- Rollup bundle analyzer
-  - To use, run `yarn analyze`
+-   **`dev`**: Starts the development server (e.g., `vite`).
+-   **`build`**: Builds the application for production (e.g., `tsc --noEmit && vite build`).
+-   **`serve` or `preview`**: Serves the production build locally (e.g., `vite preview`).
+-   **`lint`**: Lints the codebase using ESLint.
+-   **`format`**: Formats the codebase using Prettier.
+-   **`analyze`**: Builds the application and analyzes the bundle size.

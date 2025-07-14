@@ -22,7 +22,6 @@
   "engines": {
     "node": "20.x"
   },
-  "packageManager": "yarn@1.22.22",
   "dependencies": {
     "@dfinity/agent": "^2.2.0",
     "@dfinity/auth-client": "^2.2.0",

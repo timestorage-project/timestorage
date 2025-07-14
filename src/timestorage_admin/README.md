@@ -1,48 +1,41 @@
-## Minimal UI ([Free version](https://free.minimals.cc/))
+# TimeStorage Admin Dashboard
 
-![license](https://img.shields.io/badge/license-MIT-blue.svg)
+This directory contains the source code for the TimeStorage Admin Dashboard. It provides an interface for administrative tasks related to the TimeStorage application.
 
-![preview](public/assets/images/minimal-free-preview.jpg)
+## Technology Stack
 
-> Free React Admin Dashboard made with Material-UI components and React + Vite.js.
+-   **Framework/Library**: [React](https://reactjs.org/)
+-   **Language**: [TypeScript](https://www.typescriptlang.org/)
+-   **Build Tool**: [Vite](https://vitejs.dev/)
+-   **UI Components**: [Material UI (MUI)](https://mui.com/)
+-   **Styling**: [Emotion](https://emotion.sh/) (used by MUI)
+-   **Routing**: [React Router DOM](https://reactrouter.com/)
+-   **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
+-   **Internet Computer Interaction**:
+    -   `@dfinity/agent`: For interacting with IC canisters.
+    -   `@dfinity/auth-client`: For authentication with Internet Identity or other IC-compatible auth methods.
+    -   `@dfinity/principal`: For handling IC principals.
+-   **Linting & Formatting**:
+    -   [ESLint](https://eslint.org/)
+    -   [Prettier](https://prettier.io/)
+-   **Charting**: [ApexCharts](https://apexcharts.com/) (via `react-apexcharts`)
 
-## Pages
+## Project Purpose
 
-- [Dashboard](https://free.minimals.cc/)
-- [Users](https://free.minimals.cc/user)
-- [Products](https://free.minimals.cc/products)
-- [Blog](https://free.minimals.cc/blog)
-- [Sign in](https://free.minimals.cc/sign-in)
-- [Not found](https://free.minimals.cc/404)
+This admin dashboard is intended to provide administrative functionalities for the TimeStorage application, such as:
+-   User management (if applicable)
+-   Viewing application statistics
+-   Managing stored data or configurations
+-   Other administrative tasks
 
-## Quick start
+(The exact functionalities would depend on the specific implementation and interaction with the backend admin canister.)
 
-- Clone the repo: `git clone https://github.com/minimal-ui-kit/material-kit-react.git`
-- Recommended: `Node.js v20.x`
-- **Install:** `npm i` or `yarn install`
-- **Start:** `npm run dev` or `yarn dev`
-- **Build:** `npm run build` or `yarn build`
-- Open browser: `http://localhost:3039`
+## Available Scripts
 
-## Upgrade to PRO Version
+(Refer to `package.json` for the most up-to-date scripts and their exact commands)
 
-| Minimal Free                | [Minimal Pro](https://material-ui.com/store/items/minimal-dashboard/)                                   |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------ |
-| **6** Pages                 | **70+** Pages                                                                                           |
-| **Partial** theme customize | **Fully** theme customize                                                                               |
-| -                           | **Next.js** version                                                                                     |
-| -                           | **TypeScript** version (Standard Plus and Extended license)                                             |
-| -                           | Design **Figma** file (Standard Plus and Extended license)                                              |
-| -                           | Authentication with **Amplify**, **Auth0**, **JWT**, **Firebase** and **Supabase**                      |
-| -                           | Light/dark mode, right-to-left, form validation... ([+more components](https://minimals.cc/components)) |
-| -                           | Complete users flows                                                                                    |
-| -                           | 1 year of free updates / 6 months of technical support                                                  |
-| -                           | Learn more: [Package & license](https://docs.minimals.cc/package)                                       |
-
-## License
-
-Distributed under the [MIT](https://github.com/minimal-ui-kit/minimal.free/blob/main/LICENSE.md) license.
-
-## Contact us
-
-Email: support@minimals.cc
+-   **`dev`**: Starts the development server (e.g., `vite`).
+-   **`build`**: Builds the application for production (e.g., `tsc && vite build`).
+-   **`start` or `preview`**: Serves the production build locally (e.g., `vite preview`).
+-   **`lint`**: Lints the codebase using ESLint.
+-   **`fm:fix` or `format`**: Formats the codebase using Prettier.

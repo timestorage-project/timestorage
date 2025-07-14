@@ -1,60 +1,48 @@
 import { FC } from 'react'
-import { Box, Typography, Button, styled } from '@mui/material'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import { AlertCircle, RotateCw } from 'lucide-react'
 import { useData } from '../context/DataContext'
 
 interface ErrorViewProps {
   message: string
+  fullScreen?: boolean
+  onRetry?: () => void
 }
 
-const ErrorView: FC<ErrorViewProps> = ({ message }) => {
+const ErrorView: FC<ErrorViewProps> = ({ 
+  message, 
+  fullScreen = true,
+  onRetry 
+}) => {
   const { reloadData } = useData()
+  const containerClasses = `flex items-center justify-center z-50 ${fullScreen ? 'fixed inset-0' : 'py-12'}`
+  
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry()
+    } else {
+      reloadData()
+    }
+  }
 
   return (
-    <ErrorContainer>
-      <ContentWrapper>
-        <StyledErrorIcon />
-        <ErrorText variant='h6'>{message}</ErrorText>
-        <Button variant='contained' color='primary' onClick={reloadData} startIcon={<ErrorOutlineIcon />}>
-          Try Again
-        </Button>
-      </ContentWrapper>
-    </ErrorContainer>
+    <div className={containerClasses}>
+      <div className="card bg-base-100 shadow-xl max-w-md w-full">
+        <div className="card-body items-center text-center">
+          <AlertCircle className="h-12 w-12 text-error mb-4" />
+          <h2 className="card-title text-lg">{message}</h2>
+          <div className="card-actions mt-4">
+            <button 
+              className="btn btn-primary"
+              onClick={handleRetry}
+            >
+              <RotateCw className="h-4 w-4 mr-2" />
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
-
-const ErrorContainer = styled(Box)`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(255, 255, 255, 0.9);
-  z-index: 1000;
-`
-
-const ContentWrapper = styled(Box)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 24px;
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-`
-
-const StyledErrorIcon = styled(ErrorOutlineIcon)`
-  color: #d32f2f;
-  font-size: 48px;
-`
-
-const ErrorText = styled(Typography)`
-  color: #d32f2f;
-  text-align: center;
-`
 
 export default ErrorView

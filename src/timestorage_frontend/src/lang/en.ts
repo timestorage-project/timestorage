@@ -43,14 +43,42 @@ export const en = {
   // Installation Wizard Questions
   SCHEDULED_DATE_QUESTION: 'When is the installation scheduled for?',
   INSTALLER_QUESTION: 'Who is the assigned installer?',
+  INSTALLER_DASHBOARD: 'Installer Dashboard',
+
+  // Installer Dashboard
+  INSTALLER_LOADING: 'Loading your projects...',
+  INSTALLER_ERROR_TITLE: 'Error Loading Projects',
+  INSTALLER_TRY_AGAIN: 'Try Again',
+  INSTALLER_PROJECT_INVITATIONS: 'Project Invitations',
+  INSTALLER_NEW_PROJECT_INVITATION: 'New Project Invitation',
+  INSTALLER_PROJECT_DEFAULT: 'Project',
+  INSTALLER_ACCEPT: 'Accept',
+  INSTALLER_REJECT: 'Reject',
+  INSTALLER_RECENT_PROJECTS: 'Recent Projects (Last 30 Days)',
+  INSTALLER_NO_RECENT_PROJECTS: 'No Recent Projects',
+  INSTALLER_PROJECTS_APPEAR_MESSAGE: 'Your recent projects will appear here once you start working on them.',
+
+  // Time formatting
+  TIME_JUST_NOW: 'Just now',
+  TIME_MINUTES_AGO: 'minutes ago',
+  TIME_HOUR_AGO: '1 hour ago',
+  TIME_HOURS_AGO: 'hours ago',
+  TIME_YESTERDAY: 'Yesterday',
+  TIME_DAYS_AGO: 'days ago',
+  TIME_WEEKS_AGO: 'weeks ago',
+
+  // Project Status
+  STATUS_ACCEPTED: 'Accepted',
+  STATUS_REJECTED: 'Rejected',
+  STATUS_PENDING: 'Pending',
+  STATUS_COMPLETED: 'Completed',
+  STATUS_IN_PROGRESS: 'In Progress',
+  STATUS_CANCELLED: 'Cancelled',
   DURATION_QUESTION: 'How long will the installation take?',
   STATUS_QUESTION: 'What is the current status of the installation?',
   TOOLS_REQUIRED_QUESTION: 'What tools are required?',
 
   // Status Options (for select)
-  STATUS_PENDING: 'Pending',
-  STATUS_IN_PROGRESS: 'In Progress',
-  STATUS_COMPLETED: 'Completed',
   STATUS_DELAYED: 'Delayed',
 
   // Tool Options (for multiselect)
@@ -102,5 +130,169 @@ export const en = {
   GIUNTO_SECONDARIO_LATERALE_BASSO_SX_QUESTION: 'Please upload a photo of the secondary joint side bottom left.',
   GIUNTO_SECONDARIO_LATERALE_ALTO_DX_QUESTION: 'Please upload a photo of the secondary joint side top right.',
   GIUNTO_SECONDARIO_LATERALE_BASSO_DX_QUESTION: 'Please upload a photo of the secondary joint side bottom right.',
-  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Please upload a general photo of the secondary joint side.'
+  GIUNTO_SECONDARIO_LATERALE_GENERALE_QUESTION: 'Please upload a general photo of the secondary joint side.',
+
+  // Bottom Navigation
+  BOTTOM_NAV_HOME: 'Home',
+  BOTTOM_NAV_PRODUCT_HOME: 'Product',
+  BOTTOM_NAV_PROJECT: 'Project',
+  BOTTOM_NAV_LOGOUT: 'Logout',
+  BOTTOM_NAV_LOGIN: 'Login',
+
+  // Wizard Page
+  WIZARD_SAVING_ANSWERS: 'Saving your answers...',
+  WIZARD_LOADING: 'Loading installation wizard...',
+  WIZARD_ANSWER_QUESTION: 'Answer the question',
+  WIZARD_YOUR_ANSWER: 'Your answer',
+  WIZARD_ENTER_ANSWER: 'Enter your answer',
+  WIZARD_SELECT_OPTION: 'Select an option',
+  WIZARD_SELECT_OPTIONS: 'Select options',
+  WIZARD_TAKE_PHOTO: 'Take Photo',
+  WIZARD_CHOOSE_PHOTO: 'Choose Photo',
+  WIZARD_REMOVE: 'Remove',
+  WIZARD_TAKE_PHOTOS: 'Take Photos',
+  WIZARD_CHOOSE_PHOTOS: 'Choose Photos',
+  WIZARD_PHOTOS_STAGED: 'photo(s) staged for upload',
+  WIZARD_CLEAR_ALL: 'Clear All',
+  WIZARD_BACK: 'Back',
+  WIZARD_NEXT: 'Next',
+  WIZARD_COMPLETE: 'Complete',
+  WIZARD_SELECT_WIZARD: 'Select an installation wizard',
+
+  // Language Switcher
+  LANGUAGE: 'Language',
+  ENGLISH: 'English',
+  ITALIAN: 'Italian',
+
+  // Loading Messages
+  LOADING_INITIALIZING: 'Initializing...',
+  LOADING_REDIRECTING: 'Redirecting to mock dashboard...',
+  LOADING_DASHBOARD: 'Loading dashboard...',
+  LOADING_PROJECT_DASHBOARD: 'Loading project dashboard...',
+  LOADING_COMPLETING_LOGIN: 'Completing login...',
+  LOADING_PAGE: 'Loading page...',
+  LOADING_PROJECT_DATA: 'Loading project data...',
+  LOADING_INSTALLER_DATA: 'Loading installer data...',
+
+  // History Dashboard
+  HISTORY_TITLE: 'History',
+  HISTORY_RECENT_PROJECTS: 'Recent Projects',
+  HISTORY_RECENT_EQUIPMENT: 'Recent Equipment',
+  HISTORY_NO_RECENT_PROJECTS: 'No recent projects',
+  HISTORY_NO_RECENT_EQUIPMENT: 'No recent equipment',
+  HISTORY_PROJECTS_APPEAR_HERE: 'Projects you visit will appear here',
+  HISTORY_EQUIPMENT_APPEAR_HERE: 'Equipment you view will appear here',
+  HISTORY_CLEAR_HISTORY: 'Clear History',
+  HISTORY_CLEAR_CONFIRM: 'Are you sure you want to clear your history?',
+  HISTORY_PROJECT_TYPE: 'Project',
+  HISTORY_EQUIPMENT_TYPE: 'Equipment',
+  HISTORY_UNTITLED_PROJECT: 'Untitled Project',
+  HISTORY_EQUIPMENT_DEFAULT: 'Equipment',
+  HISTORY_JUST_NOW: 'Just now',
+  HISTORY_MINUTES_AGO: 'minutes ago',
+  HISTORY_HOUR_AGO: '1 hour ago',
+  HISTORY_HOURS_AGO: 'hours ago',
+  HISTORY_YESTERDAY: 'Yesterday',
+  HISTORY_DAYS_AGO: 'days ago',
+
+  // Linking Page
+  LINKING_PAGE_TITLE: 'Link Equipment',
+  LINKING_LOADING_DATA: 'Loading linking data...',
+  LINKING_PROJECT_NOT_FOUND: 'Project not found',
+  LINKING_PROJECT_ID_REQUIRED: 'Project ID is required',
+  LINKING_FAILED_TO_LOAD_DATA: 'Failed to load data',
+
+  // Position Selection
+  LINKING_SELECT_POSITION: 'Select Position',
+  LINKING_SELECTED: 'Selected',
+  LINKING_PROJECT_POSITIONS: 'Project Positions',
+  LINKING_CHOOSE_POSITION: 'Choose a position...',
+  LINKING_FLOOR: 'Floor',
+  LINKING_POSITION_DETAILS: 'Position Details',
+  LINKING_POSITION_NUMBER: 'Position #',
+  LINKING_SEQUENCE_NUMBER: 'Sequence #',
+  LINKING_DESCRIPTION: 'Description',
+  LINKING_ASSET: 'Asset',
+  LINKING_DIMENSIONS: 'Dimensions',
+  LINKING_NOTES: 'Notes',
+  LINKING_MANAGE: 'Gestisci',
+
+  // QR Tag Selection
+  LINKING_SELECT_QR_TAG: 'Select QR Tag',
+  LINKING_AVAILABLE_QR_TAGS: 'Available QR Tags',
+  LINKING_CHOOSE_QR_TAG: 'Choose a QR tag...',
+  LINKING_QR_TAG_DETAILS: 'QR Tag Details',
+  LINKING_SERIAL_NO: 'Serial No',
+  LINKING_STATUS: 'Status',
+  LINKING_SEQUENCE: 'Sequence',
+  LINKING_YEAR: 'Year',
+  LINKING_CLIENT_CODE: 'Client Code',
+  LINKING_ASSET_MODEL: 'Asset Model',
+
+  // Actions
+  LINKING_LINK_QR_TAG_TO_POSITION: 'Link QR Tag to Position',
+  LINKING_UNLINK_QR_TAG: 'Unlink QR Tag',
+
+  // Error Messages
+  LINKING_SELECT_BOTH_POSITION_AND_QR_TAG: 'Please select both a position and a QR tag',
+  LINKING_FAILED_TO_LINK_QR_TAG: 'Failed to link QR tag',
+  LINKING_FAILED_TO_UNLINK_QR_TAG: 'Failed to unlink QR tag',
+
+  // Success Messages
+  LINKING_QR_TAG_LINKED_SUCCESS: 'QR tag successfully linked to position!',
+  LINKING_QR_TAG_UNLINKED_SUCCESS: 'QR tag successfully unlinked from position!',
+
+  // Linked QR Tags Section
+  LINKING_POSITIONS_WITH_LINKED_QR_TAGS: 'Positions with Linked QR Tags',
+  LINKING_LINKED_QR_TAG: 'Linked QR Tag',
+
+
+  "PRODUCT_DETAIL_TITLE": "Product Details",
+  "PRODUCT_DETAIL_DESCRIPTION": "General information about the product.",
+  "BRAND_LABEL": "Brand",
+  "MODEL_LABEL": "Model",
+  "DESCRIPTION_LABEL": "Description",
+  "NOTES_LABEL": "Notes",
+
+  "DOCUMENT_DETAIL_TITLE": "Product Documents",
+  "DOCUMENT_DETAIL_DESCRIPTION": "All documents related to the product.",
+  "TECHNICAL_SHEET_LABEL": "Technical Sheet",
+  "INSTRUCTION_MANUAL_LABEL": "Instruction Manual",
+  "PRODUCT_PICTURE_LABEL": "Product Picture",
+  "INSTALLATION_DOCUMENT_LABEL": "Installation Document",
+  "CE_CERTIFICATION_LABEL": "CE Certification",
+  "DOP_LABEL": "Declaration of Performance (DOP)",
+  "HAZARDOUS_SUBSTANCES_DECLARATION_LABEL": "Hazardous Substances Declaration",
+
+  "POSITION_INFO_TITLE": "Position Information",
+  "POSITION_INFO_DESCRIPTION": "Details about the product's installation position.",
+  "POSITION_NUMBER_LABEL": "Position Number",
+  "POSITION_SEQUENCE_LABEL": "Position Sequence",
+  "FLOOR_LABEL": "Floor",
+  "WIDTH_LABEL": "Width (mm)",
+  "HEIGHT_LABEL": "Height (mm)",
+
+  "PROJECT_INFO_TITLE": "Project Information",
+  "PROJECT_INFO_DESCRIPTION": "Details about the overall project.",
+  "PROJECT_NUMBER_LABEL": "Project Number",
+  "PROJECT_DATE_LABEL": "Project Date",
+  "INSTALLER_INFO_LABEL": "Installer Name",
+
+  "INSTALLATION_GALLERY_TITLE": "Installation Gallery",
+  "INSTALLATION_GALLERY_DESCRIPTION": "Photos taken during the installation process.",
+  "INSTALLATION_PHOTO_1_LABEL": "Installation Photo 1",
+  "INSTALLATION_PHOTO_2_LABEL": "Installation Photo 2",
+  "INSTALLATION_PHOTO_3_LABEL": "Installation Photo 3",
+  "INSTALLATION_PHOTO_4_LABEL": "Installation Photo 4",
+
+  "INSTALLATION_WIZARD_TITLE": "Start Installation Photos",
+  "INSTALLATION_WIZARD_DESCRIPTION": "Take 4 photos of the installation process.",
+  "INSTALLATION_PHOTO_1_QUESTION": "Take the first photo of the installation.",
+  "INSTALLATION_PHOTO_2_QUESTION": "Take the second photo of the installation.",
+  "INSTALLATION_PHOTO_3_QUESTION": "Take the third photo of the installation.",
+  "INSTALLATION_PHOTO_4_QUESTION": "Take the final photo of the installation.",
+
+  // Project Dashboard
+  "MANAGE_LINKINGS_TITLE": "Manage Linkings",
+  "MANAGE_LINKINGS_DESCRIPTION": "Configure equipment assignments and connections"
 }

@@ -1,40 +1,24 @@
-import { FC, useContext, useMemo } from 'react'
-import CssBaseline from '@mui/material/CssBaseline'
-import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles'
+import { ReactNode, useEffect } from 'react'
 
-import { ChosenTheme } from './ChosenTheme'
-
-export const ThemeProvider: FC = ({ children }) => {
-  const { theme } = useContext(ChosenTheme)
-  const muiTheme = useMemo(() => createThemeHelper(theme), [theme])
-
-  return (
-    <MuiThemeProvider theme={muiTheme}>
-      <CssBaseline />
-      {children}
-    </MuiThemeProvider>
-  )
+// Define an interface for your provider props
+interface ThemeProviderProps {
+  children: ReactNode
 }
 
-const brandColor = '#00b8d4'
-const createThemeHelper = (theme: 'dark' | 'light') => {
-  const isDark = theme === 'dark'
-  return createTheme({
-    palette: {
-      mode: theme,
-      background: {
-        default: isDark ? '#303030;' : '#f0f0f0',
-        paper: isDark ? '#242526' : '#ffffff'
-      },
-      primary: {
-        main: brandColor
-      },
-      error: {
-        main: 'rgb(232, 51, 51)'
-      },
-      success: {
-        main: 'rgb(76,175,80)'
-      }
-    }
-  })
+// This component will now primarily ensure the light theme is active for Tailwind/Shadcn
+// by managing the .dark class on the html element.
+export const ThemeProvider = ({ children }: ThemeProviderProps) => {
+  useEffect(() => {
+    // Ensure light theme is active by removing the .dark class
+    const root = window.document.documentElement
+    root.classList.remove('dark')
+
+    // Optional: If your Shadcn setup or other parts of your app
+    // look for a data-theme attribute, you can set it here.
+    // root.setAttribute('data-theme', 'light')
+  }, []) // Run only once on mount to set the light theme.
+
+  // We no longer use MuiThemeProvider or CssBaseline from MUI.
+  // Tailwind's preflight and your globals.css will handle base styles.
+  return <>{children}</>
 }

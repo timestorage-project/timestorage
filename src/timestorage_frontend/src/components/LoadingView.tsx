@@ -1,70 +1,26 @@
 import { FC } from 'react'
-import { Box, CircularProgress, Typography, styled } from '@mui/material'
-import ConstructionIcon from '@mui/icons-material/Construction'
 
 interface LoadingViewProps {
   message?: string
+  fullScreen?: boolean
 }
 
-const LoadingView: FC<LoadingViewProps> = ({ message = 'Loading data...' }) => {
+const LoadingView: FC<LoadingViewProps> = ({ 
+  message = 'Loading...',
+  fullScreen = true 
+}) => {
+  const containerClasses = `flex flex-col items-center justify-center p-4 ${fullScreen ? 'min-h-screen' : 'py-12'}`
+  
   return (
-    <LoadingContainer>
-      <ContentWrapper>
-        <IconWrapper>
-          <StyledConstructionIcon />
-          <StyledCircularProgress />
-        </IconWrapper>
-        <LoadingText variant='h6'>{message}</LoadingText>
-      </ContentWrapper>
-    </LoadingContainer>
+    <div className={containerClasses}>
+      <div className="flex flex-col items-center space-y-4">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+        <h2 className="text-xl font-medium text-center">
+          {message}
+        </h2>
+      </div>
+    </div>
   )
 }
-
-const LoadingContainer = styled(Box)`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(255, 255, 255, 0.9);
-  z-index: 1000;
-`
-
-const ContentWrapper = styled(Box)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-`
-
-const IconWrapper = styled(Box)`
-  position: relative;
-  width: 64px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`
-
-const StyledConstructionIcon = styled(ConstructionIcon)`
-  color: #95bcf9;
-  font-size: 40px;
-  position: absolute;
-  z-index: 1;
-`
-
-const StyledCircularProgress = styled(CircularProgress)`
-  position: absolute;
-  color: #95bcf9;
-  z-index: 0;
-`
-
-const LoadingText = styled(Typography)`
-  color: #95bcf9;
-  text-align: center;
-`
 
 export default LoadingView

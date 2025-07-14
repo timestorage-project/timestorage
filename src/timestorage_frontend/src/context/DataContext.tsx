@@ -1,266 +1,253 @@
-import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useEffect, useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import * as canisterService from '../services/canisterService'
+import * as serverService from '../services/serverService'
 import { en } from '@/lang/en'
 import { it } from '@/lang/it'
+import { AssetCore, FetchingStatus, IWizardQuestion } from '@/types/structures'
+import { DataStructure } from '@/types/DataStructure'
+import { historyService } from '../services/historyService'
 
-/**
- * DataNode represents either a "data" section or a "wizard" section,
- * with children for data, or questions for a wizard.
- */
-interface DataNode {
-  id: string
-  title: string
-  icon: string
-  description: string
-  /** Only used if this is a "data" section: */
-  children?: {
-    icon: string
-    label: string
-    value: string
-    fileType?: string
-    path?: string
-  }[]
-  /** Used if this is a "wizard" section: */
-  questions?: WizardQuestion[]
-  showImages?: boolean
-  isWizard?: boolean
-}
+type TransformedProjectAPIResponse = Awaited<ReturnType<typeof canisterService.getProject>>
 
-/**
- * You mentioned your UI uses these four sections, so we'll keep them.
- * Each key corresponds to a section in your data.
- */
-interface DataStructure {
-  [key: string]: DataNode
-}
-
-/** WizardQuestion is used only in wizard sections */
-export interface WizardQuestion {
-  id: string
-  type: 'text' | 'select' | 'multiselect' | 'photo' | 'multiphoto'
-  question: string
-  options?: string[]
-  // You can include refId or other fields from your schema if you need them:
-  refId?: string
-}
-
-/**
- * Our DataContextType holds the data structure, loading/error states,
- * plus helper methods to reload data or get wizard questions.
- */
-interface DataContextType {
+interface IDataHookReturn {
+  provider: 'canister' | 'server'
+  uuid: string
   data: DataStructure | null
+  project: TransformedProjectAPIResponse | null
+  assetCore: AssetCore | null
+  fetchingStatus: FetchingStatus
   isLoading: boolean
   error: string | null
-  projectId: string
   reloadData: () => Promise<void>
-  getWizardQuestions: (sectionId: string) => Promise<WizardQuestion[]>
-}
-
-const DataContext = createContext<DataContextType | undefined>(undefined)
-
-/**
- * Helper function to retrieve value from the values object
- */
-function getValueFromPath(values: Record<string, string>, path: string): string {
-  console.log('Looking up path:', path, 'in values:', values)
-
-  // Remove the #/values/ prefix if present
-  const cleanPath = path.replace('#/values/', '')
-
-  // Try with forward slash converted to dot notation
-  const dotPath = cleanPath.replace(/\//g, '.')
-
-  // Try with camelCase converted to snake_case
-  const snakePath = dotPath.replace(/([A-Z])/g, '_$1').toLowerCase()
-
-  console.log('Cleaned paths to try:', { dotPath, snakePath })
-
-  // Try all possible formats
-  if (values[cleanPath] !== undefined) {
-    console.log('Found with cleanPath:', cleanPath)
-    return values[cleanPath]
+  getWizardQuestions: (sectionId: string) => Promise<IWizardQuestion[]>
+  // Service methods exposed through provider abstraction
+  service: {
+    // Methods available in both services (allowing for different return types)
+    getUUIDInfo: (uuid: string) => Promise<[string, string, unknown[]]>
+    getProjectByUuid: (uuid: string) => Promise<TransformedProjectAPIResponse>
+    getProject: (projectUuid: string) => Promise<TransformedProjectAPIResponse>
+    getAssetCore: (uuid: string) => Promise<AssetCore>
+    isFileId: (value: string) => boolean
+    getFileIcon: (mimeType: string) => string
+    // Methods only available in canister service (will throw error if using server)
+    updateValue: (uuid: string, key: string, value: string, lock?: boolean) => Promise<unknown>
+    uploadFile: (
+      uuid: string,
+      fileData: string,
+      metadata: { fileName: string; mimeType: string; uploadTimestamp: bigint }
+    ) => Promise<unknown>
+    getImage: (uuid: string, imageId: string) => Promise<boolean>
+    getFileMetadataByUUIDAndId: (uuid: string, fileId: string) => Promise<unknown>
+    getFileMetadataByUUID: (uuid: string) => Promise<unknown[]>
+    getFileByUUIDAndId: (uuid: string, fileId: string) => Promise<unknown>
+    downloadFileContent: (uuid: string, fileId: string) => Promise<unknown>
   }
-
-  if (values[dotPath] !== undefined) {
-    console.log('Found with dotPath:', dotPath)
-    return values[dotPath]
-  }
-
-  if (values[snakePath] !== undefined) {
-    console.log('Found with snakePath:', snakePath)
-    return values[snakePath]
-  }
-
-  // One more attempt - try lowercase version
-  const lowerDotPath = dotPath.toLowerCase()
-  if (values[lowerDotPath] !== undefined) {
-    console.log('Found with lowerDotPath:', lowerDotPath)
-    return values[lowerDotPath]
-  }
-
-  console.log('Value not found for path:', path)
-  // Return default value if not found
-  return '-'
 }
 
 /**
- * Utility to convert a "section" from the API into DataNode
+ * ---------------------------------------------------------
+ * 1) Determine which service to use based on asset availability and status
+ * ---------------------------------------------------------
  */
-function mapSectionToDataNode(section: unknown, values: Record<string, string> = {}): DataNode {
-  const { id, title, icon, description, type, children = [], questions = [] } = section as never
+async function determineProvider(uuid: string): Promise<'canister' | 'server'> {
+  try {
+    // First try to get asset from canister
+    const assetCore = await canisterService.getAssetCore(uuid)
 
-  const isWizard = type === 'wizard'
+    // If asset exists and status is completed, use canister
+    if (assetCore && assetCore.status === 'completed') {
+      return 'canister'
+    }
 
-  return {
-    id,
-    title,
-    icon,
-    description,
-    children: isWizard
-      ? []
-      : children.map((child: { icon: string; value: string; label: string; fileType?: string }) => {
-          const originalPath = child.value.startsWith('#/values/') ? child.value : undefined
+    // If asset doesn't exist or status is not completed, try server
+    return 'server'
+  } catch (canisterError) {
+    console.log('Asset not found in canister, trying server:', canisterError)
 
-          return {
-            icon: child.icon,
-            label: child.label,
-            value: originalPath ? getValueFromPath(values, originalPath) : child.value,
-            fileType: child.fileType,
-            path: originalPath // Store the original path
+    try {
+      // Try to fetch QR tag from server to see if it exists there
+      await serverService.getAssetCore(uuid)
+      return 'server'
+    } catch (serverAssetError) {
+      console.log('Asset not found in server either, checking for project:', serverAssetError)
+
+      try {
+        // UUID might be a project UUID instead of QR tag, try to fetch project
+        await serverService.getProjectByUuid(uuid)
+        console.log('Found project with UUID in server, using server provider')
+        return 'server'
+      } catch (serverProjectError) {
+        console.log('Project not found in server either:', serverProjectError)
+
+        try {
+          // Last attempt: try to fetch project from canister
+          await canisterService.getProjectByUuid(uuid)
+          console.log('Found project with UUID in canister, using canister provider')
+          return 'canister'
+        } catch (canisterProjectError) {
+          console.log('Project not found in canister either:', canisterProjectError)
+
+          // Last last attempt: try to fetch project documents from canister
+          try {
+            await serverService.getProject(uuid)
+            console.log('Found project with UUID in canister, using canister provider')
+            return 'server'
+          } catch (canisterProjectDocumentsError) {
+            console.log('Project documents not found in canister either:', canisterProjectDocumentsError)
+            // If not found anywhere, throw error
+            throw new Error('UUID not found as either asset or project in any service')
           }
-        }),
-    questions: isWizard
-      ? questions.map((q: { id: string; type: string; question: string; options: string[]; refId: string }) => ({
-          id: q.id,
-          type: q.type as never,
-          question: q.question,
-          options: q.options || [],
-          refId: q.refId
-        }))
-      : [],
-    isWizard
-  }
-}
-
-/**
- * ---------------------------------------------------------
- * 2) Convert the combined API response into DataStructure
- * ---------------------------------------------------------
- * The API response is assumed to be an object like:
- * {
- *   schema: { ... },
- *   data: {
- *     productInfo: { id, title, type, icon, children: [...], etc },
- *     installationProcess: { ... },
- *     maintenanceLog: { ... },
- *     startInstallation: { ... }
- *   }
- * }
- */
-function mapApiResponseToDataStructure(response: {
-  data: { [key: string]: unknown }
-  values?: Record<string, string>
-}): DataStructure {
-  const { data, values = {} } = response
-  console.log('Data received', response)
-
-  const result: DataStructure = {}
-
-  for (const key in data) {
-    if (data.hasOwnProperty(key)) {
-      result[key] = mapSectionToDataNode(data[key], values)
+        }
+      }
     }
   }
-
-  return result
 }
 
 /**
  * ---------------------------------------------------------
- * 3) Fetch function that calls your canister or backend
+ * 2) Fetch function that calls either canister or server service
  * ---------------------------------------------------------
- * This must return the new JSON that includes { schema, data }.
+ * This now returns a DataStructure instance directly.
  */
-async function fetchData(projectId: string, translations: { [key: string]: string }): Promise<DataStructure> {
+async function fetchData(
+  uuid: string,
+  translations: { [key: string]: string },
+  provider: 'canister' | 'server'
+): Promise<DataStructure> {
   try {
-    const [response] = await canisterService.getUUIDInfo(projectId)
-    let copied = response
+    const service = provider === 'canister' ? canisterService : serverService
+    const [schemaText, valuesAndLockJson] = await service.getUUIDInfo(uuid)
+
+    // Parse the JSON strings first
+    const schemaData = JSON.parse(schemaText)
+    const valuesAndLock = JSON.parse(valuesAndLockJson)
+
+    // Combine the data
+    const combinedData = {
+      uuid,
+      ...schemaData,
+      values: valuesAndLock.values,
+      lockStatus: valuesAndLock.lockStatus
+    }
+
+    // Convert back to string for translation
+    let combinedJsonString = JSON.stringify(combinedData)
+
+    // Apply translations to the entire combined JSON string
     for (const localeKey in translations) {
       if (translations.hasOwnProperty(localeKey)) {
         const regex = new RegExp(localeKey, 'g')
-        copied = copied.replace(regex, translations[localeKey])
+        combinedJsonString = combinedJsonString.replace(regex, translations[localeKey])
       }
     }
-    return mapApiResponseToDataStructure(JSON.parse(copied))
+
+    console.debug('Combined and translated JSON:', combinedJsonString)
+
+    // Parse the translated JSON string back to an object
+    const translatedData = JSON.parse(combinedJsonString)
+
+    // Use the new class-based method to parse the entire structure
+    return DataStructure.fromJSON(translatedData)
   } catch (err) {
-    console.error('Error fetching data from API:', err)
+    console.error(`Error fetching data from ${provider}:`, err)
     throw err
   }
 }
 
 /**
  * ---------------------------------------------------------
- * 4) DataProvider & useData Hook
+ * Main data fetching hook - accepts UUID/projectId parameters
  * ---------------------------------------------------------
  */
-interface DataProviderProps {
-  children: ReactNode
-}
-
-export const DataProvider: FC<DataProviderProps> = ({ children }) => {
+export const useData = (uuid?: string, projectId?: string): IDataHookReturn => {
   const [data, setData] = useState<DataStructure | null>(null)
+  const [project, setProject] = useState<TransformedProjectAPIResponse | null>(null)
+  const [assetCore, setAssetCore] = useState<AssetCore | null>(null)
+  const [fetchingStatus, setFetchingStatus] = useState<FetchingStatus>('none')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const location = useLocation()
-  const [projectId, setProjectId] = useState<string>('uuid-dummy')
-  const [dataLoaded, setDataLoaded] = useState(false)
-  const [locale] = useState<'en' | 'it'>('it') // Default to Italian
+  const [provider, setProvider] = useState<'canister' | 'server'>('canister')
+  const navigate = useNavigate()
+  const [resolvedUuid, setResolvedUuid] = useState<string>('')
+  const [locale] = useState<'en' | 'it'>('it')
 
   const translations = locale === 'en' ? en : it
 
   useEffect(() => {
     const loadData = async () => {
-      // If we already loaded data once, just update the projectId from the path:
-      if (dataLoaded) {
-        const pathParts = location.pathname.split('/')
-        const newProjectId = pathParts[1] || ''
-        setProjectId(newProjectId)
+      setIsLoading(true)
+      setError(null)
+
+      const currentUuid = uuid || projectId || ''
+
+      if (!currentUuid) {
+        setError('No UUID provided for data loading.')
+        setData(null)
+        setResolvedUuid('')
+        setIsLoading(false)
         return
       }
 
-      try {
-        setIsLoading(true)
-        const pathParts = location.pathname.split('/')
-        const newProjectId = pathParts[1] || ''
-        if (!newProjectId) {
-          setError('No project ID provided')
-          return
-        }
-        setProjectId(newProjectId)
+      setResolvedUuid(currentUuid)
 
-        const result = await fetchData(newProjectId, translations)
-        setData(result)
-        setDataLoaded(true)
-        setError(null)
+      try {
+        const determinedProvider = await determineProvider(currentUuid).catch(() => 'canister' as const)
+        setProvider(determinedProvider)
+        console.log(`Using ${determinedProvider} service for UUID: ${currentUuid}`)
+
+        const service = determinedProvider === 'canister' ? canisterService : serverService
+
+        setFetchingStatus('project')
+        const projectResult = await service.getProjectByUuid(currentUuid).catch(err => {
+          console.error('Failed to fetch project, proceeding without it.', err)
+          return null
+        })
+        if (projectResult) {
+          setProject(projectResult)
+          historyService.addProject(
+            currentUuid,
+            projectResult.info.identification,
+            projectResult.info.subIdentification
+          )
+        }
+
+        setFetchingStatus('data')
+        const dataResult = await fetchData(currentUuid, translations, determinedProvider).catch(() => null)
+        if (dataResult) {
+          setData(dataResult)
+          historyService.addUUID(currentUuid, dataResult.info?.identification, dataResult.info?.subIdentification)
+        } else if (projectResult) {
+          navigate(`/linking/${currentUuid}`)
+        }
+
+        const assetCoreResult = await service.getAssetCore(currentUuid).catch(() => null)
+        if (assetCoreResult) {
+          setAssetCore(assetCoreResult)
+        } else {
+          setAssetCore({
+            status: 'initialized',
+            grants: [],
+            identifier: undefined,
+            subidentifier: undefined
+          })
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+        setError(err instanceof Error ? err.message : 'An error occurred while fetching data')
+        setData(null)
       } finally {
         setIsLoading(false)
+        setFetchingStatus('completed')
       }
     }
 
     loadData()
-  }, [location.pathname, dataLoaded, translations])
+  }, [uuid, projectId, translations, navigate])
 
-  /**
-   * Allows us to refetch data on demand (e.g., after a form submission).
-   */
   const reloadData = async () => {
     try {
       setIsLoading(true)
-      const result = await fetchData(projectId, translations)
+      const result = await fetchData(resolvedUuid, translations, provider)
       setData(result)
       setError(null)
     } catch (err) {
@@ -270,37 +257,112 @@ export const DataProvider: FC<DataProviderProps> = ({ children }) => {
     }
   }
 
-  /**
-   * Dynamically returns wizard questions from the "startInstallation" node
-   * (or any node that might be a wizard, if you prefer to generalize).
-   */
-  const getWizardQuestions = async (sectionId: string): Promise<WizardQuestion[]> => {
-    if (!data) return []
-    const wizardNode = data[sectionId]
+  const getWizardQuestions = async (sectionId: string): Promise<IWizardQuestion[]> => {
+    if (!data?.nodes) return []
+    const wizardNode = data.nodes[sectionId]
     if (!wizardNode?.isWizard || !wizardNode?.questions) return []
     return wizardNode.questions
   }
 
-  return (
-    <DataContext.Provider
-      value={{
-        data,
-        isLoading,
-        error,
-        projectId,
-        getWizardQuestions,
-        reloadData
-      }}
-    >
-      {children}
-    </DataContext.Provider>
-  )
-}
+  // Create the service object that abstracts provider calls using useMemo to keep it stable
+  const service = useMemo(() => {
+    return {
+      // Methods available in both services
+      getUUIDInfo: async (uuid: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getUUIDInfo(uuid)
+      },
+      getProjectByUuid: async (uuid: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getProjectByUuid(uuid)
+      },
+      getProject: async (projectUuid: string) => {
+        const determinedProvider = await determineProvider(projectUuid).catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getProject(projectUuid)
+      },
+      getAssetCore: async (uuid: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getAssetCore(uuid)
+      },
+      isFileId: async (value: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.isFileId(value)
+      },
+      getFileIcon: async (mimeType: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        const currentService = determinedProvider === 'canister' ? canisterService : serverService
+        return await currentService.getFileIcon(mimeType)
+      },
 
-export const useData = () => {
-  const context = useContext(DataContext)
-  if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider')
+      // Methods only available in canister service
+      updateValue: async (uuid: string, key: string, value: string, lock?: boolean) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('updateValue is not available in server provider')
+        }
+        return await canisterService.updateValue(uuid, key, value, lock)
+      },
+      uploadFile: async (uuid: string, fileData: string, metadata: { fileName: string; mimeType: string; uploadTimestamp: bigint }) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('uploadFile is not available in server provider')
+        }
+        return await canisterService.uploadFile(uuid, fileData, metadata)
+      },
+      getImage: async (uuid: string, imageId: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('getImage is not available in server provider')
+        }
+        return await canisterService.getImage(uuid, imageId)
+      },
+      getFileMetadataByUUIDAndId: async (uuid: string, fileId: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('getFileMetadataByUUIDAndId is not available in server provider')
+        }
+        return await canisterService.getFileMetadataByUUIDAndId(uuid, fileId)
+      },
+      getFileMetadataByUUID: async (uuid: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('getFileMetadataByUUID is not available in server provider')
+        }
+        return await canisterService.getFileMetadataByUUID(uuid)
+      },
+      getFileByUUIDAndId: async (uuid: string, fileId: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('getFileByUUIDAndId is not available in server provider')
+        }
+        return await canisterService.getFileByUUIDAndId(uuid, fileId)
+      },
+      downloadFileContent: async (uuid: string, fileId: string) => {
+        const determinedProvider = await determineProvider(uuid || projectId || '').catch(() => 'canister' as const)
+        if (determinedProvider !== 'canister') {
+          throw new Error('downloadFileContent is not available in server provider')
+        }
+        return await canisterService.downloadFileContent(uuid, fileId)
+      }
+    }
+  }, [uuid, projectId])
+
+  return {
+    data: data ?? null,
+    project,
+    assetCore,
+    fetchingStatus,
+    isLoading,
+    error,
+    uuid: resolvedUuid,
+    getWizardQuestions,
+    reloadData,
+    provider,
+    service: service as unknown as IDataHookReturn['service']
   }
-  return context
 }

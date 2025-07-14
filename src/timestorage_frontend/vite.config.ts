@@ -21,12 +21,18 @@ const config: UserConfig = {
   },
   build: {
     rollupOptions: {
-      plugins: !!shouldAnalyze ? [visualizer({ open: true, filename: './bundle-size/bundle.html' })] : []
+      plugins: !!shouldAnalyze ? [visualizer({ open: true, filename: './bundle-size/bundle.html' })] as never : []
     },
     sourcemap: !!shouldAnalyze
   },
   define: {
-    'process.env': process.env
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+    // If you have other specific 'process.env' variables your client code needs,
+    // they should be explicitly added here, e.g.:
+    // 'process.env.MY_VARIABLE': JSON.stringify(process.env.MY_VARIABLE)
+  },
+  server: {
+    port: 3000
   },
   plugins: [
     react(),
@@ -38,7 +44,15 @@ const config: UserConfig = {
         extensions: ['.ts', '.tsx']
       }
     })
-  ]
+  ],
+  optimizeDeps: {
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis'
+      }
+    }
+  }
 }
 
 const getConfig = () => config
